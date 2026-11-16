@@ -50,8 +50,14 @@ pero sigue aceptando esquemas propios.
    antes de que venza el `access_token`. Un solo refresh a la vez (actor), aunque haya varias
    llamadas esperando.
 5. Ante `invalid_grant`: borrar los tokens y volver a la pantalla de Client ID con un mensaje.
-   **[VERIFICAR]** Según fuentes de terceros, desde mediados de 2026 el refresh token vence a
-   los **6 meses** de la autorización original, aunque se refresque.
+   **Verificado (nov-2026, "Refreshing tokens")**: los refresh tokens de apps del panel duran
+   **6 meses** desde la autorización original; refrescar no los extiende. A los 6 meses el
+   usuario vuelve a conectar.
+6. **Comprobar el acceso** después del login con `GET /me/player` (scope
+   `user-read-playback-state`, que ya pedimos). Un `403` ahí significa que la cuenta no está
+   en *Users Management* de la app. No se usa `GET /me` porque su referencia lista scopes
+   que no pedimos (`user-read-private`, `user-read-email`). Spotify no documenta el cuerpo de
+   ese `403`.
 
 Todo se guarda en el **Llavero** (`kSecClassGenericPassword`, accesible después del primer
 desbloqueo).
