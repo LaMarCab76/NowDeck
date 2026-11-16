@@ -1,0 +1,25 @@
+{
+  "formato": "nowdeck.tema/1",
+  "nombre": "Azul noche",
+  "colores": {
+    "fondo": "#0B1220",
+    "superficie": "#16203A",
+    "texto": "#EEF3FA",
+    "textoSecundario": "#9FB0C8",
+    "acento": "#7CC4FF",
+    "textoSobreAcento": "#04121F"
+  },
+  "fondoReproductor": "solido",
+  "reproductor": {
+    "caratula": "izquierda",
+    "controles": [
+      "aleatorio",
+      "repetir",
+      "letras",
+      "volumen"
+    ]
+  },
+  "letras": {
+    "ancho": "dos-tercios"
+  }
+}

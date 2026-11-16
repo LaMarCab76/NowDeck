@@ -1,0 +1,25 @@
+{
+  "formato": "nowdeck.tema/1",
+  "nombre": "Ámbar",
+  "colores": {
+    "fondo": "#121A24",
+    "superficie": "#1E2733",
+    "texto": "#F2EEE8",
+    "textoSecundario": "#A9B4C0",
+    "acento": "#FFB23E",
+    "textoSobreAcento": "#1A1206"
+  },
+  "fondoReproductor": "solido",
+  "reproductor": {
+    "caratula": "izquierda",
+    "controles": [
+      "aleatorio",
+      "repetir",
+      "letras",
+      "volumen"
+    ]
+  },
+  "letras": {
+    "ancho": "dos-tercios"
+  }
+}

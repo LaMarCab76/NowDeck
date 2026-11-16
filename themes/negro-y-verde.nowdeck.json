@@ -1,0 +1,25 @@
+{
+  "formato": "nowdeck.tema/1",
+  "nombre": "Negro y verde",
+  "colores": {
+    "fondo": "#000000",
+    "superficie": "#161616",
+    "texto": "#F2EEE8",
+    "textoSecundario": "#A9B4C0",
+    "acento": "#2FD566",
+    "textoSobreAcento": "#00170A"
+  },
+  "fondoReproductor": "caratula",
+  "reproductor": {
+    "caratula": "izquierda",
+    "controles": [
+      "aleatorio",
+      "repetir",
+      "letras",
+      "volumen"
+    ]
+  },
+  "letras": {
+    "ancho": "dos-tercios"
+  }
+}

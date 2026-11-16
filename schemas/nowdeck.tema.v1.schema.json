@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LaMarCab76/Nowdeck/schemas/nowdeck.tema.v1.schema.json",
+  "title": "Tema de Nowdeck v1",
+  "type": "object",
+  "required": ["formato", "nombre"],
+  "properties": {
+    "formato": { "const": "nowdeck.tema/1" },
+    "nombre": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "colores": {
+      "type": "object",
+      "properties": {
+        "fondo": { "$ref": "#/$defs/hex" },
+        "superficie": { "$ref": "#/$defs/hex" },
+        "texto": { "$ref": "#/$defs/hex" },
+        "textoSecundario": { "$ref": "#/$defs/hex" },
+        "acento": { "$ref": "#/$defs/hex" },
+        "textoSobreAcento": { "$ref": "#/$defs/hex" }
+      }
+    },
+    "fondoReproductor": { "enum": ["solido", "caratula"] },
+    "reproductor": {
+      "type": "object",
+      "properties": {
+        "caratula": { "enum": ["izquierda", "derecha"] },
+        "controles": {
+          "type": "array",
+          "items": { "enum": ["aleatorio", "repetir", "letras", "volumen"] },
+          "uniqueItems": true,
+          "maxItems": 4
+        }
+      }
+    },
+    "letras": {
+      "type": "object",
+      "properties": {
+        "ancho": { "enum": ["mitad", "dos-tercios", "completo"] }
+      }
+    }
+  },
+  "$defs": {
+    "hex": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" }
+  }
+}

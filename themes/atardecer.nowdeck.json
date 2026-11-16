@@ -1,0 +1,25 @@
+{
+  "formato": "nowdeck.tema/1",
+  "nombre": "Atardecer",
+  "colores": {
+    "fondo": "#120A0F",
+    "superficie": "#22141C",
+    "texto": "#FFF4EC",
+    "textoSecundario": "#8A6F7A",
+    "acento": "#FF8A5B",
+    "textoSobreAcento": "#1F0A02"
+  },
+  "fondoReproductor": "solido",
+  "reproductor": {
+    "caratula": "izquierda",
+    "controles": [
+      "aleatorio",
+      "repetir",
+      "letras",
+      "volumen"
+    ]
+  },
+  "letras": {
+    "ancho": "dos-tercios"
+  }
+}
