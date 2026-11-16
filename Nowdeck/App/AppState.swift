@@ -20,6 +20,7 @@ final class AppState: ObservableObject {
     /// A message shown on the Client ID step after a failed or expired login.
     enum Notice: Equatable {
         case sessionExpired
+        case savedClientIDRejected
         case notAllowlisted
         case invalidClientID
         case accessDenied
@@ -31,6 +32,8 @@ final class AppState: ObservableObject {
             switch self {
             case .sessionExpired:
                 return "Tu sesión de Spotify venció. Conectate de nuevo para seguir."
+            case .savedClientIDRejected:
+                return "Spotify ya no reconoce el Client ID guardado. Puede que la app se haya borrado en el panel de Spotify: pegá el Client ID de tu app o creá una nueva."
             case .notAllowlisted:
                 return "Spotify no deja usar tu app con esta cuenta. Entrá con la misma cuenta con la que creaste la app, o sumala en Users Management, en los ajustes de tu app en el panel de Spotify."
             case .invalidClientID:
@@ -89,10 +92,12 @@ final class AppState: ObservableObject {
     }
 
     /// The app's real dependencies.
+    ///
+    /// Keychain items survive deleting the app, so after a reinstall the user may come back
+    /// logged in. That is intended: if those credentials no longer work, the first refresh
+    /// fails and `sessionWasRejected` sends the user back to the setup.
     convenience init() {
-        let keychain = KeychainStore()
-        Self.clearKeychainOnFirstLaunch(keychain)
-        self.init(credentials: CredentialStore(store: keychain),
+        self.init(credentials: CredentialStore(store: KeychainStore()),
                   webAuthenticator: WebAuthenticationSession())
     }
 
@@ -142,10 +147,18 @@ final class AppState: ObservableObject {
         }
     }
 
-    /// Called by the token manager when Spotify rejects the refresh token.
-    func sessionDidExpire() {
+    /// Called by the token manager when Spotify rejects the stored credentials. The tokens
+    /// are already deleted.
+    func sessionWasRejected(_ error: AuthError) {
         tokenManager = nil
-        notice = .sessionExpired
+        if error == .invalidClient {
+            // The Client ID itself is no longer valid: don't prefill it again.
+            try? credentials.removeClientID()
+            savedClientID = nil
+            notice = .savedClientIDRejected
+        } else {
+            notice = .sessionExpired
+        }
         route = .onboarding(.clientID)
     }
 
@@ -153,8 +166,8 @@ final class AppState: ObservableObject {
 
     private func makeTokenManager(clientID: String) -> TokenManager {
         TokenManager(clientID: clientID, credentials: credentials, accounts: accounts,
-                     onSessionExpired: { [weak self] in
-                         await self?.sessionDidExpire()
+                     onSessionRejected: { [weak self] error in
+                         await self?.sessionWasRejected(error)
                      })
     }
 
@@ -167,15 +180,5 @@ final class AppState: ObservableObject {
         case AuthError.network: return .offline
         default: return .failed
         }
-    }
-
-    /// Keychain items survive deleting the app. Without this, reinstalling would silently log
-    /// the user back in with old credentials. `UserDefaults` only stores a flag here, never a
-    /// secret.
-    private static func clearKeychainOnFirstLaunch(_ keychain: KeychainStore) {
-        let key = "didLaunchBefore"
-        guard !UserDefaults.standard.bool(forKey: key) else { return }
-        try? keychain.removeAll()
-        UserDefaults.standard.set(true, forKey: key)
     }
 }

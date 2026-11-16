@@ -185,4 +185,25 @@ final class LoginFlowTests: XCTestCase {
         XCTAssertEqual(appState.savedClientID, clientID)
         XCTAssertNil(try credentials.tokens())
     }
+
+    /// After a reinstall the old credentials come back from the Keychain. If the Spotify app
+    /// behind them is gone, the user goes back to the setup with an empty field.
+    func testRejectedSavedClientIDReturnsToSetupWithoutPrefill() async throws {
+        let credentials = CredentialStore(store: InMemorySecureStore())
+        try credentials.setClientID(clientID)
+        try credentials.setTokens(OAuthTokens(accessToken: "a", refreshToken: "r",
+                                              expiresAt: .distantPast, scope: ""))
+        let (appState, _, _) = makeAppState(credentials: credentials, tokenStatus: 400,
+                                            tokenError: "invalid_client")
+        XCTAssertEqual(appState.route, .player)
+
+        let manager = try XCTUnwrap(appState.tokenManager)
+        _ = try? await manager.validAccessToken()
+
+        XCTAssertEqual(appState.route, .onboarding(.clientID))
+        XCTAssertEqual(appState.notice, .savedClientIDRejected)
+        XCTAssertNil(appState.savedClientID)
+        XCTAssertNil(try credentials.clientID())
+        XCTAssertNil(try credentials.tokens())
+    }
 }

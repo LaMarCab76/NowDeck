@@ -60,7 +60,14 @@ pero sigue aceptando esquemas propios.
    ese `403`.
 
 Todo se guarda en el **Llavero** (`kSecClassGenericPassword`, accesible después del primer
-desbloqueo).
+desbloqueo). Lo guardado en el Llavero sobrevive a desinstalar la app, y se deja así: al
+reinstalar, la app arranca con la sesión anterior. Si Spotify la rechaza en la primera
+renovación, se borra y se vuelve a la configuración:
+
+- `invalid_grant` (venció o se revocó el refresh token): se borran los tokens y se vuelve al
+  paso del Client ID con el ID cargado.
+- `invalid_client` (por ejemplo, la app se borró en el panel): se borran los tokens y el
+  Client ID, y se vuelve al paso del Client ID con el campo vacío.
 
 ### Scopes
 
