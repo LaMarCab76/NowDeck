@@ -48,6 +48,19 @@ struct Palette: Equatable, Sendable {
     static let subtleSurface = Color.white.opacity(0.09)
     /// Border of unselected filter chips.
     static let chipBorder = Color.white.opacity(0.35)
+
+    // Neutral lines of the onboarding mockups (Onboarding1–3.dc.html). Not tokens of the
+    // design doc and not themable: they are fixed warm greys that go with the black
+    // background of the first launch.
+
+    /// Step-number circles and the Client ID field border.
+    static let outline = RGBColor(hex: "#5A544D")!
+    /// Border of the box with the Redirect URI.
+    static let hairline = RGBColor(hex: "#3A3632")!
+    /// Line above the permission list.
+    static let divider = RGBColor(hex: "#2B2825")!
+    /// Border of outlined buttons ("Abrir el panel").
+    static let outlineButtonBorder = Color.white.opacity(0.45)
 }
 
 extension Palette {
