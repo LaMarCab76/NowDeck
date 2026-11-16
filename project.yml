@@ -1,0 +1,97 @@
+name: Nowdeck
+
+# Shared settings (bundle ID, team) live in Config/Nowdeck.xcconfig, which optionally
+# includes the gitignored Config/Local.xcconfig for per-developer overrides.
+configFiles:
+  Debug: Config/Nowdeck.xcconfig
+  Release: Config/Nowdeck.xcconfig
+
+options:
+  deploymentTarget:
+    iOS: "16.0"
+  developmentLanguage: es
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+
+targets:
+  Nowdeck:
+    type: application
+    platform: iOS
+    sources:
+      - path: Nowdeck
+        excludes:
+          - "**/.gitkeep"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(NOWDECK_BUNDLE_ID)
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    info:
+      path: Nowdeck/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: Nowdeck
+        CFBundleDevelopmentRegion: es
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        # Portrait is needed for onboarding; everything else locks to landscape at runtime.
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        # OAuth redirect: nowdeck://callback
+        CFBundleURLTypes:
+          - CFBundleURLName: $(PRODUCT_BUNDLE_IDENTIFIER).oauth
+            CFBundleURLSchemes:
+              - nowdeck
+        # Theme files: <name>.nowdeck.json
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER).theme
+            UTTypeDescription: Tema de Nowdeck
+            UTTypeConformsTo:
+              - public.json
+            UTTypeTagSpecification:
+              public.filename-extension:
+                - nowdeck.json
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Tema de Nowdeck
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Owner
+            LSItemContentTypes:
+              - $(PRODUCT_BUNDLE_IDENTIFIER).theme
+        LSSupportsOpeningDocumentsInPlace: false
+        ITSAppUsesNonExemptEncryption: false
+
+  NowdeckTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: NowdeckTests
+    dependencies:
+      - target: Nowdeck
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(NOWDECK_BUNDLE_ID).tests
+        GENERATE_INFOPLIST_FILE: YES
+        # XCTest in Xcode 27 requires iOS 17; tests only run on current simulators.
+        # The app itself stays at iOS 16.0.
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+
+schemes:
+  Nowdeck:
+    build:
+      targets:
+        Nowdeck: all
+        NowdeckTests: [test]
+    test:
+      gatherCoverageData: true
+      targets:
+        - NowdeckTests

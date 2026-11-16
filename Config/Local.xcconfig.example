@@ -1,0 +1,4 @@
+// Copy this file to Config/Local.xcconfig (it is gitignored) and fill in your values.
+
+DEVELOPMENT_TEAM = ABCDE12345
+// NOWDECK_BUNDLE_ID = com.yourname.nowdeck
