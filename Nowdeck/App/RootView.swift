@@ -6,6 +6,8 @@ struct RootView: View {
 
     var body: some View {
         switch appState.route {
+        case .onboarding(let step):
+            OnboardingView(step: step)
         case .player:
             // Placeholder until milestone 2: an empty landscape screen on the theme background.
             themeStore.palette.background.color
