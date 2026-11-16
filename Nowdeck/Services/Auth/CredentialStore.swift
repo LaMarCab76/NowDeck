@@ -23,6 +23,10 @@ struct CredentialStore: Sendable {
         try store.set(Data(clientID.utf8), forKey: Key.clientID)
     }
 
+    func removeClientID() throws {
+        try store.removeValue(forKey: Key.clientID)
+    }
+
     func tokens() throws -> OAuthTokens? {
         guard let data = try store.data(forKey: Key.tokens) else { return nil }
         // A token blob we cannot read (for example, from a future format) is the same as

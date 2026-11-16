@@ -36,6 +36,7 @@
     "Spotify Premium" : {},
     "Spotify no deja usar tu app con esta cuenta. Entrá con la misma cuenta con la que creaste la app, o sumala en Users Management, en los ajustes de tu app en el panel de Spotify." : {},
     "Spotify no reconoce este Client ID. Revisá que sea el de tu app." : {},
+    "Spotify ya no reconoce el Client ID guardado. Puede que la app se haya borrado en el panel de Spotify: pegá el Client ID de tu app o creá una nueva." : {},
     "Tiene que tener 32 letras y números, y ahora tiene %lld caracteres. Revisá que lo hayas copiado completo." : {},
     "Tocá **Create app**. En nombre y descripción poné lo que quieras." : {},
     "Tu iPhone, ahora control de escritorio." : {},

@@ -11,9 +11,10 @@ actor TokenManager {
     private let credentials: CredentialStore
     private let accounts: SpotifyAccountsClient
     private let now: @Sendable () -> Date
-    /// Called once when the refresh token is rejected (`invalid_grant`). The stored tokens are
-    /// already deleted at that point.
-    private let onSessionExpired: @Sendable () async -> Void
+    /// Called once when Spotify rejects the stored credentials: the refresh token
+    /// (`invalid_grant`) or the Client ID (`invalid_client`, for example after the app was
+    /// deleted in the dashboard). The stored tokens are already deleted at that point.
+    private let onSessionRejected: @Sendable (AuthError) async -> Void
 
     private var refreshTask: Task<OAuthTokens, Error>?
 
@@ -22,13 +23,13 @@ actor TokenManager {
         credentials: CredentialStore,
         accounts: SpotifyAccountsClient,
         now: @escaping @Sendable () -> Date = { Date() },
-        onSessionExpired: @escaping @Sendable () async -> Void = {}
+        onSessionRejected: @escaping @Sendable (AuthError) async -> Void = { _ in }
     ) {
         self.clientID = clientID
         self.credentials = credentials
         self.accounts = accounts
         self.now = now
-        self.onSessionExpired = onSessionExpired
+        self.onSessionRejected = onSessionRejected
     }
 
     /// A token that is valid for at least another 60 s.
@@ -71,10 +72,11 @@ actor TokenManager {
 
         do {
             return try await task.value
-        } catch AuthError.invalidGrant {
+        } catch let error as AuthError where error == .invalidGrant || error == .invalidClient {
+            // Retrying cannot fix these: the user has to configure the app again.
             try? credentials.removeTokens()
-            await onSessionExpired()
-            throw AuthError.invalidGrant
+            await onSessionRejected(error)
+            throw error
         }
     }
 }

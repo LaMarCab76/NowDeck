@@ -7,7 +7,7 @@ final class TokenManagerTests: XCTestCase {
 
     private func makeManager(
         tokens: OAuthTokens?,
-        onSessionExpired: @escaping @Sendable () async -> Void = {},
+        onSessionRejected: @escaping @Sendable (AuthError) async -> Void = { _ in },
         handler: @escaping StubURLProtocol.Handler
     ) throws -> (TokenManager, CredentialStore, StubRecorder) {
         let credentials = CredentialStore(store: InMemorySecureStore())
@@ -16,7 +16,7 @@ final class TokenManagerTests: XCTestCase {
         let fixedNow = now
         let manager = TokenManager(clientID: clientID, credentials: credentials,
                                    accounts: SpotifyAccountsClient(session: session),
-                                   now: { fixedNow }, onSessionExpired: onSessionExpired)
+                                   now: { fixedNow }, onSessionRejected: onSessionRejected)
         return (manager, credentials, recorder)
     }
 
@@ -82,22 +82,34 @@ final class TokenManagerTests: XCTestCase {
         XCTAssertEqual(recorder.requests.count, 1)
     }
 
-    func testInvalidGrantDeletesTokensAndReportsExpiredSession() async throws {
-        let expired = expectation(description: "session expired callback")
+    func testInvalidGrantDeletesTokensAndReportsRejectedSession() async throws {
+        try await assertRejectedCredentials(spotifyError: "invalid_grant", expected: .invalidGrant)
+    }
+
+    /// For example, the Spotify app was deleted in the dashboard after a reinstall.
+    func testInvalidClientDeletesTokensAndReportsRejectedSession() async throws {
+        try await assertRejectedCredentials(spotifyError: "invalid_client", expected: .invalidClient)
+    }
+
+    private func assertRejectedCredentials(spotifyError: String, expected: AuthError) async throws {
+        let rejected = expectation(description: "session rejected callback")
         let (manager, credentials, _) = try makeManager(
             tokens: tokens(expiresIn: -10),
-            onSessionExpired: { expired.fulfill() }
+            onSessionRejected: { error in
+                XCTAssertEqual(error, expected)
+                rejected.fulfill()
+            }
         ) { _ in
-            (.stub(400), tokenErrorJSON("invalid_grant"))
+            (.stub(400), tokenErrorJSON(spotifyError))
         }
 
         do {
             _ = try await manager.validAccessToken()
-            XCTFail("Expected invalid_grant")
+            XCTFail("Expected \(expected)")
         } catch {
-            XCTAssertEqual(error as? AuthError, .invalidGrant)
+            XCTAssertEqual(error as? AuthError, expected)
         }
-        await fulfillment(of: [expired], timeout: 1)
+        await fulfillment(of: [rejected], timeout: 1)
         XCTAssertNil(try credentials.tokens())
     }
 
