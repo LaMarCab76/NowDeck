@@ -1,0 +1,166 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-16T11:20:00Z"
+  },
+  "title": "Nowdeck — pantallas base",
+  "launch": {
+    "view": "canvas"
+  },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 896,
+      "h": 414,
+      "title": "Reproducción",
+      "is_interactive": true
+    },
+    "Letras.dc.html": {
+      "x": 976,
+      "y": 0,
+      "w": 896,
+      "h": 414,
+      "title": "Letras · por palabra",
+      "is_interactive": true
+    },
+    "LetrasEstrofa.dc.html": {
+      "x": 1952,
+      "y": 0,
+      "w": 896,
+      "h": 414,
+      "title": "Letras · estrofa completa",
+      "is_interactive": true
+    },
+    "SinLetra.dc.html": {
+      "x": 2928,
+      "y": 0,
+      "w": 896,
+      "h": 414,
+      "title": "Letras · no encontrada",
+      "is_interactive": true
+    },
+    "Volumen.dc.html": {
+      "x": 3904,
+      "y": 0,
+      "w": 896,
+      "h": 414,
+      "title": "Volumen a la vista",
+      "is_interactive": true
+    },
+    "Biblioteca.dc.html": {
+      "x": 0,
+      "y": 774,
+      "w": 896,
+      "h": 414,
+      "title": "Biblioteca",
+      "is_interactive": true
+    },
+    "Dispositivos.dc.html": {
+      "x": 976,
+      "y": 774,
+      "w": 896,
+      "h": 414,
+      "title": "Dispositivos",
+      "is_interactive": true
+    },
+    "Ajustes.dc.html": {
+      "x": 1952,
+      "y": 774,
+      "w": 896,
+      "h": 414,
+      "title": "Ajustes · apariencia",
+      "is_interactive": true
+    },
+    "SinReproduccion.dc.html": {
+      "x": 4880,
+      "y": 774,
+      "w": 896,
+      "h": 414,
+      "title": "Nada sonando",
+      "is_interactive": true
+    },
+    "Onboarding1.dc.html": {
+      "x": 0,
+      "y": 1548,
+      "w": 414,
+      "h": 896,
+      "title": "Primer inicio · Bienvenida",
+      "is_interactive": true
+    },
+    "Onboarding2.dc.html": {
+      "x": 494,
+      "y": 1548,
+      "w": 414,
+      "h": 896,
+      "title": "Primer inicio · Crear la app",
+      "is_interactive": true
+    },
+    "Onboarding3.dc.html": {
+      "x": 988,
+      "y": 1548,
+      "w": 414,
+      "h": 896,
+      "title": "Primer inicio · Client ID",
+      "is_interactive": true
+    },
+    "AjustesReproductor.dc.html": {
+      "x": 2928,
+      "y": 774,
+      "w": 896,
+      "h": 414,
+      "title": "Ajustes · reproductor",
+      "is_interactive": true
+    },
+    "TemaImportar.dc.html": {
+      "x": 3904,
+      "y": 774,
+      "w": 896,
+      "h": 414,
+      "title": "Importar tema",
+      "is_interactive": true
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Letras.dc.html",
+    "LetrasEstrofa.dc.html",
+    "SinLetra.dc.html",
+    "Volumen.dc.html",
+    "Biblioteca.dc.html",
+    "Dispositivos.dc.html",
+    "Ajustes.dc.html",
+    "AjustesReproductor.dc.html",
+    "TemaImportar.dc.html",
+    "SinReproduccion.dc.html",
+    "Onboarding1.dc.html",
+    "Onboarding2.dc.html",
+    "Onboarding3.dc.html"
+  ],
+  "notes": {
+    "t-uso": {
+      "x": 0,
+      "y": -300,
+      "text": "Reproductor",
+      "kind": "title1",
+      "maxW": 4800
+    },
+    "t-otras": {
+      "x": 0,
+      "y": 474,
+      "text": "Biblioteca, dispositivos y ajustes",
+      "kind": "title1",
+      "maxW": 5776
+    },
+    "t-inicio": {
+      "x": 0,
+      "y": 1248,
+      "text": "Primer inicio · Client ID propio",
+      "kind": "title1",
+      "maxW": 1402
+    }
+  },
+  "designSystems": []
+}
