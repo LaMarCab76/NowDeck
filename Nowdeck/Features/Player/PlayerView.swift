@@ -9,7 +9,7 @@ struct PlayerView: View {
     var showsLyricsButton: Bool
     /// Full screen width, to adapt to the iPhone 8 Plus (736 pt).
     var screenWidth: CGFloat
-    /// The edge swipe (`PlayerContent`): moves the cover and title, and shows the next or
+    /// The track swipe (`PlayerContent`, `TrackSwipe`): moves the cover and title, and shows the next or
     /// previous item beside them.
     var swipe: TrackSwipePhase = .idle
 
@@ -76,9 +76,9 @@ struct PlayerView: View {
     /// The origin row across the whole width, so "Desde la playlist …" always sits in the
     /// top-left corner, and below it the artwork with the title, artist and device.
     ///
-    /// The cover, title and device row form a page that follows the edge swipe; the page of
-    /// the next or previous item comes in one screen width away, from the edge the finger
-    /// started at. The device row moves with its page: if it stayed still, the moving cover
+    /// The cover, title and device row form a page that follows the track swipe; the page of
+    /// the next or previous item comes in one screen width away, from the side it belongs
+    /// to. The device row moves with its page: if it stayed still, the moving cover
     /// would pass under it (docs/06: nothing on top of the cover). The origin and everything
     /// below stay still.
     private var normalTopBlock: some View {
@@ -95,6 +95,14 @@ struct PlayerView: View {
                 }
             }
             .frame(height: Layout.topBlockHeight, alignment: .top)
+            .background {
+                // The band where a track swipe can start (`TrackSwipe`).
+                GeometryReader { proxy in
+                    let frame = proxy.frame(in: .global)
+                    Color.clear.preference(key: TrackSwipeBandKey.self,
+                                           value: frame.minY...frame.maxY)
+                }
+            }
         }
         .frame(height: Layout.upperAreaHeight, alignment: .top)
     }
@@ -121,7 +129,7 @@ struct PlayerView: View {
         }
     }
 
-    private func previewPage(edge: EdgeSwipe.Edge) -> some View {
+    private func previewPage(edge: TrackSwipe.Edge) -> some View {
         let preview: TrackPreview?
         switch swipe {
         case .landing(_, let frozen, _): preview = frozen
@@ -214,7 +222,7 @@ struct ArtworkView: View {
     }
 }
 
-/// One page of the edge swipe: the cover and, beside it, the title centered above the device
+/// One page of the track swipe: the cover and, beside it, the title centered above the device
 /// row.
 private struct TrackPage<Title: View, DeviceSpace: View>: View {
     var artworkSide: CGFloat

@@ -112,10 +112,14 @@ Cambia lo anterior en estos puntos (no está en los mockups):
   del tema se reparten a los dos lados igual que antes (`PlayerControlLayout`), y los dos lados
   ocupan el mismo ancho flexible, así que Play/Pausa queda siempre en el centro exacto. Con los
   siete botones la fila mide 584 (entra en los 640 del 8 Plus).
-- **Deslizar desde el borde** para pasar de tema:
-  - Un arrastre que empieza a 40 o menos del borde izquierdo o derecho mueve la carátula y el
-    título con el dedo.
-  - Desde ese borde entra la "página" del otro ítem, una pantalla más allá: desde la derecha el
+- **Deslizar para pasar de tema**, como un carrusel:
+  - El arrastre puede empezar en cualquier punto de la franja de la carátula y el título, de
+    borde a borde de la pantalla, o a 40 o menos de un borde lateral a cualquier altura. Solo
+    cuenta si arranca más horizontal que vertical (se decide a los 8). La barra de progreso y
+    los controles quedan fuera, con sus propios gestos.
+  - Arrastrar a la izquierda trae el siguiente y a la derecha el anterior. La carátula, el
+    título y el dispositivo siguen al dedo, y volver más allá del inicio muestra el otro.
+  - Del costado correspondiente entra la "página" del otro ítem, una pantalla más allá: desde la derecha el
     siguiente de la cola (`GET /me/player/queue`), desde la izquierda el anterior (el que la
     app vio sonar antes; la Web API no lo da). La fila del dispositivo se mueve con su página
     (si quedara quieta, la carátula pasaría por debajo); la fila del origen y todo lo de abajo

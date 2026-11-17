@@ -121,6 +121,8 @@ struct PlayerContent: View {
     var showsNotices = true
 
     @State private var swipe: TrackSwipePhase = .idle
+    /// Where a swipe may start (the cover and title band), from `PlayerView`.
+    @State private var swipeBand: ClosedRange<CGFloat>?
 
     var body: some View {
         ZStack {
@@ -165,10 +167,11 @@ struct PlayerContent: View {
                 emptyState(.unavailable)
             }
         }
-        // Next / previous by dragging in from the right or left edge: the cover and title
-        // follow the finger and the other item comes in from that edge.
-        .edgeSwipe(isActive: model.status == .active && !lyrics.showsLyricsMode,
-                   onChange: swipeChanged, onEnd: swipeEnded)
+        // Next / previous by dragging left or right across the cover and title: they follow
+        // the finger and the other item comes in from the side.
+        .trackSwipe(isActive: model.status == .active && !lyrics.showsLyricsMode,
+                    band: swipeBand, onChange: swipeChanged, onEnd: swipeEnded)
+        .onPreferenceChange(TrackSwipeBandKey.self) { swipeBand = $0 }
         .onChange(of: model.nowPlaying?.transitionKey) { key in
             // The item the swipe showed is now the current one: put the pages back without
             // animation (both show the same item, so nothing moves on screen).
@@ -187,33 +190,33 @@ struct PlayerContent: View {
         }
     }
 
-    private func swipeChanged(_ edgeSwipe: EdgeSwipe) {
+    private func swipeChanged(_ trackSwipe: TrackSwipe) {
         if swipe.isLanding { return }
-        if swipe == .idle, edgeSwipe.edge == .right { model.refreshUpNextIfStale() }
-        swipe = .dragging(edge: edgeSwipe.edge, distance: edgeSwipe.distance,
-                          isAllowed: isAllowed(edgeSwipe.edge))
+        if swipe.edge != .right, trackSwipe.edge == .right { model.refreshUpNextIfStale() }
+        swipe = .dragging(edge: trackSwipe.edge, distance: trackSwipe.distance,
+                          isAllowed: isAllowed(trackSwipe.edge))
     }
 
-    private func swipeEnded(_ edgeSwipe: EdgeSwipe, commits: Bool) {
+    private func swipeEnded(_ trackSwipe: TrackSwipe, commits: Bool) {
         if swipe.isLanding { return }
-        guard commits, isAllowed(edgeSwipe.edge) else {
+        guard commits, isAllowed(trackSwipe.edge) else {
             withAnimation(Motion.swipeSettle) { swipe = .idle }
             return
         }
         // The track changes under the finger: the phone confirms it (owner's request).
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        let preview = edgeSwipe.edge == .right ? model.upNext : model.previousTrack
+        let preview = trackSwipe.edge == .right ? model.upNext : model.previousTrack
         withAnimation(Motion.swipeLand) {
-            swipe = .landing(edge: edgeSwipe.edge, preview: preview,
+            swipe = .landing(edge: trackSwipe.edge, preview: preview,
                              fromKey: model.nowPlaying?.transitionKey)
         }
-        switch edgeSwipe.edge {
+        switch trackSwipe.edge {
         case .left: actions.previous()
         case .right: actions.next()
         }
     }
 
-    private func isAllowed(_ edge: EdgeSwipe.Edge) -> Bool {
+    private func isAllowed(_ edge: TrackSwipe.Edge) -> Bool {
         let availability = ControlAvailability(playback: model.playback)
         return edge == .left ? availability.previous : availability.next
     }

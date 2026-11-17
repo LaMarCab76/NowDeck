@@ -2,11 +2,51 @@ import UIKit
 import XCTest
 @testable import Nowdeck
 
-/// The edge swipe that shows the next or previous item (owner's request, 2026-11-17): the
+/// The track swipe that shows the next or previous item (owner's request, 2026-11-17): the
 /// pages' offsets, the next item from `GET /me/player/queue` and the previous one from the
 /// app's own history.
 @MainActor
 final class TrackSwipeTests: XCTestCase {
+    // MARK: Gesture
+
+    func testDirectionPicksTheItem() {
+        let left = TrackSwipe(translation: -50)
+        XCTAssertEqual(left.edge, .right, "Dragging left brings the next item from the right")
+        XCTAssertEqual(left.distance, 50)
+        XCTAssertFalse(left.isCommitted)
+        XCTAssertEqual(TrackSwipe(translation: 120).edge, .left)
+        XCTAssertTrue(TrackSwipe(translation: TrackSwipe.commitDistance).isCommitted)
+    }
+
+    func testStartsInTheBandOrAtASideEdgeAndOnlyHorizontally() {
+        let band: ClosedRange<CGFloat> = 64...280
+        let sideways = CGSize(width: -12, height: 3)
+        XCTAssertTrue(TrackSwipe.canStart(at: CGPoint(x: 450, y: 150), translation: sideways,
+                                          screenWidth: 896, band: band),
+                      "Anywhere across the cover and title, not only at the edge")
+        XCTAssertFalse(TrackSwipe.canStart(at: CGPoint(x: 450, y: 360), translation: sideways,
+                                           screenWidth: 896, band: band),
+                       "Not on the progress bar or the controls")
+        XCTAssertTrue(TrackSwipe.canStart(at: CGPoint(x: 880, y: 360), translation: sideways,
+                                          screenWidth: 896, band: band),
+                      "Next to a side edge, at any height")
+        XCTAssertFalse(TrackSwipe.canStart(at: CGPoint(x: 450, y: 150),
+                                           translation: CGSize(width: 4, height: 10),
+                                           screenWidth: 896, band: band),
+                       "A vertical drag is not a swipe")
+        XCTAssertFalse(TrackSwipe.canStart(at: CGPoint(x: 450, y: 150), translation: sideways,
+                                           screenWidth: 896, band: nil),
+                       "Without the band (lyrics mode) only the edges count")
+    }
+
+    func testAFlickCommitsEarlyOnlyInItsDirection() {
+        let short = TrackSwipe(translation: -40)
+        XCTAssertFalse(short.commitsOnRelease(predictedTranslation: -60))
+        XCTAssertTrue(short.commitsOnRelease(predictedTranslation: -TrackSwipe.flickDistance))
+        XCTAssertFalse(short.commitsOnRelease(predictedTranslation: TrackSwipe.flickDistance),
+                       "Flicked back the other way")
+    }
+
     // MARK: Page offsets
 
     func testPagesFollowTheFingerAndLandOneScreenAway() {

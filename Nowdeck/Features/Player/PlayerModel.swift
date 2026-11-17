@@ -47,11 +47,11 @@ final class PlayerModel: ObservableObject {
     @Published private(set) var artistImage: UIImage?
     @Published private(set) var freshness: Freshness = .live
 
-    /// The first item of Spotify's queue, shown when swiping from the right edge.
+    /// The first item of Spotify's queue, shown when swiping left (next).
     /// `nil` while unknown (not read yet, empty queue, or the read failed).
     @Published private(set) var upNext: TrackPreview?
     /// The item that played before, from what this app saw (the Web API has no "previous
-    /// item"). Shown when swiping from the left edge. `nil` right after opening the app.
+    /// item"). Shown when swiping right. `nil` right after opening the app.
     @Published private(set) var previousTrack: TrackPreview?
 
     /// Commands and the volume panel. Created on first use, so that it shares this model;
@@ -413,7 +413,7 @@ final class PlayerModel: ObservableObject {
     }
 
     /// Reads the queue again if the last read is older than `upNextMaxAge`. Called when a
-    /// swipe from the right edge starts.
+    /// swipe toward the next item starts.
     func refreshUpNextIfStale() {
         guard status == .active, upNextTask == nil else { return }
         if let upNextFetchedAt, now().timeIntervalSince(upNextFetchedAt) < Self.upNextMaxAge {
