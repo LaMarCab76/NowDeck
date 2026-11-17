@@ -158,6 +158,26 @@ struct PlayerContent: View {
                 emptyState(.unavailable)
             }
         }
+        // Next / previous (±15 s on episodes) by dragging in from the right or left edge.
+        .edgeSwipe(isActive: model.status == .active, isEpisode: isEpisode,
+                   isEnabled: { [availability = ControlAvailability(playback: model.playback),
+                                 isEpisode] edge in
+                       if isEpisode { return availability.seek }
+                       return edge == .left ? availability.previous : availability.next
+                   },
+                   onCommit: { [actions, isEpisode] edge in
+                       switch (edge, isEpisode) {
+                       case (.left, false): actions.previous()
+                       case (.right, false): actions.next()
+                       case (.left, true): actions.skipBackward()
+                       case (.right, true): actions.skipForward()
+                       }
+                   })
+    }
+
+    private var isEpisode: Bool {
+        if case .episode = model.playback?.item { return true }
+        return false
     }
 
     private func emptyState(_ kind: NothingPlayingView.Kind) -> some View {
