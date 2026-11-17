@@ -341,8 +341,8 @@ final class PlayerModel: ObservableObject {
     /// as a new start. Small differences are just Spotify's clock against the local one.
     private static let restartJumpMs = 5_000
 
-    /// Whether `item` started since the last answer: a different item, or the same one
-    /// behind the position interpolated from the last answer.
+    /// Whether `item` started since the last answer: a different item, or the same one after
+    /// Spotify reported a state change or clearly behind the interpolated position.
     private func isNewStart(of item: NowPlaying, state: PlaybackState, at date: Date) -> Bool {
         guard let previous = nowPlaying else { return true }
         if previous.transitionKey != item.transitionKey { return true }
@@ -354,11 +354,11 @@ final class PlayerModel: ObservableObject {
             progressMs: previousProgress, durationMs: previous.durationMs,
             isPlaying: playback.isPlaying, fetchedAt: fetchedAt, now: date)
         // Spotify's `timestamp` changes when the state changes (play, pause, skip, seek…).
-        // Then any position behind the expected one is a start: a skip right after the
-        // last answer, early in a track queued twice in a row, is only a few hundred ms
-        // behind. A pause or a seek back may count too; that only costs Cola one more read.
-        let stateChanged = state.timestamp != nil && state.timestamp != playback.timestamp
-        if stateChanged { return progressMs < expected }
+        // The position alone cannot tell a skip apart: right after the last answer it is only
+        // a few hundred ms behind, and from a pause it can even be ahead (paused at 0.5 s,
+        // skipped and resumed elsewhere, now at 2 s). So any state change counts; a pause or
+        // a seek only costs Cola one more read of the queue.
+        if state.timestamp != nil && state.timestamp != playback.timestamp { return true }
         return progressMs + Self.restartJumpMs < expected
     }
 

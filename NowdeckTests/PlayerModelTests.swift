@@ -69,6 +69,7 @@ final class PlayerModelTests: XCTestCase {
         let fixture = try Fixture.data("playback-state-playing") // 84 s of 227 s, playing
         let progress = StubBox(84_000)
         let timestamp = StubBox<Int64>(1_763_380_000_000)
+        let playing = StubBox(true)
         let clock = TestClock()
         let (model, _) = makeModel(clock: clock) { request in
             if request.url?.host == "i.scdn.co" { return (.stub(404), Data()) }
@@ -76,6 +77,7 @@ final class PlayerModelTests: XCTestCase {
             var state = try XCTUnwrap(JSONSerialization.jsonObject(with: fixture) as? [String: Any])
             state["progress_ms"] = progress.value
             state["timestamp"] = timestamp.value
+            state["is_playing"] = playing.value
             return (.stub(200), try JSONSerialization.data(withJSONObject: state))
         }
 
@@ -121,6 +123,21 @@ final class PlayerModelTests: XCTestCase {
         timestamp.value += 3_000
         await model.poll()
         XCTAssertEqual(model.itemStarts, 5)
+
+        // Paused at 0.5 s, then skipped and resumed from another Spotify app: 3 s later it
+        // plays at 2 s, ahead of the paused position. The changed timestamp is enough.
+        playing.value = false
+        progress.value = 500
+        timestamp.value += 3_000
+        clock.advance(3)
+        await model.poll()
+        let beforeResume = model.itemStarts
+        playing.value = true
+        progress.value = 2_000
+        timestamp.value += 3_000
+        clock.advance(3)
+        await model.poll()
+        XCTAssertEqual(model.itemStarts, beforeResume + 1)
     }
 
     func testUnreadablePlaylistShowsOnlyTheType() async throws {
