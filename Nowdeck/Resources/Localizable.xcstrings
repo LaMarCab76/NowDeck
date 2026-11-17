@@ -5,6 +5,8 @@
     "2/3" : {},
     "5 minutos" : {},
     "ABRIR SPOTIFY" : {},
+    "Abre en Spotify" : {},
+    "Abre la app de Spotify" : {},
     "Abrir el panel" : {},
     "Abrir el panel de Spotify" : {},
     "Abrir en Spotify" : {},
@@ -17,11 +19,21 @@
     "Apariencia" : {},
     "Aplicar tema" : {},
     "Atrás" : {},
+    "Audiolibro" : {
+      "comment" : "Library card subtitle"
+    },
+    "Audiolibro · %@" : {
+      "comment" : "Library card subtitle: the audiobook's authors, verbatim"
+    },
+    "Audiolibros" : {},
     "Biblioteca" : {},
     "Blanco" : {},
+    "Buscar" : {},
+    "Buscar en Spotify" : {},
     "CLIENT ID" : {},
     "COLOR DE RESALTADO" : {},
     "Cancelar" : {},
+    "Cargando" : {},
     "Celeste" : {},
     "Cerrar" : {},
     "Client ID" : {},
@@ -69,6 +81,7 @@
     "Explícito" : {},
     "Exportar tema" : {},
     "FONDO DEL REPRODUCTOR" : {},
+    "Filtrar biblioteca" : {},
     "Gris oscuro" : {},
     "Hay campos que esta versión no conoce y se van a ignorar: %@." : {},
     "Importar tema" : {},
@@ -77,6 +90,7 @@
     "Las letras vienen de LRCLIB, una base comunitaria: no las provee Spotify y pueden faltar o tener errores. Con sincronía por palabra se resaltan mientras suenan; si no, se ve la estrofa completa." : {},
     "Lavanda" : {},
     "Letras" : {},
+    "Los resultados de búsqueda todavía no están disponibles en esta versión." : {},
     "Mitad" : {},
     "Mostrar letras" : {},
     "NOWDECK VA A PEDIR PERMISO PARA" : {},
@@ -86,9 +100,13 @@
     "No es un tema de Nowdeck." : {},
     "No es un tema de Nowdeck: el texto no es un JSON válido." : {},
     "No hay conexión a internet. Revisala y probá de nuevo." : {},
+    "No hay nada guardado acá todavía." : {},
+    "No hay un dispositivo activo. Elegí uno para escuchar." : {},
     "No pudimos buscar la letra. Probá de nuevo en un rato." : {},
+    "No pudimos cargar tu biblioteca. Revisá la conexión y probá de nuevo." : {},
     "No pudimos conectar con Spotify. Probá de nuevo en un rato." : {},
     "No pudimos leer el archivo. Probá abrirlo de nuevo." : {},
+    "No pudimos reproducirlo. Probá de nuevo." : {},
     "No se puede importar" : {},
     "No ve tu contraseña ni toca tus playlists." : {},
     "Nowdeck es un proyecto open source independiente. No está afiliado a Spotify ni cuenta con su aval." : {},
@@ -103,13 +121,35 @@
     "Pegar desde el portapapeles" : {},
     "Pegá tu Client ID" : {},
     "Personalizado" : {},
+    "Playlist" : {
+      "comment" : "Library card subtitle"
+    },
+    "Playlist · %lld temas" : {
+      "comment" : "Library card subtitle: number of tracks"
+    },
+    "Playlist · 1 tema" : {
+      "comment" : "Library card subtitle: a playlist with one track"
+    },
+    "Playlists" : {},
+    "Podcast" : {
+      "comment" : "Library card subtitle"
+    },
+    "Podcast · %lld episodios" : {
+      "comment" : "Library card subtitle: number of episodes"
+    },
+    "Podcast · 1 episodio" : {
+      "comment" : "Library card subtitle: a podcast with one episode"
+    },
+    "Podcasts" : {},
     "Poné algo en Spotify en cualquiera de tus dispositivos y aparece acá." : {},
     "Portapapeles" : {},
     "Progreso" : {},
     "Publicidad" : {
       "comment" : "Player title while Spotify plays an ad"
     },
+    "Reintentar" : {},
     "Repetir" : {},
+    "Reproduce en el dispositivo activo" : {},
     "Reproduciendo en" : {},
     "Reproduciendo en %@" : {},
     "Reproducir" : {},
@@ -125,19 +165,26 @@
     "Sin conexión con Spotify" : {},
     "Son 32 letras y números. Se guarda solo en este iPhone, en el Llavero." : {},
     "Spotify Premium" : {},
+    "Spotify no deja leer tu biblioteca con esta cuenta. Revisá que siga en Users Management, en el panel de Spotify." : {},
     "Spotify no deja usar tu app" : {},
     "Spotify no deja usar tu app con esta cuenta. Entrá con la misma cuenta con la que creaste la app, o sumala en Users Management, en los ajustes de tu app en el panel de Spotify." : {},
+    "Spotify no dejó reproducirlo. Revisá que tu cuenta tenga Premium." : {},
     "Spotify no reconoce este Client ID. Revisá que sea el de tu app." : {},
+    "Spotify pidió esperar un momento. Probá de nuevo en un rato." : {},
     "Spotify ya no reconoce el Client ID guardado. Puede que la app se haya borrado en el panel de Spotify: pegá el Client ID de tu app o creá una nueva." : {},
+    "Suena en" : {},
     "Suma un botón de letras al reproductor." : {},
     "TEMA" : {},
     "Tema válido" : {},
+    "Temas, artistas, álbumes, podcasts o audiolibros" : {},
     "Tiene que tener 32 letras y números, y ahora tiene %lld caracteres. Revisá que lo hayas copiado completo." : {},
     "Tocá **Create app**. En nombre y descripción poné lo que quieras." : {},
+    "Tocá un resultado y empieza a sonar en el dispositivo activo." : {},
     "Tu iPhone, ahora control de escritorio." : {},
     "Tu sesión de Spotify venció. Conectate de nuevo para seguir." : {},
     "Un navegador para entrar al panel de desarrolladores de Spotify" : {},
     "VAS A NECESITAR" : {},
+    "Ver más en Spotify" : {},
     "Ver qué está sonando" : {},
     "Ver tus dispositivos y pasar la música de uno a otro" : {},
     "Ver tus playlists, álbumes, podcasts y audiolibros guardados" : {},
@@ -145,7 +192,15 @@
     "Vista previa" : {},
     "Volumen" : {},
     "Volver" : {},
+    "Vuelve al reproductor" : {},
     "Ya tengo mi Client ID" : {},
+    "Álbum" : {
+      "comment" : "Library card subtitle"
+    },
+    "Álbum · %@" : {
+      "comment" : "Library card subtitle: the album's artists, verbatim"
+    },
+    "Álbumes" : {},
     "Ámbar" : {}
   },
   "version" : "1.0"
