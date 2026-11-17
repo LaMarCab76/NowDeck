@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// The three first-launch screens, in portrait.
+/// The first-launch screens, in portrait: the three of the mockups, the optional playlist
+/// folders step and "¡Listo!".
 ///
 /// Steps are switched by `AppState` instead of a `NavigationStack`: the mockups have their
 /// own "Atrás" button and no navigation bar, and `AppState` must be able to jump straight to
@@ -27,9 +28,22 @@ struct OnboardingView: View {
             case .clientID:
                 ClientIDView(onBack: { go(to: .createApp) })
                     .transition(.opacity)
+            case .folders:
+                PlaylistFoldersStepView(onAnswer: { enabled in
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        appState.answerPlaylistFolders(enabled: enabled)
+                    }
+                })
+                .transition(.opacity)
+            case .connected:
+                SetupDoneView(onFinish: {
+                    withAnimation(.easeInOut(duration: 0.4)) { appState.finishOnboarding() }
+                })
+                .transition(.opacity)
             }
         }
-        .orientationLock(.portrait)
+        // Steps changed by the login itself (Client ID → carpetas or ¡Listo!) also fade.
+        .animation(.easeInOut(duration: 0.25), value: step)
     }
 
     private func go(to step: AppState.OnboardingStep) {

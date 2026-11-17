@@ -20,6 +20,7 @@ struct NowdeckApp: App {
                 // The import sheet waits while onboarding (portrait) is on screen.
                 .themeImportPresenter(isEnabled: appState.route == .player)
                 .environmentObject(appState)
+                .environmentObject(appState.preferences)
                 .environmentObject(themeStore)
                 .environmentObject(themeImport)
                 .preferredColorScheme(.dark)
