@@ -73,6 +73,12 @@ struct PlayerView: View {
 
     // MARK: Bottom block
 
+    /// The theme's optional controls in its order. `showsLyricsButton` comes from the same
+    /// theme list; it is applied again here so callers can still turn the button off.
+    private var optionalControls: [Theme.PlayerControl] {
+        theme.playerControls.filter { $0 != .lyrics || showsLyricsButton }
+    }
+
     private var bottomBlock: some View {
         VStack(spacing: Layout.bottomBlockGap) {
             if let item = model.nowPlaying, let playback = model.playback {
@@ -80,7 +86,7 @@ struct PlayerView: View {
                             isPlaying: playback.isPlaying, fetchedAt: model.fetchedAt)
             }
             PlayerControls(playback: model.playback, actions: actions,
-                           showsLyricsButton: showsLyricsButton,
+                           controls: optionalControls,
                            lyricsActive: lyrics.isButtonActive,
                            sideGroupWidth: screenWidth < Layout.narrowScreenWidth
                                ? Layout.narrowSideGroupWidth : Layout.sideGroupWidth)
@@ -399,51 +405,104 @@ struct ProgressRow: View {
 
 // MARK: - Controls
 
-/// The three control groups. In milestone 2 the buttons show the current state but do
-/// nothing; milestone 3 wires them and applies `actions.disallows`.
+/// The three control groups (`Main.dc.html`): the theme's optional controls split between the
+/// side groups (`PlayerControlLayout`), and previous · play/pause · next in the center.
+///
+/// - Controls that `actions.disallows` forbids, or all of them on a restricted device, are
+///   shown disabled (`ControlAvailability`).
+/// - For podcast episodes the center group has −15 s and +15 s instead of previous and next,
+///   as Spotify's design guidelines ask ("Podcasts need to have the option to seek 15 seconds
+///   forward or backwards").
 struct PlayerControls: View {
     var playback: PlaybackState?
     var actions: PlayerActions
-    var showsLyricsButton: Bool
+    /// Optional controls in the theme's order (`reproductor.controles`).
+    var controls: [Theme.PlayerControl]
     var lyricsActive = false
     var sideGroupWidth: CGFloat
 
-    @EnvironmentObject private var theme: ThemeStore
     private typealias Layout = Metrics.Player
 
     var body: some View {
+        let layout = PlayerControlLayout(controls: controls)
+        let availability = ControlAvailability(playback: playback)
         HStack(spacing: 0) {
             HStack(spacing: Layout.sideButtonGap) {
-                ToggleIconButton(systemName: "shuffle", isOn: playback?.shuffleState == true,
-                                 label: "Aleatorio", action: actions.shuffle)
-                ToggleIconButton(systemName: playback?.repeatState == .track ? "repeat.1" : "repeat",
-                                 isOn: (playback?.repeatState ?? .off) != .off,
-                                 label: "Repetir", action: actions.repeatMode)
+                ForEach(layout.leading, id: \.self) { control in
+                    optionalButton(control, availability: availability)
+                }
             }
             .frame(width: sideGroupWidth, alignment: .leading)
 
             Spacer(minLength: 0)
 
             HStack(spacing: Layout.centerGap) {
-                SkipButton(systemName: "backward.end.fill", label: "Anterior",
-                           action: actions.previous)
-                PlayPauseButton(isPlaying: playback?.isPlaying == true, action: actions.playPause)
-                SkipButton(systemName: "forward.end.fill", label: "Siguiente", action: actions.next)
+                if isEpisode {
+                    SkipButton(systemName: "gobackward.15", label: "Retroceder 15 segundos",
+                               iconSize: Metrics.SeekButton.iconSize,
+                               isEnabled: availability.seek, action: actions.skipBackward)
+                } else {
+                    SkipButton(systemName: "backward.end.fill", label: "Anterior",
+                               isEnabled: availability.previous, action: actions.previous)
+                }
+                PlayPauseButton(isPlaying: playback?.isPlaying == true,
+                                isEnabled: availability.playPause, action: actions.playPause)
+                if isEpisode {
+                    SkipButton(systemName: "goforward.15", label: "Adelantar 15 segundos",
+                               iconSize: Metrics.SeekButton.iconSize,
+                               isEnabled: availability.seek, action: actions.skipForward)
+                } else {
+                    SkipButton(systemName: "forward.end.fill", label: "Siguiente",
+                               isEnabled: availability.next, action: actions.next)
+                }
             }
 
             Spacer(minLength: 0)
 
             HStack(spacing: Layout.sideButtonGap) {
-                if showsLyricsButton {
-                    ToggleIconButton(systemName: "quote.bubble", isOn: lyricsActive,
-                                     label: "Letras", action: actions.lyrics)
+                ForEach(layout.trailing, id: \.self) { control in
+                    optionalButton(control, availability: availability)
                 }
-                ToggleIconButton(systemName: "speaker.wave.2", isOn: false, label: "Volumen",
-                                 action: actions.volume)
             }
             .frame(width: sideGroupWidth, alignment: .trailing)
         }
         .frame(height: Layout.controlsHeight)
+    }
+
+    private var isEpisode: Bool {
+        if case .episode = playback?.item { return true }
+        return false
+    }
+
+    @ViewBuilder
+    private func optionalButton(_ control: Theme.PlayerControl,
+                                availability: ControlAvailability) -> some View {
+        switch control {
+        case .shuffle:
+            ToggleIconButton(systemName: "shuffle", isOn: playback?.shuffleState == true,
+                             label: "Aleatorio", isEnabled: availability.shuffle,
+                             action: actions.shuffle)
+        case .repeatMode:
+            ToggleIconButton(systemName: playback?.repeatState == .track ? "repeat.1" : "repeat",
+                             isOn: (playback?.repeatState ?? .off) != .off,
+                             label: repeatLabel, isEnabled: availability.repeatMode,
+                             action: actions.repeatMode)
+        case .lyrics:
+            ToggleIconButton(systemName: "quote.bubble", isOn: lyricsActive,
+                             label: "Letras", action: actions.lyrics)
+        case .volume:
+            // Always enabled: on a device without volume control the panel explains why.
+            ToggleIconButton(systemName: "speaker.wave.2", isOn: false, label: "Volumen",
+                             action: actions.volume)
+        }
+    }
+
+    private var repeatLabel: LocalizedStringKey {
+        switch playback?.repeatState ?? .off {
+        case .off: return "Repetir: desactivado"
+        case .context: return "Repetir: todo"
+        case .track: return "Repetir: este tema"
+        }
     }
 }
 
@@ -452,6 +511,7 @@ struct ToggleIconButton: View {
     var systemName: String
     var isOn: Bool
     var label: LocalizedStringKey
+    var isEnabled = true
     var action: () -> Void
 
     @EnvironmentObject private var theme: ThemeStore
@@ -468,6 +528,8 @@ struct ToggleIconButton: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : Palette.disabledControlOpacity)
         .accessibilityLabel(Text(label))
         .accessibilityAddTraits(isOn ? .isSelected : [])
     }
@@ -476,6 +538,8 @@ struct ToggleIconButton: View {
 struct SkipButton: View {
     var systemName: String
     var label: LocalizedStringKey
+    var iconSize: CGFloat = Metrics.Player.skipIconSize
+    var isEnabled = true
     var action: () -> Void
 
     @EnvironmentObject private var theme: ThemeStore
@@ -483,18 +547,21 @@ struct SkipButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: Metrics.Player.skipIconSize, weight: .regular))
+                .font(.system(size: iconSize, weight: .regular))
                 .foregroundStyle(theme.palette.text.color)
                 .frame(width: Metrics.Player.skipButtonSize, height: Metrics.Player.skipButtonSize)
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : Palette.disabledControlOpacity)
         .accessibilityLabel(Text(label))
     }
 }
 
 struct PlayPauseButton: View {
     var isPlaying: Bool
+    var isEnabled = true
     var action: () -> Void
 
     @EnvironmentObject private var theme: ThemeStore
@@ -509,6 +576,8 @@ struct PlayPauseButton: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : Palette.disabledControlOpacity)
         .accessibilityLabel(isPlaying ? Text("Pausar") : Text("Reproducir"))
     }
 }
