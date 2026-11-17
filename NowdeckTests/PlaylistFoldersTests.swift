@@ -96,7 +96,9 @@ final class PlaylistFoldersTests: XCTestCase {
 
     // MARK: Library
 
-    private func makeModel(rootlistStatus: StubBox<Int> = StubBox(200)) -> (LibraryModel, StubRecorder) {
+    private func makeModel(rootlistStatus: StubBox<Int> = StubBox(200),
+                           playlistPage: (@Sendable (Int) throws -> Data)? = nil)
+        -> (LibraryModel, StubRecorder) {
         let playlists = LibraryJSON.page([LibraryJSON.playlist("Asado", id: "a"),
                                           LibraryJSON.playlist("Suelta", id: "s")])
         let rootlist = Proto.rootlist(length: 4, truncated: false, rows: [
@@ -112,7 +114,8 @@ final class PlaylistFoldersTests: XCTestCase {
             case ("api.spotify.com", "/v1/me"):
                 return (.stub(200), Data(#"{"id":"lauti"}"#.utf8))
             case ("api.spotify.com", "/v1/me/playlists"):
-                return (.stub(200), playlists)
+                let offset = Int(request.queryValue("offset") ?? "") ?? 0
+                return (.stub(200), try playlistPage?(offset) ?? playlists)
             case ("spclient.wg.spotify.com", "/playlist/v2/user/lauti/rootlist"):
                 let status = rootlistStatus.value
                 return (.stub(status), status == 200 ? rootlist : Data())
@@ -171,6 +174,46 @@ final class PlaylistFoldersTests: XCTestCase {
         XCTAssertNil(model.detail)
         XCTAssertEqual(model.folderPath.map(\.id), ["f1"])
         XCTAssertEqual(model.state(of: .playlists), .loaded(inside))
+    }
+
+    func testFolderPlaylistPagesContinueAfterEmptyPageAndStopAtNonAdvancingOffset() async {
+        let (model, recorder) = makeModel { offset in
+            switch offset {
+            case 0:
+                return LibraryJSON.page([], limit: 50, hasNext: true)
+            case 50:
+                return Data(#"{"items":[{"uri":"spotify:playlist:a","name":"Asado"}],"next":"https://api.spotify.com/v1/me/playlists"}"#.utf8)
+            default:
+                return LibraryJSON.page([])
+            }
+        }
+
+        await model.load(.playlists)
+        model.openFolder(id: "f1")
+
+        XCTAssertEqual(playlistOffsets(in: recorder), ["0", "50"])
+        guard case .loaded(let inside) = model.state(of: .playlists) else {
+            return XCTFail("Expected the folder's contents")
+        }
+        XCTAssertEqual(inside.map(\.name), ["Asado", "Hecha por Spotify"])
+    }
+
+    func testFolderPlaylistRequestsAreBoundedEvenWhenEveryPageIsEmpty() async {
+        let budget = LibraryModel.maxFolderPlaylistPages
+        let (model, recorder) = makeModel { offset in
+            LibraryJSON.page([], offset: offset, limit: 50, hasNext: offset < budget * 50)
+        }
+
+        await model.load(.playlists)
+
+        XCTAssertTrue(model.showsFolders)
+        XCTAssertEqual(playlistOffsets(in: recorder), (0..<budget).map { String($0 * 50) })
+    }
+
+    private func playlistOffsets(in recorder: StubRecorder) -> [String] {
+        recorder.requests
+            .filter { $0.url?.path == "/v1/me/playlists" }
+            .compactMap { $0.queryValue("offset") }
     }
 
     func testRejectedRootlistFallsBackToTheFlatListWithANotice() async {

@@ -29,6 +29,21 @@ final class VolumeControllerTests: XCTestCase {
         recorder.requests.map { $0.queryValue("volume_percent") }
     }
 
+    private func holdFirstRequest(status: Int = 204)
+        -> (VolumeController, StubRecorder, DispatchSemaphore) {
+        let release = DispatchSemaphore(value: 0)
+        let isFirst = StubBox(true)
+        let (session, recorder) = StubURLProtocol.session { _ in
+            guard isFirst.value else { return (.stub(204), Data()) }
+            isFirst.value = false
+            guard release.wait(timeout: .now() + 3) == .success else { throw URLError(.timedOut) }
+            return (.stub(status), status == 204 ? Data() : spotifyErrorJSON(status: status, message: "x"))
+        }
+        let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session,
+                             sleep: { _ in }, jitter: { 0 })
+        return (VolumeController(api: api, debounce: 0.35, hideAfter: 30), recorder, release)
+    }
+
     // MARK: Coalescing
 
     func testQuickTapsSendOneRequestWithTheFinalLevel() async throws {
@@ -116,6 +131,23 @@ final class VolumeControllerTests: XCTestCase {
                        "Only the newest level follows the slow request")
     }
 
+    func testFlushingDeferredLevelCancelsTheNewerDebounce() async throws {
+        let (volume, recorder, release) = holdFirstRequest()
+        volume.observe(device(50))
+        volume.drag(to: 60)
+        volume.endDrag()
+        try await eventually { recorder.requests.count == 1 }
+
+        volume.drag(to: 65)
+        volume.endDrag()
+        volume.increase()
+        release.signal()
+
+        try await eventually { recorder.requests.count == 2 }
+        try await Task.sleep(nanoseconds: 500_000_000)
+        XCTAssertEqual(sentLevels(recorder), ["60", "70"])
+    }
+
     func testDraggingOnADeviceWithoutVolumeSendsNothing() async throws {
         let (volume, recorder, _, _) = make()
         volume.observe(device(50, supportsVolume: false))
@@ -164,6 +196,29 @@ final class VolumeControllerTests: XCTestCase {
         volume.observe(device(20, id: "b"))
         XCTAssertFalse(volume.isPanelVisible)
         XCTAssertEqual(volume.level, 20)
+    }
+
+    func testSameTargetStillSendsAfterSwitchingDevicesDuringARequest() async throws {
+        for status in [204, 403] {
+            let (volume, recorder, release) = holdFirstRequest(status: status)
+            var failures = 0
+            volume.onFailure = { _ in failures += 1 }
+            volume.observe(device(50, id: "a"))
+            volume.drag(to: 60)
+            volume.endDrag()
+            try await eventually { recorder.requests.count == 1 }
+
+            volume.observe(device(20, id: "b"))
+            volume.drag(to: 60)
+            volume.endDrag()
+            release.signal()
+
+            try await eventually { recorder.requests.count == 2 }
+            XCTAssertEqual(sentLevels(recorder), ["60", "60"])
+            XCTAssertEqual(volume.level, 60)
+            XCTAssertTrue(volume.isPanelVisible)
+            XCTAssertEqual(failures, 0, "An old device's failure should not produce a notice")
+        }
     }
 
     func testOldPollsAfterATapAreIgnored() async throws {

@@ -54,7 +54,8 @@ struct Paging<Item: Decodable & Sendable>: Decodable, Sendable {
     /// still take a position on Spotify's side.
     var nextOffset: Int? {
         guard next != nil else { return nil }
-        return (offset ?? 0) + (limit ?? items.count)
+        let (nextOffset, overflow) = (offset ?? 0).addingReportingOverflow(limit ?? items.count)
+        return overflow ? nil : nextOffset
     }
 }
 

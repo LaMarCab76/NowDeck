@@ -42,6 +42,8 @@ final class VolumeController: ObservableObject {
 
     /// The device whose volume `confirmedLevel` belongs to.
     private var deviceID: String?
+    /// Distinguishes requests sent before a device switch, even if its ID comes back later.
+    private var deviceGeneration = 0
     /// The last level Spotify reported, or that it accepted from us.
     private var confirmedLevel: Int?
     /// The level the user asked for that Spotify has not reported back yet.
@@ -115,10 +117,7 @@ final class VolumeController: ObservableObject {
         guard isDragging else { return }
         isDragging = false
         showPanel()
-        if let task = debounceTask {
-            task.cancel()
-            sendPending()
-        }
+        if debounceTask != nil { sendPending() }
     }
 
     func hidePanel() {
@@ -144,13 +143,19 @@ final class VolumeController: ObservableObject {
         let wait = debounce
         debounceTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
-            guard !Task.isCancelled else { return }
-            self?.sendPending()
+            guard !Task.isCancelled, let self else { return }
+            debounceTask = nil
+            sendPending()
         }
     }
 
-    private func sendPending() {
+    private func cancelScheduledSend() {
+        debounceTask?.cancel()
         debounceTask = nil
+    }
+
+    private func sendPending() {
+        cancelScheduledSend()
         guard let target = pendingLevel else { return }
         // One request at a time, and no queue: whatever is newest when it ends goes next.
         guard !isRequestInFlight else {
@@ -158,6 +163,7 @@ final class VolumeController: ObservableObject {
             return
         }
         isRequestInFlight = true
+        let generation = deviceGeneration
         Task { [weak self, api] in
             let result: Result<Void, Error>
             do {
@@ -166,30 +172,36 @@ final class VolumeController: ObservableObject {
             } catch {
                 result = .failure(error)
             }
-            self?.requestFinished(target: target, result: result)
+            self?.requestFinished(target: target, generation: generation, result: result)
         }
     }
 
-    private func requestFinished(target: Int, result: Result<Void, Error>) {
+    private func requestFinished(target: Int, generation: Int, result: Result<Void, Error>) {
         isRequestInFlight = false
-        switch result {
-        case .success:
-            settleDeadline = now().addingTimeInterval(settleTime)
-        case .failure(let error):
-            // Only undo if the user has not asked for another level meanwhile.
-            if pendingLevel == target {
-                pendingLevel = nil
-                settleDeadline = nil
-                level = confirmedLevel
-                hidePanel()
+        let isCurrentDevice = generation == deviceGeneration
+        if isCurrentDevice {
+            switch result {
+            case .success:
+                settleDeadline = now().addingTimeInterval(settleTime)
+            case .failure(let error):
+                // Only undo if the user has not asked for another level meanwhile.
+                if pendingLevel == target {
+                    pendingLevel = nil
+                    settleDeadline = nil
+                    level = confirmedLevel
+                    cancelScheduledSend()
+                    hidePanel()
+                }
+                onFailure?(error)
             }
-            onFailure?(error)
         }
-        if sendsWhenRequestEnds {
-            sendsWhenRequestEnds = false
-            // Nothing to send if the level that just went out is still the newest one
-            // (after a failure that undid it, `pendingLevel` is `nil`).
-            if pendingLevel != target { sendPending() }
+
+        let shouldSend = sendsWhenRequestEnds
+        sendsWhenRequestEnds = false
+        if isCurrentDevice && pendingLevel == target {
+            cancelScheduledSend()
+        } else if shouldSend {
+            sendPending()
         }
     }
 
@@ -255,14 +267,14 @@ final class VolumeController: ObservableObject {
     }
 
     private func reset(to device: SpotifyDevice?) {
+        deviceGeneration += 1
         deviceID = device?.id
         hasDevice = device != nil
         confirmedLevel = device?.volumePercent
         level = device?.volumePercent
         pendingLevel = nil
         settleDeadline = nil
-        debounceTask?.cancel()
-        debounceTask = nil
+        cancelScheduledSend()
         sendsWhenRequestEnds = false
         if device == nil {
             isAdjustable = false
