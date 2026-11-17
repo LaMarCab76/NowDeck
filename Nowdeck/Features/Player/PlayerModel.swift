@@ -7,8 +7,9 @@ import UIKit
 ///   progress from `fetchedAt` (`PlaybackProgress`).
 /// - After an error the last state stays on screen and `freshness` says it may be old.
 ///
-/// Milestone 3 adds the commands; after each one it should update `playback` optimistically
-/// and call `refresh(after: 0.6)` to confirm.
+/// Commands (milestone 3) live in `PlayerControlsModel` (`controls`). While one is in flight
+/// they hold the polling (`holdPolling()`), change `playback` optimistically
+/// (`updatePlayback(_:)`) and poll again shortly after (`resumePolling(after:)`).
 @MainActor
 final class PlayerModel: ObservableObject {
     enum Status: Equatable {
@@ -43,12 +44,19 @@ final class PlayerModel: ObservableObject {
     @Published private(set) var artworkColor: RGBColor?
     @Published private(set) var freshness: Freshness = .live
 
-    private let api: SpotifyAPI
+    /// Commands and the volume panel. Created on first use, so that it shares this model;
+    /// it keeps only a weak reference back.
+    private(set) lazy var controls = PlayerControlsModel(player: self)
+
+    /// Shared with `controls`, which sends the playback commands.
+    let api: SpotifyAPI
     private let artworkLoader: ArtworkLoader
     private let policy: PollingPolicy
     private let now: () -> Date
 
     private var pollTask: Task<Void, Never>?
+    /// Between `start()` and `stop()`: the screen is visible and the app in the foreground.
+    private var wantsPolling = false
     private var consecutiveFailures = 0
     private var quotaLimitedUntil: Date?
 
@@ -78,13 +86,31 @@ final class PlayerModel: ObservableObject {
 
     /// Starts polling right away. Does nothing if it is already running.
     func start() {
+        wantsPolling = true
         guard pollTask == nil else { return }
         schedule(initialDelay: 0)
     }
 
     func stop() {
+        wantsPolling = false
         pollTask?.cancel()
         pollTask = nil
+    }
+
+    /// Pauses the polling while a command is in flight, so that an answer read *before* the
+    /// command cannot overwrite the optimistic state. Cancelling also drops a poll that is
+    /// already waiting for its answer.
+    func holdPolling() {
+        pollTask?.cancel()
+        pollTask = nil
+    }
+
+    /// Polls again after `delay` and continues the cycle, unless the screen stopped polling
+    /// meanwhile (background).
+    func resumePolling(after delay: TimeInterval) {
+        guard wantsPolling else { return }
+        holdPolling()
+        schedule(initialDelay: delay)
     }
 
     /// Polls again after `delay` seconds and continues the regular cycle from there.
@@ -115,6 +141,8 @@ final class PlayerModel: ObservableObject {
     func poll() async -> TimeInterval {
         do {
             let state = try await api.playbackState()
+            // Held for a command while the answer was on its way: it may predate the command.
+            try Task.checkCancellation()
             consecutiveFailures = 0
             apply(state, at: now())
             let quotaLimited = isQuotaLimited
@@ -173,6 +201,34 @@ final class PlayerModel: ObservableObject {
         origin = nil
         updateArtwork(nil)
         freshness = .live
+    }
+
+    // MARK: Local changes (commands)
+
+    /// Changes the state on screen before Spotify confirms a command (optimistic update), or
+    /// takes such a change back. The progress is first moved to the position interpolated
+    /// for this instant, so pausing freezes the bar where it is and playing continues from
+    /// there.
+    func updatePlayback(_ change: (inout PlaybackState) -> Void) {
+        guard status == .active, var state = playback else { return }
+        let date = now()
+        if let progress = state.progressMs, let durationMs = nowPlaying?.durationMs {
+            state.progressMs = PlaybackProgress.interpolatedMs(
+                progressMs: progress, durationMs: durationMs, isPlaying: state.isPlaying,
+                fetchedAt: fetchedAt, now: date)
+        }
+        change(&state)
+        playback = state
+        fetchedAt = date
+    }
+
+    /// The progress shown right now, in milliseconds.
+    var currentPositionMs: Int? {
+        guard let playback, let progress = playback.progressMs,
+              let durationMs = nowPlaying?.durationMs else { return nil }
+        return PlaybackProgress.interpolatedMs(progressMs: progress, durationMs: durationMs,
+                                               isPlaying: playback.isPlaying,
+                                               fetchedAt: fetchedAt, now: now())
     }
 
     // MARK: Applying an answer
