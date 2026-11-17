@@ -1,7 +1,8 @@
 import Foundation
 
 /// State of the library screen: one row of cards per filter, loaded when the filter is
-/// first shown, and the "play this card" command.
+/// first shown, the detail screen of the playlist or album that was opened, and the "play
+/// this card" command.
 ///
 /// - Rows hold at most `rowLimit` (20) cards, as Spotify's guidelines ask. When a page
 ///   drops unusable items (no URI, `null`), the next page is fetched, up to `maxPages`.
@@ -58,6 +59,8 @@ final class LibraryModel: ObservableObject {
     /// URI of the card whose playback is starting.
     @Published private(set) var startingURI: String?
     @Published private(set) var notice: Notice?
+    /// The playlist or album whose detail screen is open, if any.
+    @Published private(set) var detail: CollectionDetailModel?
 
     private let api: SpotifyAPI
     private var noticeTask: Task<Void, Never>?
@@ -167,6 +170,19 @@ final class LibraryModel: ObservableObject {
         case SpotifyAPIError.rateLimited: return .rateLimited
         default: return .failed
         }
+    }
+
+    // MARK: Detail screen
+
+    /// Opens the detail screen of a playlist or an album (`CollectionDetailView`). Podcasts
+    /// and audiobooks have none: they open in Spotify.
+    func showDetail(of item: LibraryEntry) {
+        guard item.playsInPlace else { return }
+        detail = CollectionDetailModel(entry: item, api: api)
+    }
+
+    func closeDetail() {
+        detail = nil
     }
 
     // MARK: Playing a card
