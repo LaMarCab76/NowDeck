@@ -26,6 +26,7 @@ struct PlayerView: View {
     }
 
     @EnvironmentObject private var theme: ThemeStore
+    @EnvironmentObject private var preferences: AppPreferences
 
     /// The normal top block, or lyrics mode in its place (docs/02, "Modo letras").
     @ViewBuilder
@@ -38,6 +39,7 @@ struct PlayerView: View {
                 lyrics: lyrics.lyrics,
                 playback: playback.lyricsPlayback(fetchedAt: model.fetchedAt),
                 width: theme.lyricsWidth,
+                offsetMs: preferences.lyricsOffsetMs,
                 artwork: model.artwork.map(Image.init(uiImage:)),
                 onOpenSource: { [origin = model.origin] in
                     if let url = origin?.url { SpotifyLink.open(url) }

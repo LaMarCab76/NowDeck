@@ -228,6 +228,7 @@ struct AppearanceSettingsView: View {
 struct PlayerSettingsView: View {
     var bottomMargin: CGFloat = 28
     @EnvironmentObject private var theme: ThemeStore
+    @EnvironmentObject private var preferences: AppPreferences
 
     var body: some View {
         SettingsColumn(spacing: Spacing.m, bottomMargin: bottomMargin) {
@@ -271,11 +272,115 @@ struct PlayerSettingsView: View {
             }
             .padding(.horizontal, Spacing.xxs)
 
+            LyricsOffsetRow(offsetMs: $preferences.lyricsOffsetMs)
+                .padding(.horizontal, Spacing.xxs)
+
             Text("Las letras vienen de LRCLIB, una base comunitaria: no las provee Spotify y pueden faltar o tener errores. Con sincronía por palabra se resaltan mientras suenan; si no, se ve la estrofa completa.")
                 .textStyle(.settingsNote)
                 .foregroundStyle(theme.palette.bodyText.color)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, Spacing.xxs)
+
+            Text("BIBLIOTECA")
+                .textStyle(.label)
+                .foregroundStyle(theme.palette.label.color)
+                .accessibilityAddTraits(.isHeader)
+                .padding(.top, Spacing.s)
+
+            Toggle(isOn: $preferences.usesPlaylistFolders) {
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
+                    Text("Carpetas de playlists (experimental)")
+                        .textStyle(.settingsRowTitle)
+                    Text("Lee tus carpetas con el servicio interno de Spotify, que no está aprobado para apps de terceros. Puede dejar de andar, y Spotify podría bloquear el Client ID de tu app.")
+                        .textStyle(.helper)
+                        .foregroundStyle(theme.palette.bodyText.color)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .toggleStyle(SettingsSwitchStyle())
+            .padding(.vertical, Spacing.m)
+            .padding(.horizontal, Spacing.l)
+            .background(
+                RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
+                    .fill(Palette.settingsCard)
+            )
+        }
+    }
+}
+
+/// "Sincronía de las letras": − and + move the lyrics 0.1 s later or earlier, to make up for
+/// the delay between Spotify's position and what is heard (Bluetooth, a slow network…).
+struct LyricsOffsetRow: View {
+    @Binding var offsetMs: Int
+    @EnvironmentObject private var theme: ThemeStore
+
+    private var range: ClosedRange<Int> { AppPreferences.lyricsOffsetRange }
+    private var step: Int { AppPreferences.lyricsOffsetStep }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            HStack(spacing: Spacing.m) {
+                Text("Sincronía de las letras")
+                    .textStyle(.settingsOptionTitle)
+                Spacer(minLength: 0)
+                if offsetMs != 0 {
+                    Button("Restablecer") { offsetMs = 0 }
+                        .buttonStyle(SubtleButtonStyle(height: Metrics.minTouchTarget,
+                                                       cornerRadius: Metrics.minTouchTarget / 2))
+                }
+                stepButton(systemName: "minus", label: "Mostrar las letras más tarde",
+                           isEnabled: offsetMs > range.lowerBound) { offsetMs -= step }
+                Text(Self.valueText(offsetMs))
+                    .textStyle(.settingsOptionTitle)
+                    .monospacedDigit()
+                    .frame(minWidth: 64)
+                    .accessibilityHidden(true)
+                stepButton(systemName: "plus", label: "Mostrar las letras antes",
+                           isEnabled: offsetMs < range.upperBound) { offsetMs += step }
+            }
+            Text(Self.explanation(offsetMs))
+                .textStyle(.helper)
+                .foregroundStyle(theme.palette.bodyText.color)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityValue(Text(Self.explanation(offsetMs)))
+    }
+
+    private func stepButton(systemName: String, label: LocalizedStringKey, isEnabled: Bool,
+                            action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 16, weight: .semibold))
+                .frame(width: Metrics.minTouchTarget, height: Metrics.minTouchTarget)
+                .background(Circle().fill(Palette.subtleSurface))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : Palette.disabledControlOpacity)
+        .accessibilityLabel(Text(label))
+    }
+
+    /// "0,0 s", "+0,3 s", "−1,5 s".
+    static func valueText(_ offsetMs: Int) -> String {
+        let seconds = (Double(abs(offsetMs)) / 1000)
+            .formatted(.number.precision(.fractionLength(1)))
+        switch offsetMs {
+        case 0: return seconds + " s"
+        case 1...: return "+" + seconds + " s"
+        default: return "−" + seconds + " s"
+        }
+    }
+
+    static func explanation(_ offsetMs: Int) -> LocalizedStringResource {
+        let seconds = (Double(abs(offsetMs)) / 1000)
+            .formatted(.number.precision(.fractionLength(1)))
+        switch offsetMs {
+        case 0: return "Sin ajuste. Si las letras van tarde, tocá +; si se adelantan, tocá −."
+        case 1...: return "Las letras se muestran \(seconds) s antes."
+        default: return "Las letras se muestran \(seconds) s más tarde."
         }
     }
 }
