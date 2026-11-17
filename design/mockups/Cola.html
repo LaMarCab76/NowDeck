@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cola</title>
+<!-- Mockup of the Cola sheet, approved by the owner on 2026-11-17. Placeholder covers and names are made up; "LOGO SPOTIFY" stands for the official asset. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+  /* Standalone page (no canvas runtime): open it in any browser. */
+  body { margin: 0 auto; padding: 16px; max-width: 896px; background: #0B0B0B; color: #F2EEE8;
+         font-family: -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+  :root { --muted-foreground: #A39D95; --foreground: #F2EEE8; --font-sans: inherit; }
+  .cap { font-family: var(--font-sans); font-size: 13px; color: var(--muted-foreground); margin: 18px 0 6px; }
+  .cap b { color: var(--foreground); font-weight: 600; }
+  .frame { position: relative; width: 100%; overflow: hidden; border-radius: 10px; }
+  .frame > .inner { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  .ui { font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #F2EEE8; }
+  .mono { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; }
+  .ell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .logo { width: 108px; height: 30px; box-sizing: border-box; border: 1px dashed rgba(255,255,255,0.5); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 10px; letter-spacing: 0.06em; color: #D5DCE4; }
+  .btn48 { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #A9B4C0; }
+  .art { position: relative; flex: none; border-radius: 4px; overflow: hidden; }
+  .art i { position: absolute; border-radius: 50%; }
+  .row { display: flex; align-items: center; gap: 14px; height: 56px; flex: none; border-top: 1px solid rgba(255,255,255,0.1); }
+  .badgeE { flex: none; width: 15px; height: 15px; border-radius: 3px; background: #C9C4BC; color: #000; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+  .ring { position: absolute; border: 2px dashed #FFB23E; border-radius: 50%; pointer-events: none; }
+  .tag { position: absolute; background: #FFB23E; color: #1A1206; font: 600 12px/16px -apple-system, Helvetica, Arial, sans-serif; padding: 3px 8px; border-radius: 10px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div class="cap"><b>1 · Reproducción</b>: botón nuevo "Cola" a la izquierda de Letras y Volumen (48 pt, mismo gris #A9B4C0)</div>
+<div class="frame" data-w="896" data-h="414"><div class="inner" id="f-player"></div></div>
+
+<div class="cap"><b>2 · Hoja de Cola</b> en 896×414 (11 Pro Max). Misma hoja que Dispositivos: 640 pt, fondo #161616, radio 20</div>
+<div class="frame" data-w="896" data-h="414"><div class="inner" id="f-sheet"></div></div>
+
+<div class="cap"><b>3 · Fin de la lista</b> (tras desplazar): máximo 20 temas y cierre con enlace a Spotify, como pide el cumplimiento</div>
+<div class="frame" data-w="896" data-h="414"><div class="inner" id="f-end"></div></div>
+
+<div class="cap"><b>4 · Cola vacía</b> en 736×414 (iPhone 8 Plus): la hoja de 640 pt entra justo con los márgenes de 48</div>
+<div class="frame" data-w="736" data-h="414"><div class="inner" id="f-empty"></div></div>
+
+<script>
+const ICON = {
+  queue: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h13"/><path d="M4 12h13"/><path d="M4 18h7"/><path d="M15 15.5v5l4.5-2.5z" fill="currentColor"/></svg>',
+  lyrics: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4V5z"/><path d="M8 9h8"/><path d="M8 12h5"/></svg>',
+  vol: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
+  shuffle: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>',
+  repeat: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>',
+  prev: '<svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M19 6l-9 6 9 6V6z"/><path d="M5 6v12"/></svg>',
+  next: '<svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 6l9 6-9 6V6z"/><path d="M19 6v12"/></svg>',
+  pause: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><path d="M8 5v14"/><path d="M16 5v14"/></svg>',
+  close: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>',
+  ext: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>',
+  device: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg>',
+  lib: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4v16"/><path d="M10 4v16"/><path d="M15 5l4 15"/></svg>',
+  gear: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10"/><path d="M18 6h2"/><circle cx="16" cy="6" r="2"/><path d="M4 12h4"/><path d="M12 12h8"/><circle cx="10" cy="12" r="2"/><path d="M4 18h12"/><circle cx="18" cy="18" r="2"/></svg>',
+  emptyQ: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#A39D95" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h13"/><path d="M4 12h13"/><path d="M4 18h7"/><path d="M15 15.5v5l4.5-2.5z"/></svg>'
+};
+
+// Placeholder artwork, same abstract style as the existing mockups.
+const ART = [
+  ['#1E3A5C','#F0A24E'], ['#5C1E3A','#F2D06B'], ['#20463A','#9FE0C0'], ['#3B2A5C','#FF8A7A'],
+  ['#4A3B22','#E9E2C8'], ['#1F2F44','#7CC4FF'], ['#5A2A1E','#F7B36A'], ['#2A2A2A','#D94F4F']
+];
+function art(size, i) {
+  const [bg, fg] = ART[i % ART.length];
+  const s = Math.round(size * 0.56);
+  return `<div class="art" aria-hidden="true" style="width:${size}px;height:${size}px;background:${bg}">
+    <i style="left:${Math.round(size*0.2)}px;top:${Math.round(size*0.14)}px;width:${s}px;height:${s}px;background:${fg}"></i>
+    <i style="left:0;right:0;bottom:0;top:auto;height:${Math.round(size*0.3)}px;border-radius:0;background:rgba(0,0,0,0.35)"></i></div>`;
+}
+
+const QUEUE = [
+  ['Luces de la Costanera', 'Los Tilos del Sur', '3:12', false],
+  ['Domingo en Palermo', 'Mara Quiroga', '4:05', false],
+  ['Fiebre de Sábado', 'Club Atlántico, Nina Ferro', '2:58', true],
+  ['El último colectivo', 'Los Tilos del Sur', '3:41', false],
+  ['Agua de Río', 'Tomás Bravo', '5:02', false],
+  ['Siesta', 'Mara Quiroga', '2:37', false],
+];
+const QUEUE_END = [
+  ['Ruta 40', 'Tomás Bravo', '3:55', false],
+  ['Persianas', 'Nina Ferro', '3:20', true],
+  ['Medianoche en Once', 'Club Atlántico', '4:12', false],
+];
+
+function row(t, i, num) {
+  return `<div class="row">
+    <div class="mono" style="width:20px;flex:none;text-align:right;font-size:12px;color:#A9B4C0">${num}</div>
+    ${art(40, i + 1)}
+    <div style="flex:1 1 0;min-width:0">
+      <div style="display:flex;align-items:center;gap:6px;font-size:16px;line-height:21px;font-weight:600;white-space:nowrap;overflow:hidden">
+        <span class="ell">${t[0]}</span>${t[3] ? '<span class="badgeE" aria-label="Explícito">E</span>' : ''}
+      </div>
+      <div class="ell" style="font-size:13px;line-height:18px;color:#C9C4BC">${t[1]}</div>
+    </div>
+    <div class="mono" style="flex:none;font-size:12px;color:#A9B4C0">${t[2]}</div>
+  </div>`;
+}
+
+function sheetShell(w, body) {
+  return `<div class="ui" style="width:${w}px;height:414px;box-sizing:border-box;padding:16px 48px 0;display:flex;justify-content:center;background:#000">
+    <div style="position:relative;overflow:hidden;width:640px;height:398px;box-sizing:border-box;padding:10px 28px 0;border-radius:20px 20px 0 0;background:#161616;display:flex;flex-direction:column;gap:10px">
+      <div aria-hidden="true" style="display:flex;justify-content:center"><div style="width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,0.35)"></div></div>
+      <div style="display:flex;align-items:center;gap:14px">
+        ${art(56, 0)}
+        <div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column">
+          <div class="mono" style="font-size:12px;line-height:16px;letter-spacing:0.08em;color:#2FD566">SONANDO</div>
+          <div class="ell" style="font-size:20px;line-height:26px;font-weight:700">Vereda Mojada</div>
+          <div class="ell" style="font-size:14px;line-height:18px;color:#C9C4BC">Los Tilos del Sur</div>
+        </div>
+        <div class="logo" style="flex:none">LOGO SPOTIFY</div>
+        <div aria-label="Cerrar" style="flex:none;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center">${ICON.close}</div>
+      </div>
+      ${body}
+    </div>
+  </div>`;
+}
+
+const fadeBottom = '<div aria-hidden="true" style="position:absolute;left:0;right:0;bottom:0;height:40px;background:linear-gradient(rgba(22,22,22,0),#161616);pointer-events:none"></div>';
+
+// 1 · Player with the new button
+document.getElementById('f-player').innerHTML = `
+<div class="ui" style="position:relative;overflow:hidden;width:896px;height:414px;box-sizing:border-box;padding:24px 48px 20px;display:flex;flex-direction:column;gap:20px;background:#34465A">
+  <div style="flex:none;height:256px;display:flex;gap:32px">
+    <div class="art" style="width:256px;height:256px;background:#1E3A5C">
+      <i style="left:53px;top:39px;width:150px;height:150px;background:#F0A24E"></i>
+      <i style="left:0;right:0;top:auto;bottom:0;height:82px;border-radius:0;background:#0F2238"></i>
+    </div>
+    <div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:space-between">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0"><div class="logo">LOGO SPOTIFY</div>
+          <span class="ell" style="font-size:13px;color:#D5DCE4"><span style="font-weight:500">Desde la playlist </span><b style="color:#F2EEE8">Para laburar</b></span></div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="display:flex;align-items:center;gap:8px;height:44px;padding:0 16px 0 12px;border-radius:22px;background:rgba(255,255,255,0.09);font-size:15px;font-weight:600">${ICON.lib}<span>Biblioteca</span></div>
+          <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#A9B4C0">${ICON.gear}</div>
+        </div>
+      </div>
+      <div><div style="font-size:40px;line-height:46px;font-weight:700;letter-spacing:-0.02em">Vereda Mojada</div>
+        <div style="font-size:22px;line-height:28px;color:#D5DCE4">Los Tilos del Sur</div></div>
+      <div style="display:flex;align-items:center;gap:10px;height:44px;color:#2FD566">${ICON.device}<span style="font-size:15px"><span style="font-weight:500">Reproduciendo en </span><b>MacBook Pro</b></span></div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div class="mono" style="display:flex;align-items:center;gap:14px;height:16px;font-size:12px;color:#A9B4C0">
+      <span style="width:36px">1:24</span><div style="flex:1;height:4px;border-radius:2px;overflow:hidden;background:rgba(255,255,255,0.18)"><div style="width:37%;height:100%;background:#F2EEE8"></div></div><span style="width:36px;text-align:right">3:47</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;height:64px">
+      <div style="width:200px;display:flex;gap:4px"><div class="btn48">${ICON.shuffle}</div><div class="btn48">${ICON.repeat}</div></div>
+      <div style="display:flex;align-items:center;gap:20px;color:#F2EEE8">
+        <div style="width:56px;height:56px;display:flex;align-items:center;justify-content:center">${ICON.prev}</div>
+        <div style="width:64px;height:64px;border-radius:50%;background:#F2EEE8;color:#000;display:flex;align-items:center;justify-content:center">${ICON.pause}</div>
+        <div style="width:56px;height:56px;display:flex;align-items:center;justify-content:center">${ICON.next}</div>
+      </div>
+      <div style="width:200px;display:flex;justify-content:flex-end;gap:4px">
+        <div class="btn48" aria-label="Cola">${ICON.queue}</div><div class="btn48">${ICON.lyrics}</div><div class="btn48">${ICON.vol}</div>
+      </div>
+    </div>
+  </div>
+  <div class="ring" style="right:${48+104-4}px;bottom:${20+8-4}px;width:52px;height:52px"></div>
+  <div class="tag" style="right:${48+104-24}px;bottom:${20+64+6}px">Nuevo: Cola</div>
+</div>`;
+
+// 2 · Sheet with items
+document.getElementById('f-sheet').innerHTML = sheetShell(896, `
+  <div style="flex:1 1 0;min-height:0;position:relative;display:flex;flex-direction:column;overflow:hidden">
+    <div class="mono" style="height:22px;flex:none;font-size:12px;letter-spacing:0.08em;color:#A39D95">A CONTINUACIÓN</div>
+    ${QUEUE.map((t, i) => row(t, i, i + 1)).join('')}
+    ${fadeBottom}
+  </div>`);
+
+// 3 · End of the list
+document.getElementById('f-end').innerHTML = sheetShell(896, `
+  <div style="flex:1 1 0;min-height:0;position:relative;display:flex;flex-direction:column;overflow:hidden">
+    ${QUEUE_END.map((t, i) => row(t, i + 3, 18 + i)).join('')}
+    <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:14px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <span style="font-size:14px;line-height:20px;color:#C9C4BC">Para quitar o reordenar temas, usá Spotify.</span>
+      <span class="mono" style="flex:none;display:flex;align-items:center;gap:6px;height:44px;font-size:12px;font-weight:500;letter-spacing:0.08em">ABRIR SPOTIFY ${ICON.ext}</span>
+    </div>
+  </div>`);
+
+// 4 · Empty queue, 736 wide
+document.getElementById('f-empty').innerHTML = sheetShell(736, `
+  <div style="flex:1 1 0;display:flex;flex-direction:column;justify-content:center;gap:10px;max-width:440px;padding-bottom:24px">
+    ${ICON.emptyQ}
+    <div style="font-size:20px;line-height:26px;font-weight:700">No hay nada en la cola</div>
+    <p style="margin:0;font-size:15px;line-height:22px;color:#C9C4BC">Cuando termine este tema, Spotify decide qué sigue. Podés elegir algo desde la Biblioteca.</p>
+  </div>`);
+
+function fit() {
+  document.querySelectorAll('.frame').forEach(f => {
+    const w = +f.dataset.w, h = +f.dataset.h;
+    const avail = f.parentElement.clientWidth;
+    const scale = Math.min(1, avail / w);
+    f.style.width = (w * scale) + 'px';
+    f.style.height = (h * scale) + 'px';
+    f.firstElementChild.style.transform = `scale(${scale})`;
+  });
+}
+fit();
+addEventListener('resize', fit);
+</script>
+</body>
+</html>
