@@ -1,12 +1,15 @@
 import SwiftUI
 
-/// What the player's buttons do. Lyrics and Settings are wired by `PlayerScreen`; the rest
-/// are no-ops until milestones 3 (controls), 4 (devices) and 5 (library) wire them. Links
-/// back to Spotify are already active (`SpotifyLink`).
+/// What the player's buttons do. Lyrics, Settings and the playback controls are wired by
+/// `PlayerScreen`; the rest are no-ops until milestones 4 (devices) and 5 (library) wire
+/// them. Links back to Spotify are already active (`SpotifyLink`).
 struct PlayerActions {
     var playPause: () -> Void = {}
     var previous: () -> Void = {}
     var next: () -> Void = {}
+    /// −15 s and +15 s, shown instead of previous and next for podcast episodes.
+    var skipBackward: () -> Void = {}
+    var skipForward: () -> Void = {}
     var shuffle: () -> Void = {}
     var repeatMode: () -> Void = {}
     var volume: () -> Void = {}
@@ -33,17 +36,30 @@ struct PlayerScreen: View {
         self.actions = actions
     }
 
-    /// The caller's actions plus the ones the player owns: lyrics mode and Settings.
+    /// The caller's actions plus the ones the player owns: lyrics mode, Settings and the
+    /// playback controls.
     private var wiredActions: PlayerActions {
         var wired = actions
         wired.lyrics = { [lyrics, model] in lyrics.toggle(for: model.playback?.lyricsTrack) }
         wired.settings = { showsSettings = true }
+        // Milestone 3: playback controls and volume.
+        let controls = model.controls
+        wired.playPause = { controls.playPause() }
+        wired.previous = { controls.previous() }
+        wired.next = { controls.next() }
+        wired.skipBackward = { controls.skipBackward() }
+        wired.skipForward = { controls.skipForward() }
+        wired.shuffle = { controls.toggleShuffle() }
+        wired.repeatMode = { controls.cycleRepeat() }
+        wired.volume = { controls.volume.toggleButton() }
         return wired
     }
 
     var body: some View {
-        PlayerContent(model: model, lyrics: lyrics, actions: wiredActions,
-                      showsLyricsButton: theme.showsLyricsButton)
+        PlayerContent(model: model, lyrics: lyrics, controls: model.controls,
+                      actions: wiredActions, showsLyricsButton: theme.showsLyricsButton)
+            // A command answered "no active device": offer the device list (milestone 4).
+            .onReceive(model.controls.noActiveDevice) { wiredActions.devices() }
             .onChange(of: model.playback?.lyricsTrack) { track in
                 lyrics.trackDidChange(to: track)
             }
@@ -68,6 +84,7 @@ struct PlayerScreen: View {
 struct PlayerContent: View {
     @ObservedObject var model: PlayerModel
     @ObservedObject var lyrics: LyricsModeController
+    @ObservedObject var controls: PlayerControlsModel
     @EnvironmentObject private var theme: ThemeStore
     var actions: PlayerActions
     var showsLyricsButton: Bool
@@ -87,12 +104,21 @@ struct PlayerContent: View {
                                showsLyricsButton: showsLyricsButton, screenWidth: width)
                 }
                 .overlay(alignment: .top) {
-                    if let notice = lyrics.notice {
+                    // A failed command is newer news than the lyrics notice: show it instead.
+                    if let notice = controls.notice {
+                        ControlNoticeView(notice: notice)
+                            .padding(.top, Metrics.Notice.top)
+                            .transition(.opacity)
+                    } else if let notice = lyrics.notice {
                         LyricsNoticeView(notice: notice)
                             .padding(.top, Metrics.Notice.top)
                             .transition(.opacity)
                     }
                 }
+                .overlay(alignment: .top) {
+                    VolumePanelView(volume: controls.volume)
+                }
+                .animation(.easeInOut(duration: 0.2), value: controls.notice)
             case .nothingPlaying:
                 emptyState(.nothingPlaying)
             case .accessDenied:
