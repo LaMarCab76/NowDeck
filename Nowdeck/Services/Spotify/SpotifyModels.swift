@@ -343,8 +343,9 @@ struct ShowSummary: Decodable, Equatable, Sendable {
 ///   allowed or not allowed.
 ///
 /// Only the `disallows` form is interpreted. The flat form is kept as-is in `flatFlags`
-/// and **not** used to disable anything until a real answer confirms its meaning
-/// (milestone 3, [VERIFICAR]).
+/// and **not** used to disable anything: reading it the wrong way round would disable every
+/// allowed control. Reviewed in milestone 3 (2026-11-17), see docs/03-spotify-api.md,
+/// "`actions`", and `ControlAvailability`.
 struct PlaybackActions: Decodable, Equatable, Sendable {
     enum Action: String, CaseIterable, Sendable {
         // camelCase because keys go through `convertFromSnakeCase`.
