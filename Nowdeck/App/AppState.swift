@@ -15,6 +15,10 @@ final class AppState: ObservableObject {
         case welcome
         case createApp
         case clientID
+        /// The optional playlist-folders mode, asked once after the first login.
+        case folders
+        /// "¡Listo!" after a successful login, shown for a moment before the player.
+        case connected
     }
 
     /// A message shown on the Client ID step after a failed or expired login.
@@ -59,6 +63,9 @@ final class AppState: ObservableObject {
     /// Available while logged in. The API client (milestone 2) gets its tokens from here.
     private(set) var tokenManager: TokenManager?
 
+    /// Settings of this iPhone (lyrics offset, playlist folders).
+    let preferences: AppPreferences
+
     private let credentials: CredentialStore
     private let accounts: SpotifyAccountsClient
     private let accessCheck: SpotifyAccessCheck
@@ -68,8 +75,10 @@ final class AppState: ObservableObject {
         credentials: CredentialStore,
         accounts: SpotifyAccountsClient = SpotifyAccountsClient(),
         accessCheck: SpotifyAccessCheck = SpotifyAccessCheck(),
-        webAuthenticator: any WebAuthenticating
+        webAuthenticator: any WebAuthenticating,
+        preferences: AppPreferences = AppPreferences()
     ) {
+        self.preferences = preferences
         self.credentials = credentials
         self.accounts = accounts
         self.accessCheck = accessCheck
@@ -89,6 +98,8 @@ final class AppState: ObservableObject {
         case (nil, _):
             route = .onboarding(.welcome)
         }
+        // Before any window exists, so the app launches in the right orientation.
+        OrientationController.shared.prepare(for: route)
     }
 
     /// The app's real dependencies.
@@ -141,7 +152,9 @@ final class AppState: ObservableObject {
 
             try credentials.setTokens(tokens)
             tokenManager = makeTokenManager(clientID: clientID)
-            route = .player
+            // The folders step is asked only once; "¡Listo!" calls `finishOnboarding()` when
+            // its animation ends.
+            route = .onboarding(preferences.hasAnsweredPlaylistFolders ? .connected : .folders)
         } catch {
             notice = Self.notice(for: error)
         }
@@ -160,6 +173,19 @@ final class AppState: ObservableObject {
             notice = .sessionExpired
         }
         route = .onboarding(.clientID)
+    }
+
+    /// The answer of the folders step. Then "¡Listo!".
+    func answerPlaylistFolders(enabled: Bool) {
+        guard route == .onboarding(.folders) else { return }
+        preferences.answerPlaylistFolders(enabled: enabled)
+        route = .onboarding(.connected)
+    }
+
+    /// Leaves the "¡Listo!" screen for the player. Does nothing from any other screen.
+    func finishOnboarding() {
+        guard route == .onboarding(.connected), tokenManager != nil else { return }
+        route = .player
     }
 
     // MARK: Helpers

@@ -21,6 +21,12 @@ struct LyricsPlayback: Equatable, Sendable {
         return progressMs + Int((elapsed * 1000).rounded())
     }
 
+    /// Position used to pick the stanza: `positionMs(at:)` moved by the user's offset
+    /// ("Sincronía de las letras"). Positive shows the lyrics earlier. Never below zero.
+    func lyricsPositionMs(at date: Date, offsetMs: Int) -> Int {
+        max(0, positionMs(at: date) + offsetMs)
+    }
+
     /// The snapshot to keep after a new poll.
     ///
     /// Small differences are poll jitter and are ignored, so the lyrics do not jump back and

@@ -65,6 +65,10 @@ inicio, sí.
   arriba.
 - Zonas táctiles de **44 pt** como mínimo.
 - Íconos: trazo 2 pt, estilo lineal. Usar SF Symbols equivalentes cuando existan.
+- **Cambios de tema y de letra** (pedido del dueño, 2026-11-17; no están en los mockups):
+  carátula con fundido cruzado (0,45 s); título y artista suben 10 pt y se desvanecen
+  (0,35 s); la estrofa actual sube 18 pt mientras entra la siguiente (0,35 s); vista normal ⇄
+  modo letras con fundido (0,3 s). Con *Reducir movimiento* quedan solo los fundidos.
 
 ## Reproducción (`Main.dc.html`)
 
@@ -72,7 +76,8 @@ inicio, sí.
 - **Bloque superior** (alto 256):
   - **Carátula** de 256×256 a la izquierda, a 32 de la columna de texto.
   - **Fila superior de la columna**:
-    - logo de Spotify (108×30 en una zona de 44; es un enlace a Spotify);
+    - ícono de Spotify (24, en una zona de 44; es un enlace a Spotify) a 12 del origen
+      (decisión del dueño del 2026-11-17: el ícono en lugar del logo completo de 108×30);
     - "Desde la playlist **Nombre**" en 13 pt, que se corta con "…";
     - a la derecha, la píldora **Biblioteca** (44 de alto) y el botón **Ajustes** (44).
   - **Título y artista** (ver tipografía). El texto truncado tiene que poder verse completo:
@@ -93,8 +98,9 @@ inicio, sí.
 
 Reemplaza el bloque superior:
 
-- **Fila superior** (44): "Desde la playlist" en 12 pt arriba y el nombre en 15 pt bold abajo,
-  a la izquierda; el logo de Spotify a la derecha.
+- **Fila superior** (44): el ícono de Spotify y, a 12, "Desde la playlist" en 12 pt arriba y
+  el nombre en 15 pt bold abajo, a la izquierda. El mockup tenía el logo a la derecha; el
+  dueño lo pasó junto al origen el 2026-11-17, igual que en la vista normal.
 - **Letras**, centradas en el espacio que queda:
   - estrofa actual y estrofa siguiente, al ancho de "Ancho de las letras" (50 %, **66,7 %** o
     100 % del ancho útil);
@@ -111,6 +117,9 @@ Reemplaza el bloque superior:
   `rgba(8,10,14,0.94)` con sombra.
 - Contenido: [−] (48) · ícono de parlante · barra de 8 de alto (relleno en acento) · valor en
   monoespaciada de 14 · [+] (48). Cada toque cambia el volumen 5 %.
+- **Arrastre** (pedido del dueño, 2026-11-17): toda la fila de 44 alrededor de la barra toma
+  el dedo; tocar o arrastrar fija el nivel al instante. Mientras se arrastra se manda como
+  máximo un cambio cada 250 ms, y el valor final al soltar.
 - **Entrada**: desliza desde `y = −112` hasta 0 en 0,30 s, con curva `(0.2, 0.8, 0.2, 1)`.
 - **Salida**: a los 3 s sin interacción, en 0,22 s ease-in.
 - **Se muestra** al tocar Volumen, al tocar − o +, o cuando el polling detecta otro volumen.
@@ -148,7 +157,11 @@ Reemplaza el bloque superior:
   - "ABRIR SPOTIFY ↗" en monoespaciada a la derecha.
 - **Tarjetas**: carátula de 150×150 (radio 4), nombre en 16 semibold y subtítulo en 13, con 20
   entre tarjetas. La fila se desliza en horizontal y llega hasta el borde derecho de la
-  pantalla. Tocar una tarjeta la reproduce en el dispositivo activo y vuelve a Reproducción.
+  pantalla. Tocar una playlist o un álbum abre su detalle. Mantener la tarjeta apretada
+  ofrece "Reproducir" directamente. Los podcasts y audiolibros se abren en Spotify.
+- **Carpetas de playlists** (opción experimental): al abrir una carpeta, la fila muestra
+  su contenido y "‹ Volver" reemplaza los filtros. Al cerrar el detalle de una playlist
+  se vuelve a la carpeta desde la que se abrió.
 - **Buscar**: campo de 56 (radio 28, blanco al 10 %) con el placeholder "Temas, artistas,
   álbumes, podcasts o audiolibros" y una línea de ayuda.
 - **Mini reproductor** (56, radio 14, fondo según la carátula): carátula de 40, título y
@@ -246,6 +259,16 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
      este iPhone, en el Llavero";
    - lista de permisos en palabras simples;
    - "Conectar con Spotify".
+
+Pasos agregados después de conectar (2026-11-17, sin mockup; mismo estilo que los anteriores):
+
+4. **Carpetas de playlists** (solo la primera vez): explica que la Web API no da las carpetas,
+   ofrece el modo experimental con sus riesgos y tiene "Seguir sin carpetas" (principal) y
+   "Activar carpetas (experimental)" (contorno). Se puede cambiar en Ajustes → Reproductor.
+5. **¡Listo!**: el anillo y el tilde se dibujan, el texto sube y a los 1,8 s entra el
+   reproductor con un fundido mientras la pantalla rota a horizontal.
+
+Toda la configuración queda **fija en vertical**: girar el teléfono no la rota.
 
 ## Adaptación al iPhone 8 Plus (736×414)
 

@@ -68,6 +68,17 @@ Romper estas reglas puede hacer que Spotify revoque el acceso a la API.
 - **Letras de LRCLIB**: la política prohíbe productos integrados con contenido de otro servicio.
   Por eso la función está apagada por defecto y explicada.
 
+- **Carpetas de playlists (experimental, opcional)**: decisión del dueño del 2026-11-17. La Web
+  API no da las carpetas; con la opción activa, Nowdeck lee el *rootlist* del servicio interno
+  de playlists de Spotify (`spclient.wg.spotify.com`), que no está documentado ni aprobado
+  para apps de terceros y choca con los Developer Terms. Por eso:
+  - está **apagada por defecto** y se ofrece con los riesgos explicados (paso opcional de la
+    configuración y Ajustes → Reproductor);
+  - solo manda el token de la Web API del usuario: **no** imita al cliente de Spotify (nada de
+    `client-token` ni token del reproductor web);
+  - si el servicio rechaza el pedido, la biblioteca muestra la lista plana con un aviso.
+  Nadie lo probó todavía con una cuenta real; lo más probable es que Spotify rechace ese token.
+
 ## App Store (si algún día se publica)
 
 - Apple puede pedir pruebas de que podés mostrar las carátulas. En las capturas de la tienda,
@@ -82,6 +93,12 @@ Repaso punto por punto sobre la rama `hito/08-terminaciones` (hitos 1 a 7 integr
 
 ### Atribución
 
+- ✅ **Logo oficial (2026-11-17)**: el dueño trajo los archivos de *Design Resources* (kit
+  2024). `SpotifyIcon` (ícono blanco) va junto al origen en Reproducción y en el modo letras;
+  `SpotifyLogo` (logo completo blanco) en Biblioteca. Los SVG oficiales solo se volvieron a
+  guardar con el relleno blanco escrito en cada trazo, porque el catálogo de assets no lee los
+  bloques `<style>`. Ícono de 24 pt (mínimo 21) con 12 libres (la mitad del alto). Lo que
+  sigue de este punto es el estado anterior.
 - ⚠️ **Logo oficial**: el lugar está en Reproducción (108×30 en una zona de 44, a la izquierda
   de la fila superior), modo letras (arriba a la derecha) y Biblioteca (fila de pestañas, que
   también cubre el mini reproductor). El asset `SpotifyLogo` está **vacío a propósito**: falta

@@ -29,6 +29,8 @@ struct LibraryEntry: Identifiable, Equatable, Sendable {
         case album
         case show
         case audiobook
+        /// A playlist folder (experimental, `PlaylistFolders.swift`). Opens in the row.
+        case folder(id: String)
     }
 
     var kind: Kind
@@ -46,13 +48,13 @@ struct LibraryEntry: Identifiable, Equatable, Sendable {
 
     var id: String { uri }
 
-    /// Whether tapping the card starts playback here. `PUT /me/player/play` documents only
+    /// Whether Nowdeck can start playback of the item. `PUT /me/player/play` documents only
     /// albums, artists and playlists as a `context_uri`; podcasts and audiobooks open in
     /// Spotify instead (verified 2026-11-17).
     var playsInPlace: Bool {
         switch kind {
         case .playlist, .album: return true
-        case .show, .audiobook: return false
+        case .show, .audiobook, .folder: return false
         }
     }
 }
@@ -75,6 +77,33 @@ extension LibraryEntry {
                   images: playlist.images, externalURL: playlist.externalUrls?.spotify,
                   detailSubtitle: Self.playlistDetailSubtitle(
                       owner: playlist.owner?.displayName, count: playlist.itemCount))
+    }
+
+    /// A folder card. Its id is not a Spotify URI: folders have no page on Spotify and
+    /// cannot be played, only opened.
+    init(folder: PlaylistFolder) {
+        let count = folder.playlistCount
+        let subtitle = count == 1
+            ? String(localized: "Carpeta · 1 playlist", comment: "Library card subtitle: a folder")
+            : String(localized: "Carpeta · \(count) playlists",
+                     comment: "Library card subtitle: number of playlists in a folder")
+        self.init(kind: .folder(id: folder.id), uri: "nowdeck:folder:\(folder.id)",
+                  name: folder.name, subtitle: subtitle, artworkURL: nil, pageURL: nil)
+    }
+
+    /// A playlist that only the rootlist knows about: its name and length, no artwork.
+    init?(rootlistPlaylistURI uri: String, name: String, itemCount: Int?) {
+        let subtitle: String
+        switch itemCount {
+        case 1?: subtitle = String(localized: "Playlist · 1 tema",
+                                   comment: "Library card subtitle: a playlist with one track")
+        case let count?: subtitle = String(localized: "Playlist · \(count) temas",
+                                           comment: "Library card subtitle: number of tracks")
+        case nil: subtitle = String(localized: "Playlist", comment: "Library card subtitle")
+        }
+        self.init(kind: .playlist, uri: uri, name: name, subtitle: subtitle, images: [],
+                  externalURL: nil,
+                  detailSubtitle: Self.playlistDetailSubtitle(owner: nil, count: itemCount))
     }
 
     init?(album: SimplifiedAlbum) {

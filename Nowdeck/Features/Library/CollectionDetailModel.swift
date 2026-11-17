@@ -217,8 +217,8 @@ final class CollectionDetailModel: ObservableObject {
                 }
                 return (Self.rows(items, from: firstPosition), page.total, page.nextOffset)
             }
-        case .show, .audiobook:
-            // Podcasts and audiobooks open in Spotify and never get a detail screen.
+        case .show, .audiobook, .folder:
+            // Only playlists and albums have a track list in the library.
             return { _, _ in ([], 0, nil) }
         }
     }

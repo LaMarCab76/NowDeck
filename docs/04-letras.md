@@ -110,6 +110,10 @@ desde LRCLIB como "Lyricsfile format").
   sea verdadero. Actualizar la vista a ~10 fps en modo palabra y ~2 fps en modo estrofa.
 - Si el polling detecta un salto de más de 1,5 s frente a lo interpolado (alguien adelantó el
   tema), resincronizar.
+- **Sincronía de las letras** (Ajustes → Reproductor, 2026-11-17): un desfase de −3 a +3 s en
+  pasos de 0,1 s que se suma a la posición interpolada antes de elegir la estrofa. Positivo
+  las muestra antes (para cuando la posición de Spotify llega tarde o el audio va por
+  Bluetooth). Se guarda en `UserDefaults`, no en el tema: depende del equipo y de la red.
 
 ## Avisos para el usuario y el README
 

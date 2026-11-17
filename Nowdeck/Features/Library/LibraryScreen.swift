@@ -35,7 +35,6 @@ struct LibraryScreen: View {
         LibraryContent(model: model, player: player, controls: player.controls, tab: $tab,
                        onPlay: play, onOpenPlayer: { dismiss() },
                        onPlayPause: onPlayPause, onShowDevices: onShowDevices)
-            .orientationLock(.landscape)
             .statusBarHidden(true)
             .persistentSystemOverlays(.hidden)
             .task { await model.open() }
@@ -59,7 +58,7 @@ struct LibraryScreen: View {
                 SpotifyLink.open(url)
             case .noActiveDevice:
                 onShowDevices()
-            case .failed, .ignored:
+            case .failed, .ignored, .openedFolder:
                 break
             }
         }
@@ -112,8 +111,14 @@ struct LibraryContent: View {
                     Spacer(minLength: 0)
                     switch tab {
                     case .library:
-                        LibraryFilterBar(filters: model.filters, selected: model.filter) { filter in
-                            Task { await model.select(filter) }
+                        if model.filter == .playlists, let folder = model.folderPath.last {
+                            FolderBackBar(folderName: folder.name) {
+                                withAnimation(.easeInOut(duration: 0.2)) { model.closeFolder() }
+                            }
+                        } else {
+                            LibraryFilterBar(filters: model.filters, selected: model.filter) { filter in
+                                Task { await model.select(filter) }
+                            }
                         }
                         Spacer(minLength: 0)
                         LibraryRow(state: model.state(of: model.filter),
@@ -163,8 +168,8 @@ struct LibraryContent: View {
         .animation(.easeInOut(duration: 0.2), value: controls.notice)
     }
 
-    /// Playlists and albums open their detail; podcasts and audiobooks go straight to
-    /// `onPlay`, which opens them in Spotify.
+    /// Playlists and albums open their detail. The model handles folders, podcasts and
+    /// audiobooks through `onPlay`.
     private func open(_ item: LibraryEntry) {
         if item.playsInPlace {
             model.showDetail(of: item)
@@ -177,7 +182,7 @@ struct LibraryContent: View {
         HStack(spacing: Layout.rowGap) {
             LibraryTabs(tab: $tab)
             Spacer(minLength: 0)
-            SpotifyLogoLink(url: SpotifyLink.home)
+            SpotifyLogoLink(url: SpotifyLink.home, variant: .full)
         }
         .frame(height: Layout.rowHeight)
     }
@@ -270,6 +275,8 @@ struct LibraryNoticeView: View {
         case .forbidden: return "Spotify no dejó reproducirlo. Revisá que tu cuenta tenga Premium."
         case .rateLimited: return "Spotify pidió esperar un momento. Probá de nuevo en un rato."
         case .playbackFailed: return "No pudimos reproducirlo. Probá de nuevo."
+        case .foldersUnavailable:
+            return "Spotify no dejó leer tus carpetas. Se muestran tus playlists sin agrupar."
         }
     }
 }

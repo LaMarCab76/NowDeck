@@ -26,7 +26,8 @@ struct LyricsModeContent: Equatable {
 /// It replaces the player's top block, so the player gives it that block's frame (256 pt
 /// high on the reference screen). Progress and controls stay below it, owned by the player.
 ///
-/// - Top row (44): source on the left, Spotify logo on the right. Both open Spotify.
+/// - Top row (44): Spotify icon and source on the left, as in the normal view (the owner moved
+///   the logo there on 2026-11-17; the mockup had it on the right). It opens Spotify.
 /// - Center: current stanza (30 pt) and next stanza (22 pt), `width` of the usable width.
 /// - Bottom row (56): artwork, title, artist and device.
 struct LyricsModeView: View {
@@ -36,6 +37,8 @@ struct LyricsModeView: View {
     let playback: LyricsPlayback
     /// "Ancho de las letras" (Ajustes → Reproductor, stored in the theme).
     var width: Theme.LyricsWidth = .twoThirds
+    /// "Sincronía de las letras" (Ajustes → Reproductor). Positive shows them earlier.
+    var offsetMs: Int = 0
     /// The track's artwork, already loaded by the player. Shown as is, never cropped.
     var artwork: Image?
     /// Opens the playlist or album in Spotify (milestone 2).
@@ -49,7 +52,7 @@ struct LyricsModeView: View {
         VStack(spacing: 0) {
             header
                 .frame(height: Metrics.Lyrics.headerHeight)
-            LyricsStanzasView(lyrics: lyrics, playback: playback, width: width)
+            LyricsStanzasView(lyrics: lyrics, playback: playback, width: width, offsetMs: offsetMs)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             footer
                 .frame(height: Metrics.Lyrics.footerHeight)
@@ -59,29 +62,45 @@ struct LyricsModeView: View {
     // MARK: - Top row
 
     private var header: some View {
-        HStack(spacing: Metrics.Lyrics.headerSpacing) {
+        HStack(spacing: 0) {
             if let sourceName = content.sourceName {
                 LyricsSourceButton(label: content.sourceLabel, name: sourceName, action: onOpenSource)
+            } else {
+                Button(action: onOpenSpotify) {
+                    SpotifyLogoImage(variant: .icon)
+                        .frame(height: Metrics.minTouchTarget)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Abrir en Spotify"))
             }
             Spacer(minLength: 0)
-            Button(action: onOpenSpotify) {
-                SpotifyLogoSlot()
-                    .frame(height: Metrics.minTouchTarget)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text("Abrir en Spotify"))
         }
     }
 
     // MARK: - Bottom row
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Changes with the track, for the footer's animations.
+    private var trackKey: String { content.title + "|" + content.artist }
+
     private var footer: some View {
         HStack(spacing: Metrics.Lyrics.footerSpacing) {
-            LyricsArtwork(image: artwork)
-            LyricsTrackLabels(title: content.title, artist: content.artist,
-                              isExplicit: content.isExplicit)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            ZStack {
+                LyricsArtwork(image: artwork)
+                    .id(trackKey)
+                    .transition(.opacity)
+            }
+            .animation(Motion.artworkCrossfade, value: trackKey)
+            ZStack(alignment: .leading) {
+                LyricsTrackLabels(title: content.title, artist: content.artist,
+                                  isExplicit: content.isExplicit)
+                    .id(trackKey)
+                    .transition(Motion.rise(Motion.trackRise, reduceMotion: reduceMotion))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .animation(Motion.trackChange, value: trackKey)
             if let deviceName = content.deviceName {
                 LyricsDeviceButton(name: deviceName, type: content.deviceType ?? "",
                                    action: onShowDevices)
@@ -98,24 +117,38 @@ private struct LyricsStanzasView: View {
     let lyrics: SyncedLyrics?
     let playback: LyricsPlayback
     let width: Theme.LyricsWidth
+    let offsetMs: Int
 
     /// The snapshot used for interpolation. Polls closer than 1.5 s to it are ignored so the
     /// lyrics do not jitter (see `LyricsPlayback.reconciled(with:)`).
     @State private var anchor: LyricsPlayback?
     @EnvironmentObject private var theme: ThemeStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         GeometryReader { proxy in
             if let lyrics {
                 TimelineView(.periodic(from: .now, by: refreshInterval(for: lyrics))) { context in
-                    let position = (anchor ?? playback).positionMs(at: context.date)
-                    if let frame = LyricsTimeline.frame(for: lyrics, atMs: position) {
-                        stanzas(lyrics, frame: frame, width: proxy.size.width * width.fraction)
-                            .frame(width: proxy.size.width, height: proxy.size.height)
+                    let position = (anchor ?? playback).lyricsPositionMs(at: context.date,
+                                                                     offsetMs: offsetMs)
+                    // The ZStack keeps its identity between ticks, so when the stanza index
+                    // changes the old stanzas rise away and the new ones come in.
+                    let frame = LyricsTimeline.frame(for: lyrics, atMs: position)
+                    ZStack {
+                        if let frame {
+                            stanzas(lyrics, frame: frame, width: proxy.size.width * width.fraction)
+                                .frame(width: proxy.size.width, height: proxy.size.height)
+                                .id(frame.primaryIndex)
+                                .transition(Motion.rise(Motion.stanzaRise, reduceMotion: reduceMotion))
+                        }
                     }
+                    .animation(Motion.stanzaChange, value: frame?.primaryIndex)
                 }
+                .transition(.opacity)
             }
         }
+        // New lyrics (another track) fade in instead of popping.
+        .animation(Motion.modeChange, value: lyrics == nil)
         .onAppear { anchor = playback }
         .onChange(of: playback) { polled in
             anchor = (anchor ?? polled).reconciled(with: polled)
@@ -197,7 +230,8 @@ private extension String {
 
 // MARK: - Pieces
 
-/// Music-list icon, "Desde la playlist" and the name in two lines.
+/// Spotify icon, "Desde la playlist" and the name in two lines. All of it opens the source in
+/// Spotify.
 private struct LyricsSourceButton: View {
     let label: String?
     let name: String
@@ -206,12 +240,8 @@ private struct LyricsSourceButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: Metrics.Lyrics.headerIconSpacing) {
-                Image(systemName: "music.note.list")
-                    .font(.system(size: 15, weight: .medium))
-                    .frame(width: Metrics.Lyrics.headerIconSize, height: Metrics.Lyrics.headerIconSize)
-                    .foregroundColor(theme.palette.secondaryText.color)
-                    .accessibilityHidden(true)
+            HStack(spacing: Metrics.Player.iconClearSpace) {
+                SpotifyLogoImage(variant: .icon)
                 VStack(alignment: .leading, spacing: 0) {
                     if let label {
                         Text(verbatim: label)
@@ -229,33 +259,6 @@ private struct LyricsSourceButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityHint(Text("Abre en Spotify"))
-    }
-}
-
-/// The official Spotify logo, if the asset is in the catalog (`SpotifyLogo`, downloaded from
-/// Spotify's Design Resources, never drawn by hand: docs/06-cumplimiento.md). Until then, the
-/// mockup's dashed placeholder.
-private struct SpotifyLogoSlot: View {
-    static let assetName = "SpotifyLogo"
-    @EnvironmentObject private var theme: ThemeStore
-
-    var body: some View {
-        if let logo = UIImage(named: Self.assetName) {
-            Image(uiImage: logo)
-                .resizable()
-                .scaledToFit()
-                .frame(width: Metrics.Lyrics.logoSize.width, height: Metrics.Lyrics.logoSize.height)
-        } else {
-            Text(verbatim: "LOGO SPOTIFY")
-                .font(.system(size: 10, design: .monospaced))
-                .tracking(0.6)
-                .foregroundColor(theme.palette.secondaryText.color)
-                .frame(width: Metrics.Lyrics.logoSize.width, height: Metrics.Lyrics.logoSize.height)
-                .overlay(
-                    RoundedRectangle(cornerRadius: Radius.artwork)
-                        .strokeBorder(Color.white.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
-                )
-        }
     }
 }
 
