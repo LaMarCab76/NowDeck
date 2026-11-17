@@ -106,6 +106,21 @@ final class PlayerControlsModelTests: XCTestCase {
         XCTAssertEqual(h.model.playback?.isPlaying, false)
     }
 
+    func testACommandAfterARefreshStillResumesThePolling() async throws {
+        let h = try await make(PlaybackJSON(isPlaying: true))
+        h.model.start()
+        // After a device transfer, Dispositivos asks for a fresh read.
+        h.model.refresh()
+        try await eventually { h.playbackReads >= 2 }
+
+        h.controls.playPause()
+        let readsAfterCommand = h.playbackReads
+        h.playback.value.isPlaying = false
+        try await eventually("The command's confirmation read and the polling come back") {
+            h.playbackReads > readsAfterCommand
+        }
+    }
+
     func testPausingFreezesTheProgressWhereItIs() async throws {
         let h = try await make(PlaybackJSON(isPlaying: true, progressMs: 84_000))
         h.controls.playPause()

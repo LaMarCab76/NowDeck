@@ -186,7 +186,10 @@ final class PlayerModel: ObservableObject {
     /// when it ends.
     func refresh(after delay: TimeInterval = 0) {
         guard !isHeldForCommand else { return }
-        stop()
+        // Replaces the poll task without touching `wantsPolling`. `stop()` would clear it,
+        // and a command sent afterwards could then never resume the polling.
+        pollTask?.cancel()
+        pollTask = nil
         schedule(initialDelay: delay)
     }
 
