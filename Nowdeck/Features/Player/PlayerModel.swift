@@ -346,19 +346,20 @@ final class PlayerModel: ObservableObject {
     private func isNewStart(of item: NowPlaying, state: PlaybackState, at date: Date) -> Bool {
         guard let previous = nowPlaying else { return true }
         if previous.transitionKey != item.transitionKey { return true }
-        guard let progressMs = state.progressMs, let playback,
-              let previousProgress = playback.progressMs else {
+        guard let playback else { return false }
+        // Spotify's `timestamp` changes when the state changes (play, pause, skip, seek…).
+        // The position alone cannot tell a skip apart: right after the last answer it is only
+        // a few hundred ms behind, and from a pause it can even be ahead (paused at 0.5 s,
+        // skipped and resumed elsewhere, now at 2 s). So any state change counts, checked
+        // before the position because `progress_ms` can be null; a pause or a seek only
+        // costs Cola one more read of the queue.
+        if state.timestamp != nil && state.timestamp != playback.timestamp { return true }
+        guard let progressMs = state.progressMs, let previousProgress = playback.progressMs else {
             return false
         }
         let expected = PlaybackProgress.interpolatedMs(
             progressMs: previousProgress, durationMs: previous.durationMs,
             isPlaying: playback.isPlaying, fetchedAt: fetchedAt, now: date)
-        // Spotify's `timestamp` changes when the state changes (play, pause, skip, seek…).
-        // The position alone cannot tell a skip apart: right after the last answer it is only
-        // a few hundred ms behind, and from a pause it can even be ahead (paused at 0.5 s,
-        // skipped and resumed elsewhere, now at 2 s). So any state change counts; a pause or
-        // a seek only costs Cola one more read of the queue.
-        if state.timestamp != nil && state.timestamp != playback.timestamp { return true }
         return progressMs + Self.restartJumpMs < expected
     }
 
