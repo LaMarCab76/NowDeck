@@ -161,6 +161,27 @@ Repaso punto por punto sobre la rama `hito/08-terminaciones` (hitos 1 a 7 integr
   de ~512 pt (896) o ~388 pt (736), y el título dos líneas de 40 pt: entran de sobra en los dos
   tamaños. En el modo letras y el mini reproductor también.
 
+### Detalle de playlist o álbum (agregado el 2026-11-17)
+
+- ✅ **Atribución y enlace de vuelta**: el logo y "ABRIR EN SPOTIFY ↗" de la fila superior
+  abren la playlist o el álbum en Spotify; en una playlist de otra persona también "Ver en
+  Spotify". Mantener apretado un tema ofrece "Abrir en Spotify" con la página del tema.
+- ✅ **Carátula**: 150×150, `.fit`, radio 4, sin nada encima; "Reproducir" va debajo.
+- ✅ **Explícito**: la lista marca con "E" los temas con `explicit: true`.
+- ✅ **Nombres truncados legibles**: el nombre y el subtítulo de la columna izquierda usan la
+  marquesina; en la lista, mantener apretado un tema muestra el título y los artistas
+  completos. VoiceOver lee todo.
+- ⚠️ **25 caracteres para el nombre de la playlist o el álbum**: la columna de 170 pt a 18 pt
+  bold deja unos 17 caracteres visibles. Mismo caso que las tarjetas: se lee entero con la
+  marquesina, pero no hay lugar *visible* para 25. Pasarlo a dos líneas no entra en los 252
+  pt del bloque junto con "Reproducir".
+- ✅ **23 caracteres de tema y 18 de artista** en la lista: el título tiene unos 510 pt en
+  896 y unos 350 en 736.
+- ⚠️ **Máximo de 20 ítems por fila**: se interpretó que no se aplica a la lista de temas, que
+  no es una fila de contenido sino el contenido de una playlist o un álbum. Se carga completa,
+  de a 50. Propuesto al dueño el 2026-11-17, falta su confirmación. La alternativa es cortar
+  en 20 y terminar con "Ver todo en Spotify".
+
 ### Controles
 
 - ✅ Lo que `actions.disallows` prohíbe se muestra **deshabilitado** (atenuado y sin acción), y

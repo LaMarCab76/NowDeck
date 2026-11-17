@@ -3,8 +3,10 @@ import SwiftUI
 /// Biblioteca (`Biblioteca.dc.html`): tabs Biblioteca / Buscar, filters, a row of cards and
 /// the mini player.
 ///
-/// The player presents it full screen. Tapping a card plays it on the active device and
-/// goes back to the player; tapping the mini player goes back too.
+/// The player presents it full screen. Tapping a playlist or an album opens its detail
+/// (`CollectionDetailView`), whose "Reproducir" plays it on the active device and goes back
+/// to the player; podcasts and audiobooks open in Spotify. Tapping the mini player goes
+/// back too.
 ///
 /// Two actions belong to other milestones and come in as closures:
 /// - `onShowDevices`: the devices sheet (milestone 4). Called by "Suena en …" and when
@@ -97,29 +99,39 @@ struct LibraryContent: View {
             let trailing = max(Layout.horizontal, insets.trailing)
 
             VStack(alignment: .leading, spacing: 0) {
-                header
-                Spacer(minLength: 0)
-                switch tab {
-                case .library:
-                    if model.filter == .playlists, let folder = model.folderPath.last {
-                        FolderBackBar(folderName: folder.name) {
-                            withAnimation(.easeInOut(duration: 0.2)) { model.closeFolder() }
-                        }
-                    } else {
-                        LibraryFilterBar(filters: model.filters, selected: model.filter) { filter in
-                            Task { await model.select(filter) }
-                        }
-                    }
+                if let detail = model.detail {
+                    CollectionDetailHeader(pageURL: detail.entry.pageURL,
+                                           onBack: { model.closeDetail() })
                     Spacer(minLength: 0)
-                    LibraryRow(state: model.state(of: model.filter),
-                               startingURI: model.startingURI,
-                               trailingMargin: trailing,
-                               onPlay: onPlay,
-                               onRetry: { Task { await model.retry() } })
-                        // The row slides under the right margin up to the screen edge.
-                        .padding(.trailing, -trailing)
-                case .search:
-                    LibrarySearchView()
+                    CollectionDetailView(model: detail,
+                                         isStarting: model.startingURI == detail.entry.uri,
+                                         onPlay: { onPlay(detail.entry) })
+                } else {
+                    header
+                    Spacer(minLength: 0)
+                    switch tab {
+                    case .library:
+                        if model.filter == .playlists, let folder = model.folderPath.last {
+                            FolderBackBar(folderName: folder.name) {
+                                withAnimation(.easeInOut(duration: 0.2)) { model.closeFolder() }
+                            }
+                        } else {
+                            LibraryFilterBar(filters: model.filters, selected: model.filter) { filter in
+                                Task { await model.select(filter) }
+                            }
+                        }
+                        Spacer(minLength: 0)
+                        LibraryRow(state: model.state(of: model.filter),
+                                   startingURI: model.startingURI,
+                                   trailingMargin: trailing,
+                                   onOpen: open,
+                                   onPlay: onPlay,
+                                   onRetry: { Task { await model.retry() } })
+                            // The row slides under the right margin up to the screen edge.
+                            .padding(.trailing, -trailing)
+                    case .search:
+                        LibrarySearchView()
+                    }
                 }
                 Spacer(minLength: 0)
                 MiniPlayerView(item: player.nowPlaying,
@@ -154,6 +166,16 @@ struct LibraryContent: View {
         }
         .animation(.easeInOut(duration: 0.2), value: model.notice)
         .animation(.easeInOut(duration: 0.2), value: controls.notice)
+    }
+
+    /// Playlists and albums open their detail. The model handles folders, podcasts and
+    /// audiobooks through `onPlay`.
+    private func open(_ item: LibraryEntry) {
+        if item.playsInPlace {
+            model.showDetail(of: item)
+        } else {
+            onPlay(item)
+        }
     }
 
     private var header: some View {

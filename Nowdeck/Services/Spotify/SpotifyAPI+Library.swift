@@ -13,6 +13,18 @@ import Foundation
 // - `PUT /me/player/play`: scope `user-modify-playback-state`, Premium only. "Valid
 //   contexts are albums, artists & playlists": shows and audiobooks are not documented as
 //   a `context_uri`, so the app does not send them.
+// - `GET /albums/{id}/tracks`: in "Endpoints still available" (Metadata); `limit` 1–50
+//   (default 20), `offset`. Simplified tracks carry `artists`, `duration_ms`, `explicit`,
+//   `is_local`, `restrictions` and, only with Track Relinking, `is_playable`.
+// - `GET /playlists/{id}/items`: added in February 2026 (it replaces `/tracks`, removed).
+//   Scope `playlist-read-private`; `limit` 1–50 (default 20). "This endpoint is only
+//   accessible for playlists owned by the current user or playlists the user is a
+//   collaborator of. A 403 Forbidden status code will be returned if the user is neither
+//   the owner nor a collaborator of the playlist."
+//
+// `market` is not sent on the track lists: the references document only country codes
+// (`from_token` is not mentioned) and say the account's country "will take priority over
+// this parameter".
 
 extension SpotifyAPI {
     /// Items per library row. Spotify's guidelines allow at most 20 items per content row
@@ -48,6 +60,31 @@ extension SpotifyAPI {
         try await page(path: "/me/audiobooks", limit: limit, offset: offset)
     }
 
+    /// Tracks per page of the detail screen: the maximum of both endpoints, so an album
+    /// usually takes a single request.
+    static let collectionPageSize = 50
+
+    /// `GET /albums/{id}/tracks`.
+    func albumTracks(albumID: String, limit: Int = SpotifyAPI.collectionPageSize,
+                     offset: Int = 0) async throws -> Paging<CollectionItem> {
+        try await page(path: "/albums/\(Self.pathComponent(albumID))/tracks",
+                       limit: limit, offset: offset)
+    }
+
+    /// `GET /playlists/{id}/items?additional_types=track,episode`. Throws
+    /// `SpotifyAPIError.forbidden` for playlists the user neither owns nor collaborates on.
+    ///
+    /// `additional_types` ("item types that your client supports besides the default track
+    /// type") includes `episode`, since the screen can show episodes. No `fields` filter: the field
+    /// names changed in February 2026 (`track` → `item`) and a filter with the wrong name
+    /// would silently return empty items.
+    func playlistItems(playlistID: String, limit: Int = SpotifyAPI.collectionPageSize,
+                       offset: Int = 0) async throws -> Paging<PlaylistItem> {
+        try await page(path: "/playlists/\(Self.pathComponent(playlistID))/items",
+                       limit: limit, offset: offset,
+                       extraQuery: [URLQueryItem(name: "additional_types", value: "track,episode")])
+    }
+
     /// `GET /search?q=…&type=…&limit=…&offset=…`. The reference lists no scope.
     func search(_ query: SearchQuery) async throws -> SearchResults {
         let request = Request(path: "/search", query: query.queryItems)
@@ -76,12 +113,12 @@ extension SpotifyAPI {
 
     // MARK: Helpers
 
-    private func page<Item>(path: String, limit: Int,
-                            offset: Int) async throws -> Paging<Item> {
+    private func page<Item>(path: String, limit: Int, offset: Int,
+                            extraQuery: [URLQueryItem] = []) async throws -> Paging<Item> {
         let request = Request(path: path, query: [
             URLQueryItem(name: "limit", value: String(min(max(limit, 1), 50))),
             URLQueryItem(name: "offset", value: String(max(offset, 0))),
-        ])
+        ] + extraQuery)
         let (data, _) = try await send(request)
         return try Self.decode(Paging<Item>.self, from: data)
     }

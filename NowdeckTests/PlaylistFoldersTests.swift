@@ -154,6 +154,25 @@ final class PlaylistFoldersTests: XCTestCase {
                      "Nowdeck never imitates Spotify's own client")
     }
 
+    func testPlaylistDetailReturnsToTheOpenFolder() async throws {
+        let (model, _) = makeModel()
+        await model.load(.playlists)
+        model.openFolder(id: "f1")
+        guard case .loaded(let inside) = model.state(of: .playlists) else {
+            return XCTFail("Expected the folder's contents")
+        }
+        let playlist = try XCTUnwrap(inside.first { $0.uri == "spotify:playlist:spotifys" })
+
+        model.showDetail(of: playlist)
+        XCTAssertEqual(model.detail?.entry, playlist)
+        XCTAssertEqual(model.detail?.entry.detailSubtitle, "30 temas")
+
+        model.closeDetail()
+        XCTAssertNil(model.detail)
+        XCTAssertEqual(model.folderPath.map(\.id), ["f1"])
+        XCTAssertEqual(model.state(of: .playlists), .loaded(inside))
+    }
+
     func testRejectedRootlistFallsBackToTheFlatListWithANotice() async {
         let (model, _) = makeModel(rootlistStatus: StubBox(401))
 

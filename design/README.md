@@ -12,6 +12,7 @@ colores, tamaños, márgenes, radios, textos y estados.
 | `SinLetra.dc.html` | Aviso "No encontramos la letra" |
 | `Volumen.dc.html` | Panel de volumen visible |
 | `Biblioteca.dc.html` | Biblioteca y Buscar, con filtros y mini reproductor |
+| `Detalle.dc.html` | Detalle de una playlist o un álbum: propia, álbum y playlist de otra persona |
 | `Dispositivos.dc.html` | Hoja de dispositivos y ayuda |
 | `Ajustes.dc.html` / `AjustesReproductor.dc.html` | Ajustes: Apariencia y Reproductor |
 | `TemaImportar.dc.html` | Importar tema |

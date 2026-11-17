@@ -1,7 +1,8 @@
 import Foundation
 
 /// State of the library screen: one row of cards per filter, loaded when the filter is
-/// first shown, and the "play this card" command.
+/// first shown, the detail screen of the playlist or album that was opened, and the "play
+/// this card" command.
 ///
 /// - Rows hold at most `rowLimit` (20) cards, as Spotify's guidelines ask. When a page
 ///   drops unusable items (no URI, `null`), the next page is fetched, up to `maxPages`.
@@ -10,7 +11,7 @@ import Foundation
 ///   user's country (removed in February 2026), so "has saved audiobooks" is the only
 ///   honest signal. A failed or empty answer keeps the filter hidden.
 /// - With the experimental playlist folders on (`folders` is set), the Playlists row shows
-///   the account's tree level by level: folders open in place and "‹ Carpeta" goes back. If
+///   the account's tree level by level: folders open in place and "‹ Volver" goes back. If
 ///   the folder service fails, the row falls back to the flat list and a notice says so.
 @MainActor
 final class LibraryModel: ObservableObject {
@@ -67,6 +68,8 @@ final class LibraryModel: ObservableObject {
     @Published private(set) var notice: Notice?
     /// The open folders, from the outermost. Empty at the top of the tree.
     @Published private(set) var folderPath: [PlaylistFolder] = []
+    /// The playlist or album whose detail screen is open, if any.
+    @Published private(set) var detail: CollectionDetailModel?
 
     private let api: SpotifyAPI
     private let folders: PlaylistFolderClient?
@@ -244,7 +247,7 @@ final class LibraryModel: ObservableObject {
         }
     }
 
-    /// "‹ Carpeta": back to the parent level.
+    /// "‹ Volver": back to the parent level.
     func closeFolder() {
         guard !folderPath.isEmpty else { return }
         folderPath.removeLast()
@@ -283,6 +286,19 @@ final class LibraryModel: ObservableObject {
         case SpotifyAPIError.rateLimited: return .rateLimited
         default: return .failed
         }
+    }
+
+    // MARK: Detail screen
+
+    /// Opens the detail screen of a playlist or an album (`CollectionDetailView`). Podcasts
+    /// and audiobooks have none: they open in Spotify.
+    func showDetail(of item: LibraryEntry) {
+        guard item.playsInPlace else { return }
+        detail = CollectionDetailModel(entry: item, api: api)
+    }
+
+    func closeDetail() {
+        detail = nil
     }
 
     // MARK: Playing a card
