@@ -28,10 +28,19 @@ Romper estas reglas puede hacer que Spotify revoque el acceso a la API.
   - Si se truncan, tiene que haber forma de verlos completos (marquesina o toque).
   - Hay que dejar lugar para al menos 25 caracteres en playlist o álbum, 18 en artista y 23 en
     tema.
-- [ ] **Controles**: deshabilitar u ocultar lo que `actions.disallows` prohíba.
+- [ ] **Controles**: deshabilitar u ocultar lo que `actions.disallows` prohíba. Las guidelines:
+  "Play controls must either have a disabled state to indicate that they are restricted or
+  they should not be displayed at all". Nowdeck los deshabilita (ver `docs/03`, "`actions`").
 - [ ] **Progreso**: informativo, sin ningún indicio de que se pueda adelantar.
-- [ ] **Podcasts**: mostrar el título del episodio y el nombre del podcast. Las guidelines piden
-  saltos de ±15 s para episodios **[VERIFICAR si aplica a esta app]**.
+- [ ] **Podcasts**: mostrar el título del episodio y el nombre del podcast. Saltos de ±15 s para
+  episodios: **aplica** (verificado el 2026-11-17 en *Design & Branding Guidelines* → "Playing
+  views"). La sección empieza con "If you choose to show play controls in your app, the
+  following requirements need to be followed" y pide "Podcasts need to have the option to seek
+  15 seconds forward or backwards" (también para muestras de audiolibros). Nowdeck muestra
+  controles, así que en los episodios −15 s y +15 s reemplazan a Anterior y Siguiente
+  (`PUT /me/player/seek`). La misma sección *recomienda* no ofrecer más controles que
+  play/pausa: es una recomendación, no una regla, y el diseño de Nowdeck la deja de lado a
+  propósito.
 - [ ] **Fondo del reproductor**: tomar el color de la carátula. Si no se puede, usar un color
   oscuro.
 - [ ] **Filas de contenido**: como máximo **20 ítems** por fila, y cada fila termina con un

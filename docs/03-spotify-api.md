@@ -98,12 +98,13 @@ Base: `https://api.spotify.com/v1`. Cabecera: `Authorization: Bearer <token>`.
 | Estado del reproductor | `GET /me/player?additional_types=episode` | `204` = nada suena → "Nada sonando". Trae `device`, `progress_ms`, `is_playing`, `item`, `shuffle_state`, `repeat_state`, `context`, `currently_playing_type` y `actions`. **Verificado (2026-11-17)**: sigue disponible, scope `user-read-playback-state`, respuestas 200/204/401/403/429. `additional_types` "might be deprecated in the future". Ver la nota sobre `actions` más abajo |
 | Dispositivos | `GET /me/player/devices` | Solo los activos o despiertos. `supports_volume` por dispositivo |
 | Transferir | `PUT /me/player` con body `{"device_ids":["<id>"],"play":true}` | |
-| Play / reanudar | `PUT /me/player/play` con body opcional `context_uri` o `uris` y `device_id` opcional | Para reproducir una tarjeta de la Biblioteca |
+| Play / reanudar | `PUT /me/player/play` con body opcional `context_uri` o `uris` y `device_id` opcional | Sin body reanuda lo que estaba sonando. Con body, para reproducir una tarjeta de la Biblioteca |
 | Pausa | `PUT /me/player/pause` | |
 | Siguiente / anterior | `POST /me/player/next` · `POST /me/player/previous` | |
 | Volumen | `PUT /me/player/volume?volume_percent=0..100` | Agrupar los toques: mandar uno solo ~250 ms después del último |
 | Aleatorio | `PUT /me/player/shuffle?state=true\|false` | |
 | Repetir | `PUT /me/player/repeat?state=off\|context\|track` | |
+| Saltar ±15 s (episodios) | `PUT /me/player/seek?position_ms=…` | "Must be a positive number". Pasarse de la duración "will cause the player to start playing the next song": la app lo limita a la duración |
 | Origen ("Desde la playlist…") | `context.type` y `context.uri` del estado. Playlist: `GET /playlists/{id}?fields=name`. Álbum, artista y podcast: el nombre sale del propio `item` cuando su URI coincide con la del contexto, sin pedido extra | **Verificado (2026-11-17)**: `GET /playlists/{id}` figura en "Endpoints still available" del changelog de feb-2026. Para playlists ajenas devuelve solo metadatos (sin `items`), y `name` está entre ellos. Soporta `fields`. La referencia no lista scope. Si responde `403`/`404` (por ejemplo, playlists editoriales o algorítmicas de Spotify, que desde nov-2024 no están disponibles para apps nuevas; esto último no se volvió a verificar), se muestra solo el tipo ("Desde una playlist") y no se vuelve a pedir. `GET /albums/{id}` sigue disponible, pero no hace falta |
 | Playlists | `GET /me/playlists?limit=…` | Disponible |
 | Álbumes guardados | `GET /me/albums` | Lectura listada en "Endpoints still available" (feb-2026, consultado 2026-11-17). Lo que se quitó son las escrituras (`PUT`/`DELETE`, reemplazadas por `/me/library`) y los `contains`. **[VERIFICAR en el hito 5]** campos y paginación |
@@ -111,24 +112,51 @@ Base: `https://api.spotify.com/v1`. Cabecera: `Authorization: Bearer <token>`.
 | Audiolibros guardados | `GET /me/audiobooks` | Lectura disponible, igual que la anterior. **[VERIFICAR en el hito 5]** mercados (no en todos los países). Si no aplica, ocultar el filtro |
 | Buscar | `GET /search?q=…&type=track,album,playlist,show,audiobook&limit=10` | Desde feb-2026, en Development Mode el **límite máximo es 10** (por defecto 5). Paginar con `offset` |
 
+**Verificado (2026-11-17), comandos de reproducción** (play, pausa, siguiente, anterior,
+volumen, aleatorio, repetir y seek): siguen en la lista "Endpoints still available" → Player del
+changelog de feb-2026, sin nota de deprecación; scope `user-modify-playback-state`; respuestas
+documentadas 204, 401, 403 y 429 (solo la 204 tiene descripción); `device_id` opcional en todos
+("If not supplied, the user's currently active device is the target"), y la app no lo manda.
+Cada página dice "The order of execution is not guaranteed when you use this API with other
+Player API endpoints": por eso la app manda los comandos de a uno, en el orden en que se tocaron.
+
 Los comandos de reproducción requieren **Premium**. **Verificado (2026-11-17)**: Spotify ya no
 documenta el motivo `PREMIUM_REQUIRED`. El cuerpo de error documentado es
 `{"error": {"status", "message", "reason"?}}` y el único `reason` listado es `QUOTA_EXCEEDED`.
 Por eso un `403` se trata siempre igual (fuera de la lista permitida, Premium vencido del dueño
 o del usuario) y se muestra con un mensaje con instrucciones.
 
-### `actions` **[VERIFICAR en el hito 3 con una respuesta real]**
+### `actions` (revisado en el hito 3, 2026-11-17)
 
-La referencia actual de *Get Playback State* (consultada el 2026-11-17) lista los diez booleanos
-(`interrupting_playback`, `pausing`, `resuming`, `seeking`, `skipping_next`, `skipping_prev`,
-`toggling_repeat_context`, `toggling_shuffle`, `toggling_repeat_track`,
-`transferring_playback`) **directamente** dentro de `actions`, sin `disallows`, y no dice si
-`true` significa permitido o prohibido. Las respuestas reales que se conocían traen
-`"actions": {"disallows": {"resuming": true}}`, donde `true` significa prohibido.
+Lo que dice la referencia actual de *Get Playback State*
+(`/reference/get-information-about-the-users-current-playback`):
 
-El modelo (`PlaybackActions`) interpreta solo la forma con `disallows`. Si llegan los booleanos
-sueltos, los guarda sin usarlos, para no deshabilitar controles con un significado que no está
-documentado. El hito 3 tiene que mirar una respuesta real y decidir.
+- `actions`: "Allows to update the user interface based on which playback actions are
+  available within the current context".
+- Lista los diez booleanos (`interrupting_playback`, `pausing`, `resuming`, `seeking`,
+  `skipping_next`, `skipping_prev`, `toggling_repeat_context`, `toggling_shuffle`,
+  `toggling_repeat_track`, `transferring_playback`) **directamente** dentro de `actions`, cada uno
+  como "Optional field", **sin `disallows`**.
+- **No dice** si `true` significa permitido o prohibido. El ejemplo trae los diez en `false`, que
+  no lo aclara. Los changelogs de feb, mar, may y jul de 2026 no mencionan ningún cambio en
+  `actions`.
+- No se pudo mirar una respuesta real: no hay una cuenta conectada en este entorno.
+
+Decisión (la conservadora):
+
+- Se interpreta **solo** la forma con `disallows` (`"actions": {"disallows": {"resuming": true}}`):
+  `true` = **prohibido**, y lo que falta = permitido. Es la forma de las respuestas reales
+  conocidas. Antes de este cambio, la referencia nombraba ese objeto `DisallowsObject` y listaba
+  los mismos booleanos sin el envoltorio (esto último sale de memoria, no se pudo volver a
+  verificar). Todo indica que la referencia muestra el contenido de `disallows`.
+- Los booleanos sueltos se guardan (`PlaybackActions.flatFlags`) pero **no deshabilitan nada**:
+  si `true` quisiera decir "disponible", leerlos como prohibición dejaría la app sin controles.
+  Si llega una acción prohibida que no se deshabilitó, Spotify responde con un error, la app
+  deshace el cambio optimista y muestra el aviso genérico.
+- Un dispositivo con `is_restricted: true` ("no Web API commands will be accepted by this
+  device") deshabilita todos los controles.
+- **Pendiente del dueño**: mirar una respuesta real de `GET /me/player` (por ejemplo durante una
+  publicidad o con un tema que no deja volver atrás) para confirmar que llega `disallows`.
 
 ### Campos quitados en Development Mode (changelog de feb-2026)
 
@@ -157,7 +185,11 @@ La Web API no tiene notificaciones push del estado, así que hay que consultarlo
   lista de usuarios.
 - **App en segundo plano**: detener el polling.
 - **Después de un comando**: actualizar la UI en forma **optimista** y volver a consultar a los
-  ~600 ms para confirmar.
+  ~600 ms para confirmar. Mientras el comando viaja, el polling se frena (una respuesta leída
+  antes del comando pisaría el cambio optimista). Si falla, se deshace el cambio y se vuelve a
+  consultar enseguida.
+- **Volumen**: después de cambiarlo desde la app, las consultas pueden traer el valor viejo un
+  rato. Se ignoran durante 3 s después del pedido (o hasta que llegue el valor pedido).
 - **Cambio de tema** (`item.id` distinto): recalcular el color de fondo y buscar la letra si el
   modo letras está activo.
 - **Cambio de volumen** frente al último conocido, y no causado por la app: mostrar el panel de
