@@ -99,7 +99,7 @@ struct AccentChoice: Identifiable, Sendable {
 
 /// Margins of a landscape screen: the mockup's value, or the safe area when it is larger
 /// (the notch or Dynamic Island of newer iPhones is deeper than 48 pt).
-struct ScreenMargins {
+struct SettingsMargins {
     var top: CGFloat
     var horizontal: CGFloat
     var bottom: CGFloat
