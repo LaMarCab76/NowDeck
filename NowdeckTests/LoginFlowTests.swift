@@ -57,8 +57,46 @@ final class LoginFlowTests: XCTestCase {
         let appState = AppState(credentials: credentials,
                                 accounts: SpotifyAccountsClient(session: session),
                                 accessCheck: SpotifyAccessCheck(session: session),
-                                webAuthenticator: web)
+                                webAuthenticator: web,
+                                preferences: AppPreferences(defaults: Self.freshDefaults()))
         return (appState, credentials, recorder)
+    }
+
+    private static func freshDefaults() -> UserDefaults {
+        let name = "LoginFlowTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+        return defaults
+    }
+
+    func testFoldersAnswerLeadsToDoneThenPlayer() async throws {
+        let (appState, _, _) = makeAppState()
+        appState.showOnboardingStep(.clientID)
+        await appState.connect(clientID: clientID)
+
+        appState.answerPlaylistFolders(enabled: true)
+        XCTAssertEqual(appState.route, .onboarding(.connected))
+        XCTAssertTrue(appState.preferences.usesPlaylistFolders)
+        XCTAssertTrue(appState.preferences.hasAnsweredPlaylistFolders)
+
+        appState.finishOnboarding()
+        XCTAssertEqual(appState.route, .player)
+    }
+
+    func testFoldersStepIsSkippedOnceAnswered() async throws {
+        let (appState, _, _) = makeAppState()
+        appState.preferences.answerPlaylistFolders(enabled: false)
+        appState.showOnboardingStep(.clientID)
+
+        await appState.connect(clientID: clientID)
+
+        XCTAssertEqual(appState.route, .onboarding(.connected))
+    }
+
+    func testFinishOnboardingDoesNothingBeforeLoggingIn() {
+        let (appState, _, _) = makeAppState()
+        appState.finishOnboarding()
+        XCTAssertEqual(appState.route, .onboarding(.welcome))
     }
 
     // MARK: SpotifyLogin
@@ -120,13 +158,13 @@ final class LoginFlowTests: XCTestCase {
 
     // MARK: AppState.connect
 
-    func testSuccessfulConnectStoresEverythingAndOpensPlayer() async throws {
+    func testSuccessfulConnectStoresEverythingAndAsksAboutFolders() async throws {
         let (appState, credentials, _) = makeAppState()
         appState.showOnboardingStep(.clientID)
 
         await appState.connect(clientID: " \(clientID)\n")
 
-        XCTAssertEqual(appState.route, .player)
+        XCTAssertEqual(appState.route, .onboarding(.folders))
         XCTAssertNil(appState.notice)
         XCTAssertEqual(try credentials.clientID(), clientID)
         XCTAssertEqual(try credentials.tokens()?.refreshToken, "refresh")

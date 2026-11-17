@@ -52,7 +52,6 @@ struct SettingsView: View {
         }
         .foregroundStyle(theme.palette.text.color)
         .background(theme.palette.background.color.ignoresSafeArea())
-        .orientationLock(.landscape)
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
         .themeImportPresenter()

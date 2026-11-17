@@ -33,7 +33,6 @@ struct LibraryScreen: View {
         LibraryContent(model: model, player: player, controls: player.controls, tab: $tab,
                        onPlay: play, onOpenPlayer: { dismiss() },
                        onPlayPause: onPlayPause, onShowDevices: onShowDevices)
-            .orientationLock(.landscape)
             .statusBarHidden(true)
             .persistentSystemOverlays(.hidden)
             .task { await model.open() }
