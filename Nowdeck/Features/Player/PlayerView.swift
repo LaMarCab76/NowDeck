@@ -529,6 +529,14 @@ struct PlayerControls: View {
             Spacer(minLength: 0)
 
             HStack(spacing: Layout.sideButtonGap) {
+                // Cola is always there, first in the right group (Cola.html). It is not
+                // a theme control: themes saved before it existed list their controls
+                // explicitly and would never show it. The theme puts at most two controls
+                // on this side, so the three buttons (152 pt) fit even in the 160 pt group
+                // of the iPhone 8 Plus.
+                ToggleIconButton(systemName: "list.bullet", isOn: false, label: "Cola",
+                                 action: actions.queue)
+                    .accessibilityHint(Text("Muestra lo que sigue"))
                 ForEach(layout.trailing, id: \.self) { control in
                     optionalButton(control, availability: availability)
                 }
