@@ -27,10 +27,19 @@ struct PlayerView: View {
 
     @EnvironmentObject private var theme: ThemeStore
     @EnvironmentObject private var preferences: AppPreferences
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// The normal top block, or lyrics mode in its place (docs/02, "Modo letras").
-    @ViewBuilder
+    /// The normal top block, or lyrics mode in its place (docs/02, "Modo letras"). They
+    /// cross-fade.
     private var topBlock: some View {
+        ZStack {
+            topBlockContent
+        }
+        .animation(Motion.modeChange, value: lyrics.showsLyricsMode)
+    }
+
+    @ViewBuilder
+    private var topBlockContent: some View {
         if lyrics.showsLyricsMode, let item = model.nowPlaying, let playback = model.playback {
             LyricsModeView(
                 content: LyricsModeContent(item: item, origin: model.origin,
@@ -50,8 +59,10 @@ struct PlayerView: View {
                 onShowDevices: actions.devices
             )
             .frame(height: Layout.topBlockHeight)
+            .transition(.opacity)
         } else {
             normalTopBlock
+                .transition(.opacity)
         }
     }
 
@@ -62,9 +73,15 @@ struct PlayerView: View {
                 PlayerTopRow(origin: model.origin, logoURL: model.nowPlaying?.itemURL,
                              actions: actions)
                 Spacer(minLength: 0)
-                if let item = model.nowPlaying {
-                    TitleBlock(item: item)
+                ZStack(alignment: .leading) {
+                    if let item = model.nowPlaying {
+                        // A new track: the old title rises away and the new one comes in.
+                        TitleBlock(item: item)
+                            .id(item.transitionKey)
+                            .transition(Motion.rise(Motion.trackRise, reduceMotion: reduceMotion))
+                    }
                 }
+                .animation(Motion.trackChange, value: model.nowPlaying?.transitionKey)
                 Spacer(minLength: 0)
                 DeviceRow(device: model.playback?.device, freshness: model.freshness,
                           action: actions.devices)
@@ -101,21 +118,29 @@ struct PlayerView: View {
 
 /// The cover as Spotify sends it: fitted (never cropped), with the 4 pt radius of the
 /// guidelines, and nothing on top of it (docs/06-cumplimiento.md).
+///
+/// A new cover cross-fades over the previous one (only covers are layered, never text or
+/// controls).
 struct ArtworkView: View {
     var image: UIImage?
     var side: CGFloat
 
     var body: some View {
-        Group {
-            if let image {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            } else {
-                // While it loads, or when the item has no cover (local files, ads).
-                Palette.subtleSurface
+        ZStack {
+            Group {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                } else {
+                    // While it loads, or when the item has no cover (local files, ads).
+                    Palette.subtleSurface
+                }
             }
+            .id(image.map(ObjectIdentifier.init))
+            .transition(.opacity)
         }
+        .animation(Motion.artworkCrossfade, value: image.map(ObjectIdentifier.init))
         .frame(width: side, height: side)
         .clipShape(RoundedRectangle(cornerRadius: Radius.artwork, style: .continuous))
         .accessibilityHidden(true)

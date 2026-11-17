@@ -80,12 +80,27 @@ struct LyricsModeView: View {
 
     // MARK: - Bottom row
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Changes with the track, for the footer's animations.
+    private var trackKey: String { content.title + "|" + content.artist }
+
     private var footer: some View {
         HStack(spacing: Metrics.Lyrics.footerSpacing) {
-            LyricsArtwork(image: artwork)
-            LyricsTrackLabels(title: content.title, artist: content.artist,
-                              isExplicit: content.isExplicit)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            ZStack {
+                LyricsArtwork(image: artwork)
+                    .id(trackKey)
+                    .transition(.opacity)
+            }
+            .animation(Motion.artworkCrossfade, value: trackKey)
+            ZStack(alignment: .leading) {
+                LyricsTrackLabels(title: content.title, artist: content.artist,
+                                  isExplicit: content.isExplicit)
+                    .id(trackKey)
+                    .transition(Motion.rise(Motion.trackRise, reduceMotion: reduceMotion))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .animation(Motion.trackChange, value: trackKey)
             if let deviceName = content.deviceName {
                 LyricsDeviceButton(name: deviceName, type: content.deviceType ?? "",
                                    action: onShowDevices)
@@ -108,6 +123,7 @@ private struct LyricsStanzasView: View {
     /// lyrics do not jitter (see `LyricsPlayback.reconciled(with:)`).
     @State private var anchor: LyricsPlayback?
     @EnvironmentObject private var theme: ThemeStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         GeometryReader { proxy in
@@ -115,13 +131,24 @@ private struct LyricsStanzasView: View {
                 TimelineView(.periodic(from: .now, by: refreshInterval(for: lyrics))) { context in
                     let position = (anchor ?? playback).lyricsPositionMs(at: context.date,
                                                                      offsetMs: offsetMs)
-                    if let frame = LyricsTimeline.frame(for: lyrics, atMs: position) {
-                        stanzas(lyrics, frame: frame, width: proxy.size.width * width.fraction)
-                            .frame(width: proxy.size.width, height: proxy.size.height)
+                    // The ZStack keeps its identity between ticks, so when the stanza index
+                    // changes the old stanzas rise away and the new ones come in.
+                    let frame = LyricsTimeline.frame(for: lyrics, atMs: position)
+                    ZStack {
+                        if let frame {
+                            stanzas(lyrics, frame: frame, width: proxy.size.width * width.fraction)
+                                .frame(width: proxy.size.width, height: proxy.size.height)
+                                .id(frame.primaryIndex)
+                                .transition(Motion.rise(Motion.stanzaRise, reduceMotion: reduceMotion))
+                        }
                     }
+                    .animation(Motion.stanzaChange, value: frame?.primaryIndex)
                 }
+                .transition(.opacity)
             }
         }
+        // New lyrics (another track) fade in instead of popping.
+        .animation(Motion.modeChange, value: lyrics == nil)
         .onAppear { anchor = playback }
         .onChange(of: playback) { polled in
             anchor = (anchor ?? polled).reconciled(with: polled)
