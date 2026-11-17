@@ -12,10 +12,17 @@ struct DevicesSheetView: View {
     var dismiss: () -> Void
 
     @EnvironmentObject private var theme: ThemeStore
-    @State private var showsHelp = false
+    @State private var showsHelp: Bool
     @State private var dragOffset: CGFloat = 0
 
     private typealias Layout = Metrics.Devices
+
+    /// `showsHelp` opens straight on the help view (previews and screenshot checks).
+    init(model: DevicesModel, showsHelp: Bool = false, dismiss: @escaping () -> Void) {
+        self.model = model
+        self.dismiss = dismiss
+        _showsHelp = State(initialValue: showsHelp)
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -103,8 +110,8 @@ private struct DevicesListPane<Handle: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Layout.sheetGap) {
             handle
-            CurrentDeviceHeader(device: model.currentDevice,
-                                isLoading: model.choices == nil, dismiss: dismiss)
+            CurrentDeviceHeader(device: model.currentDevice, listState: listState,
+                                dismiss: dismiss)
             content
             helpButton
         }
@@ -112,6 +119,11 @@ private struct DevicesListPane<Handle: View>: View {
         .padding(.horizontal, Layout.sheetHorizontalPadding)
         .padding(.bottom, Layout.sheetBottomPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private var listState: CurrentDeviceHeader.ListState {
+        if model.choices != nil { return .loaded }
+        return model.problem == nil ? .loading : .failed
     }
 
     @ViewBuilder
@@ -198,8 +210,14 @@ private struct DevicesListPane<Handle: View>: View {
 
 /// Accent circle with the device icon, "DISPOSITIVO ACTUAL", the name and Cerrar.
 private struct CurrentDeviceHeader: View {
+    enum ListState {
+        case loading
+        case loaded
+        case failed
+    }
+
     var device: SpotifyDevice?
-    var isLoading: Bool
+    var listState: ListState
     var dismiss: () -> Void
 
     @EnvironmentObject private var theme: ThemeStore
@@ -211,7 +229,8 @@ private struct CurrentDeviceHeader: View {
                 Image(systemName: device.map { DeviceSymbol.name(for: $0.type) }
                       ?? "speaker.slash")
                     .font(.system(size: Layout.currentIconSize - 4, weight: .semibold))
-                    .foregroundStyle(theme.palette.textOnAccent.color)
+                    .foregroundStyle(device == nil
+                        ? theme.palette.tertiaryText.color : theme.palette.textOnAccent.color)
                     .frame(width: Layout.currentCircleSize, height: Layout.currentCircleSize)
                     .background(Circle().fill(device == nil
                         ? Palette.closeButtonFill : theme.palette.accent.color))
@@ -257,7 +276,11 @@ private struct CurrentDeviceHeader: View {
             // Device names come from the user's account: shown verbatim.
             return Text(verbatim: device.name)
         }
-        return isLoading && device == nil ? Text(verbatim: " ") : Text("Ninguno")
+        switch listState {
+        case .loading: return Text(verbatim: " ")
+        case .loaded: return Text("Ninguno")
+        case .failed: return Text("Sin datos")
+        }
     }
 }
 
