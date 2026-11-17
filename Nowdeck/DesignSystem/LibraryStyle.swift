@@ -61,7 +61,6 @@ extension Metrics {
         static let miniGap: CGFloat = 8
         static let miniArtworkSize: CGFloat = 40
         static let miniArtworkGap: CGFloat = 12
-        static let miniTitleGap: CGFloat = 8
         static let miniDevicePadding: CGFloat = 10
         static let miniDeviceIconSize: CGFloat = 18
         static let miniDeviceIconGap: CGFloat = 8

@@ -71,26 +71,9 @@ struct MiniPlayerView: View {
     @ViewBuilder
     private var titles: some View {
         if let item {
-            HStack(alignment: .firstTextBaseline, spacing: Layout.miniTitleGap) {
-                Text(verbatim: item.title)
-                    .textStyle(.miniTitle)
-                    .foregroundStyle(theme.palette.text.color)
-                    .layoutPriority(1)
-                if item.isExplicit {
-                    Image(systemName: "e.square.fill")
-                        .font(.system(size: 13))
-                        .foregroundStyle(theme.palette.bodyText.color)
-                        .accessibilityLabel(Text("Explícito"))
-                }
-                if !item.subtitle.isEmpty {
-                    Text(verbatim: item.subtitle)
-                        .textStyle(.miniSubtitle)
-                        .foregroundStyle(theme.palette.bodyText.color)
-                }
-            }
-            .lineLimit(1)
-            .truncationMode(.tail)
-            .accessibilityElement(children: .combine)
+            // One line that scrolls when it does not fit (docs/06, "Metadatos").
+            MarqueeText(titleLine(item), id: "\(item.title)|\(item.subtitle)",
+                        accessibilityText: titleLabel(item))
         } else {
             Text("Nada sonando")
                 .textStyle(.miniTitle)
@@ -99,10 +82,41 @@ struct MiniPlayerView: View {
         }
     }
 
+    /// Title, explicit mark and artist, as one text so they scroll together.
+    private func titleLine(_ item: NowPlaying) -> Text {
+        // Two spaces at these sizes give about the 8 pt gap of the mockup.
+        let gap = Text(verbatim: "  ")
+        var line = Text(verbatim: item.title)
+            .font(TextStyle.miniTitle.fixedFont)
+            .foregroundColor(theme.palette.text.color)
+        if item.isExplicit {
+            line = line + gap + Text(Image(systemName: "e.square.fill"))
+                .font(.system(size: 13))
+                .foregroundColor(theme.palette.bodyText.color)
+        }
+        if !item.subtitle.isEmpty {
+            line = line + gap + Text(verbatim: item.subtitle)
+                .font(TextStyle.miniSubtitle.fixedFont)
+                .foregroundColor(theme.palette.bodyText.color)
+        }
+        return line
+    }
+
+    private func titleLabel(_ item: NowPlaying) -> Text {
+        var label = Text(verbatim: item.title)
+        if item.isExplicit {
+            label = label + Text(verbatim: ", ") + Text("Explícito")
+        }
+        if !item.subtitle.isEmpty {
+            label = label + Text(verbatim: ", ") + Text(verbatim: item.subtitle)
+        }
+        return label
+    }
+
     private var deviceButton: some View {
         Button(action: onShowDevices) {
             HStack(spacing: Layout.miniDeviceIconGap) {
-                Image(systemName: DeviceSymbol.name(for: device?.type ?? ""))
+                DeviceSymbol.image(for: device?.type ?? "")
                     .font(.system(size: Layout.miniDeviceIconSize - 3, weight: .medium))
                     .frame(width: Layout.miniDeviceIconSize, height: Layout.miniDeviceIconSize)
                     .accessibilityHidden(true)
@@ -116,6 +130,7 @@ struct MiniPlayerView: View {
         }
         .buttonStyle(.plain)
         .fixedSize()
+        .accessibilityHint(Text("Abre la lista de dispositivos"))
     }
 
     private var deviceText: Text {

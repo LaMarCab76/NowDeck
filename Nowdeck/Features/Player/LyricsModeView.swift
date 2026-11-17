@@ -9,12 +9,16 @@ struct LyricsModeContent: Equatable {
     var title: String
     /// All the artists, as the player shows them.
     var artist: String
+    /// Marked like in the player (docs/06, "Explícito").
+    var isExplicit = false
     /// "Desde la playlist". `nil` hides the source.
     var sourceLabel: String?
     /// Name of the playlist or album.
     var sourceName: String?
     /// Device that is playing. `nil` hides it.
     var deviceName: String?
+    /// Spotify Connect type of that device, for its icon (`DeviceSymbol`).
+    var deviceType: String?
 }
 
 /// Lyrics mode (`Main.dc.html`, `letras` block; docs/02-diseno.md, "Modo letras").
@@ -75,10 +79,12 @@ struct LyricsModeView: View {
     private var footer: some View {
         HStack(spacing: Metrics.Lyrics.footerSpacing) {
             LyricsArtwork(image: artwork)
-            LyricsTrackLabels(title: content.title, artist: content.artist)
+            LyricsTrackLabels(title: content.title, artist: content.artist,
+                              isExplicit: content.isExplicit)
                 .frame(maxWidth: .infinity, alignment: .leading)
             if let deviceName = content.deviceName {
-                LyricsDeviceButton(name: deviceName, action: onShowDevices)
+                LyricsDeviceButton(name: deviceName, type: content.deviceType ?? "",
+                                   action: onShowDevices)
             }
         }
     }
@@ -213,17 +219,16 @@ private struct LyricsSourceButton: View {
                             .foregroundColor(theme.palette.secondaryText.color)
                             .lineLimit(1)
                     }
-                    Text(verbatim: name)
+                    MarqueeText(verbatim: name)
                         .textStyle(.lyricsSourceName)
                         .foregroundColor(theme.palette.text.color)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
                 }
             }
             .frame(height: Metrics.minTouchTarget)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityHint(Text("Abre en Spotify"))
     }
 }
 
@@ -277,18 +282,26 @@ private struct LyricsArtwork: View {
 private struct LyricsTrackLabels: View {
     let title: String
     let artist: String
+    let isExplicit: Bool
     @EnvironmentObject private var theme: ThemeStore
 
     var body: some View {
         VStack(alignment: .leading, spacing: Metrics.Lyrics.titleArtistSpacing) {
-            Text(verbatim: title)
-                .textStyle(.lyricsTrackTitle)
-                .foregroundColor(theme.palette.text.color)
-                .lineLimit(1)
-            Text(verbatim: artist)
+            HStack(spacing: Spacing.xs) {
+                MarqueeText(verbatim: title)
+                    .textStyle(.lyricsTrackTitle)
+                    .foregroundColor(theme.palette.text.color)
+                if isExplicit {
+                    // Not in the mockup; Spotify asks to mark explicit content (docs/06).
+                    Image(systemName: "e.square.fill")
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(theme.palette.secondaryText.color)
+                        .accessibilityLabel(Text("Explícito"))
+                }
+            }
+            MarqueeText(verbatim: artist)
                 .textStyle(.lyricsArtist)
                 .foregroundColor(theme.palette.secondaryText.color)
-                .lineLimit(1)
         }
         .accessibilityElement(children: .combine)
     }
@@ -297,19 +310,19 @@ private struct LyricsTrackLabels: View {
 /// Device name in the accent color. Opens the devices sheet.
 private struct LyricsDeviceButton: View {
     let name: String
+    let type: String
     let action: () -> Void
     @EnvironmentObject private var theme: ThemeStore
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: Metrics.Lyrics.deviceIconSpacing) {
-                Image(systemName: "laptopcomputer")
+                DeviceSymbol.image(for: type)
                     .font(.system(size: 15, weight: .medium))
                     .frame(width: Metrics.Lyrics.deviceIconSize, height: Metrics.Lyrics.deviceIconSize)
                     .accessibilityHidden(true)
-                Text(verbatim: name)
+                MarqueeText(verbatim: name)
                     .textStyle(.lyricsDevice)
-                    .lineLimit(1)
             }
             .foregroundColor(theme.palette.accent.color)
             .frame(height: Metrics.minTouchTarget)
@@ -317,5 +330,6 @@ private struct LyricsDeviceButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text("Reproduciendo en \(name)"))
+        .accessibilityHint(Text("Abre la lista de dispositivos"))
     }
 }
