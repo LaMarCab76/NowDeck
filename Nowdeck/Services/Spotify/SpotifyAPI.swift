@@ -214,7 +214,7 @@ final class SpotifyAPI: Sendable {
 
     /// IDs come from Spotify URIs; percent-encode them anyway so a malformed one cannot
     /// change the path.
-    private static func pathComponent(_ id: String) -> String {
+    static func pathComponent(_ id: String) -> String {
         id.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? ""
     }
 
