@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 /// The light pill shown for 3 s when a track has no lyrics (`Main.dc.html`, `avisoVisible`).
 ///
@@ -35,10 +34,10 @@ struct LyricsNoticeView: View {
         .background(Capsule().fill(theme.palette.text.color))
         .shadow(color: Palette.noticeShadow, radius: Metrics.Notice.shadowRadius, y: Metrics.Notice.shadowY)
         .accessibilityElement(children: .combine)
-        .onAppear {
-            // Announced as a status message (docs/02-diseno.md, "Aviso").
-            UIAccessibility.post(notification: .announcement, argument: String(localized: message))
-        }
+        // Announced as a status message (docs/02-diseno.md, "Aviso"), again if it changes
+        // while on screen.
+        .onAppear { AccessibilityAnnouncement.post(message) }
+        .onChange(of: notice) { _ in AccessibilityAnnouncement.post(message) }
     }
 
     private var message: LocalizedStringResource {

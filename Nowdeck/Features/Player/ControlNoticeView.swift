@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 /// The pill shown for 3 s when a command fails. Same look and place as the "no lyrics"
 /// notice (docs/02-diseno.md, "Aviso"): `texto` background, dark text in 15 semibold, an
@@ -32,7 +31,7 @@ struct ControlNoticeView: View {
     }
 
     private func announce() {
-        UIAccessibility.post(notification: .announcement, argument: String(localized: message))
+        AccessibilityAnnouncement.post(message)
     }
 
     private var iconName: String {

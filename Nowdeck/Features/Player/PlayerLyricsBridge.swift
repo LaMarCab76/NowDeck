@@ -33,12 +33,14 @@ extension PlaybackOrigin {
 }
 
 extension LyricsModeContent {
-    init(item: NowPlaying, origin: PlaybackOrigin?, deviceName: String?) {
+    init(item: NowPlaying, origin: PlaybackOrigin?, deviceName: String?,
+         deviceType: String? = nil) {
         // Lyrics mode shows the name line only when there is a name; otherwise the label
         // ("Desde una playlist") is the line.
         let name = origin.flatMap { ($0.name ?? "").isEmpty ? $0.lyricsSourceLabel : $0.name }
         let label = origin.flatMap { ($0.name ?? "").isEmpty ? nil : $0.lyricsSourceLabel }
-        self.init(title: item.title, artist: item.subtitle, sourceLabel: label,
-                  sourceName: name, deviceName: deviceName)
+        self.init(title: item.title, artist: item.subtitle, isExplicit: item.isExplicit,
+                  sourceLabel: label, sourceName: name, deviceName: deviceName,
+                  deviceType: deviceType)
     }
 }
