@@ -49,6 +49,55 @@ struct LibraryFilterBar: View {
     }
 }
 
+/// Inside a playlist folder (experimental): "‹ Volver" and the folder's name, in place of
+/// the filters.
+struct FolderBackBar: View {
+    var folderName: String
+    var onBack: () -> Void
+
+    @EnvironmentObject private var theme: ThemeStore
+    private typealias Layout = Metrics.Library
+
+    var body: some View {
+        HStack(spacing: Layout.rowGap) {
+            Button(action: onBack) {
+                HStack(spacing: 6) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 15, weight: .semibold))
+                        .accessibilityHidden(true)
+                    Text("Volver")
+                        .textStyle(.libraryFilter)
+                }
+                .foregroundStyle(theme.palette.text.color)
+                .padding(.horizontal, Layout.filterHorizontalPadding)
+                .frame(height: Layout.filterHeight)
+                .overlay(Capsule().strokeBorder(Palette.chipBorder,
+                                                lineWidth: Layout.filterBorderWidth))
+                .frame(height: Metrics.minTouchTarget)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            HStack(spacing: 8) {
+                Image(systemName: "folder")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(theme.palette.tertiaryText.color)
+                    .accessibilityHidden(true)
+                // Names are shown verbatim and scroll when they don't fit.
+                MarqueeText(verbatim: folderName)
+                    .textStyle(.libraryFilter)
+                    .foregroundStyle(theme.palette.text.color)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
+
+            Spacer(minLength: 0)
+            OpenSpotifyLink()
+        }
+        .frame(height: Layout.rowHeight)
+    }
+}
+
 /// "ABRIR SPOTIFY ↗": the visible link the compliance checklist asks for.
 struct OpenSpotifyLink: View {
     @EnvironmentObject private var theme: ThemeStore
@@ -202,7 +251,11 @@ struct LibraryCard: View {
     var body: some View {
         Button(action: onPlay) {
             VStack(alignment: .leading, spacing: Layout.cardTextGap) {
-                CardArtwork(url: item.artworkURL, side: Layout.cardSize)
+                if case .folder = item.kind {
+                    FolderTile(side: Layout.cardSize)
+                } else {
+                    CardArtwork(url: item.artworkURL, side: Layout.cardSize)
+                }
                 VStack(alignment: .leading, spacing: 0) {
                     Text(verbatim: item.name)
                         .textStyle(.cardTitle)
@@ -223,8 +276,34 @@ struct LibraryCard: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: "\(item.name), \(item.subtitle)"))
-        .accessibilityHint(item.playsInPlace ? Text("Reproduce en el dispositivo activo")
-                                             : Text("Abre en Spotify"))
+        .accessibilityHint(hint)
+        .modifier(CardMenu(item: item, onPlay: onPlay, theme: theme))
+    }
+
+    private var hint: Text {
+        if case .folder = item.kind { return Text("Abre la carpeta") }
+        return item.playsInPlace ? Text("Reproduce en el dispositivo activo")
+                                 : Text("Abre en Spotify")
+    }
+}
+
+/// The long-press menu of a card (folders have none: they have no page in Spotify).
+private struct CardMenu: ViewModifier {
+    var item: LibraryEntry
+    var onPlay: () -> Void
+    var theme: ThemeStore
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if case .folder = item.kind {
+            content
+        } else {
+            menu(content)
+        }
+    }
+
+    private func menu(_ content: Content) -> some View {
+        content
         // The context menu's two actions, reachable from the VoiceOver rotor too.
         .accessibilityAction(named: Text("Abrir en Spotify")) { SpotifyLink.open(item.pageURL) }
         .contextMenu {
@@ -242,6 +321,24 @@ struct LibraryCard: View {
             CardPreview(item: item)
                 .environmentObject(theme)
         }
+    }
+}
+
+/// A folder card's square: a filled tile with a folder symbol, like "Ver más en Spotify".
+private struct FolderTile: View {
+    var side: CGFloat
+    @EnvironmentObject private var theme: ThemeStore
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: Metrics.Library.moreCardRadius, style: .continuous)
+            .fill(Palette.subtleSurface)
+            .overlay(
+                Image(systemName: "folder")
+                    .font(.system(size: Metrics.Library.moreCardIconSize, weight: .semibold))
+                    .foregroundStyle(theme.palette.text.color)
+            )
+            .frame(width: side, height: side)
+            .accessibilityHidden(true)
     }
 }
 
