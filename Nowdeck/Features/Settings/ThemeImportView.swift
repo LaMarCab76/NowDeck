@@ -107,13 +107,15 @@ struct ThemeImportView: View {
     // MARK: Left: the file
 
     private var codeBox: some View {
-        ScrollView([.vertical, .horizontal]) {
+        // Vertical scroll only, with the lines wrapped at the box's width: JSON pasted on a
+        // single line would otherwise run off the right edge and hide most of the file.
+        ScrollView(.vertical) {
             // `verbatim`: the text comes from the file and must never be read as Markdown or
             // as a localization key.
             Text(verbatim: request.contents.isEmpty ? " " : request.contents)
                 .textStyle(.importCode)
                 .foregroundStyle(theme.palette.bodyText.color)
-                .fixedSize()
+                .fixedSize(horizontal: false, vertical: true)
                 .textSelection(.enabled)
                 .padding(.vertical, 14)
                 .padding(.horizontal, Spacing.m)
@@ -138,7 +140,10 @@ struct ThemeImportView: View {
         VStack(alignment: .leading, spacing: 14) {
             switch request.result {
             case .success(let validated):
-                ScrollView(.vertical, showsIndicators: false) {
+                // Takes all the height above the buttons (no spacer: a spacer would split
+                // that height with the list and cut a warning in half halfway down). What
+                // does not fit scrolls and fades out at the bottom edge.
+                FadingScrollView {
                     VStack(alignment: .leading, spacing: 14) {
                         status(Text("Tema válido"), systemImage: "checkmark.circle",
                                color: theme.palette.accent.color)
@@ -147,8 +152,8 @@ struct ThemeImportView: View {
                             message(Text(warning.message))
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                Spacer(minLength: 0)
                 VStack(spacing: Spacing.xs) {
                     Button {
                         theme.apply(validated)
@@ -214,6 +219,75 @@ struct ThemeImportView: View {
                 .foregroundStyle(theme.palette.bodyText.color)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+}
+
+/// A vertical scroll view whose bottom edge fades out while there is more content below,
+/// with a small arrow pointing down, so a row cut by the edge reads as "there is more"
+/// instead of a broken layout. The content gets the fade's height as extra bottom space,
+/// so the last row can scroll fully clear of the fade.
+struct FadingScrollView<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    static var fadeHeight: CGFloat { 32 }
+    private static var space: String { "FadingScrollView" }
+
+    @EnvironmentObject private var theme: ThemeStore
+    @State private var contentHeight: CGFloat = 0
+    /// Bottom of the content, in the scroll view's own coordinates (moves as it scrolls).
+    @State private var contentBottom: CGFloat = 0
+    @State private var viewportHeight: CGFloat = 0
+
+    private var overflows: Bool {
+        contentHeight > viewportHeight + 0.5
+    }
+
+    /// Some content is still hidden below the bottom edge.
+    private var hasMoreBelow: Bool {
+        overflows && contentBottom > viewportHeight + 0.5
+    }
+
+    var body: some View {
+        ScrollView(.vertical, showsIndicators: true) {
+            content
+                .background(GeometryReader { proxy in
+                    let frame = proxy.frame(in: .named(Self.space))
+                    Color.clear
+                        .onAppear {
+                            contentHeight = frame.height
+                            contentBottom = frame.maxY
+                        }
+                        .onChange(of: frame) { frame in
+                            contentHeight = frame.height
+                            contentBottom = frame.maxY
+                        }
+                })
+                .padding(.bottom, overflows ? Self.fadeHeight : 0)
+        }
+        .coordinateSpace(name: Self.space)
+        .background(GeometryReader { proxy in
+            Color.clear
+                .onAppear { viewportHeight = proxy.size.height }
+                .onChange(of: proxy.size.height) { viewportHeight = $0 }
+        })
+        .mask {
+            VStack(spacing: 0) {
+                Rectangle()
+                if hasMoreBelow {
+                    LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
+                        .frame(height: Self.fadeHeight)
+                }
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if hasMoreBelow {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(theme.palette.label.color)
+                    .accessibilityHidden(true)
+            }
+        }
+        .animation(.easeOut(duration: 0.15), value: hasMoreBelow)
     }
 }
 

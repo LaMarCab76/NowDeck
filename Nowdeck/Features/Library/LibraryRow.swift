@@ -72,6 +72,7 @@ struct OpenSpotifyLink: View {
         }
         .buttonStyle(.plain)
         .fixedSize()
+        .accessibilityAddTraits(.isLink)
     }
 }
 
@@ -212,10 +213,11 @@ struct LibraryCard: View {
                 }
                 .lineLimit(1)
                 .truncationMode(.tail)
+                // While playback starts, the texts dim. The artwork stays as Spotify sends
+                // it: nothing drawn over it, no fading (docs/06, "Carátulas").
+                .opacity(isStarting ? 0.5 : 1)
             }
             .frame(width: Layout.cardSize, alignment: .leading)
-            // While playback starts, the card dims. Nothing is drawn over the artwork.
-            .opacity(isStarting ? 0.5 : 1)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -223,6 +225,8 @@ struct LibraryCard: View {
         .accessibilityLabel(Text(verbatim: "\(item.name), \(item.subtitle)"))
         .accessibilityHint(item.playsInPlace ? Text("Reproduce en el dispositivo activo")
                                              : Text("Abre en Spotify"))
+        // The context menu's two actions, reachable from the VoiceOver rotor too.
+        .accessibilityAction(named: Text("Abrir en Spotify")) { SpotifyLink.open(item.pageURL) }
         .contextMenu {
             if item.playsInPlace {
                 Button(action: onPlay) {

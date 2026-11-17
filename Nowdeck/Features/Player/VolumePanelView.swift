@@ -10,7 +10,16 @@ struct VolumePanelView: View {
     @ObservedObject var volume: VolumeController
 
     @EnvironmentObject private var theme: ThemeStore
+    /// Waits before announcing, so a burst of taps on − or + is read once, with the final
+    /// level.
+    @State private var announcementTask: Task<Void, Never>?
+    /// Last time VoiceOver changed the level by swiping on the bar. VoiceOver reads the new
+    /// value itself in that case, so no announcement follows.
+    @State private var lastAdjustment = Date.distantPast
     private typealias Layout = Metrics.VolumePanel
+
+    /// How long the announcement waits for the taps to settle.
+    static let announcementDelay: TimeInterval = 0.5
 
     var body: some View {
         HStack(spacing: Layout.gap) {
@@ -50,6 +59,19 @@ struct VolumePanelView: View {
                    value: volume.isPanelVisible)
         .allowsHitTesting(volume.isPanelVisible)
         .accessibilityHidden(!volume.isPanelVisible)
+        .onChange(of: volume.announcement) { announce($0) }
+    }
+
+    private func announce(_ announcement: VolumeAnnouncement?) {
+        announcementTask?.cancel()
+        guard let announcement,
+              Date().timeIntervalSince(lastAdjustment) > Self.announcementDelay * 2 else { return }
+        let delay = Self.announcementDelay
+        announcementTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            AccessibilityAnnouncement.post(announcement.message)
+        }
     }
 
     private var unavailableMessage: LocalizedStringKey {
@@ -72,6 +94,7 @@ struct VolumePanelView: View {
         .accessibilityLabel(Text("Volumen"))
         .accessibilityValue(Text("\(level) de 100"))
         .accessibilityAdjustableAction { direction in
+            lastAdjustment = Date()
             switch direction {
             case .increment: volume.increase()
             case .decrement: volume.decrease()

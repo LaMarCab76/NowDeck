@@ -60,6 +60,12 @@ final class VolumeController: ObservableObject {
         self.now = now
     }
 
+    /// What VoiceOver should say about the panel right now; `nil` while it is hidden.
+    var announcement: VolumeAnnouncement? {
+        VolumeAnnouncement(isPanelVisible: isPanelVisible, level: level,
+                           isAdjustable: isAdjustable, hasDevice: hasDevice)
+    }
+
     // MARK: Taps
 
     /// The Volumen button: opens the panel, or closes it if it is open.
@@ -223,6 +229,38 @@ final class VolumeController: ObservableObject {
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             guard !Task.isCancelled else { return }
             self?.isPanelVisible = false
+        }
+    }
+}
+
+/// What VoiceOver says when the volume panel appears or its level changes (docs/07, Hito 8:
+/// "anuncios del aviso y del panel de volumen"). The panel never takes the VoiceOver focus,
+/// so without an announcement a change made with − and +, or on another device, is silent.
+enum VolumeAnnouncement: Equatable {
+    case level(Int)
+    /// The device does not let the app change its volume (`supports_volume: false`,
+    /// restricted, or no level reported).
+    case notAdjustable
+    case noDevice
+
+    init?(isPanelVisible: Bool, level: Int?, isAdjustable: Bool, hasDevice: Bool) {
+        guard isPanelVisible else { return nil }
+        if !hasDevice {
+            self = .noDevice
+        } else if isAdjustable, let level {
+            self = .level(level)
+        } else {
+            self = .notAdjustable
+        }
+    }
+
+    /// Same wording as the panel: its level bar reads "N de 100", and the unavailable states
+    /// reuse the panel's own messages.
+    var message: LocalizedStringResource {
+        switch self {
+        case .level(let level): return "Volumen: \(level) de 100"
+        case .notAdjustable: return "Este dispositivo no permite cambiar el volumen"
+        case .noDevice: return "No hay un dispositivo activo"
         }
     }
 }

@@ -33,7 +33,8 @@ struct PlayerView: View {
         if lyrics.showsLyricsMode, let item = model.nowPlaying, let playback = model.playback {
             LyricsModeView(
                 content: LyricsModeContent(item: item, origin: model.origin,
-                                           deviceName: playback.device?.name),
+                                           deviceName: playback.device?.name,
+                                           deviceType: playback.device?.type),
                 lyrics: lyrics.lyrics,
                 playback: playback.lyricsPlayback(fetchedAt: model.fetchedAt),
                 width: theme.lyricsWidth,
@@ -144,6 +145,7 @@ struct PlayerTopRow: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityHint(Text("Abre en Spotify"))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -155,6 +157,7 @@ struct PlayerTopRow: View {
                             Image(systemName: "books.vertical")
                                 .font(.system(size: Layout.libraryIconSize - 3, weight: .medium))
                                 .frame(width: Layout.libraryIconSize, height: Layout.libraryIconSize)
+                                .accessibilityHidden(true)
                             Text("Biblioteca")
                                 .textStyle(.libraryPill)
                         }
@@ -215,9 +218,8 @@ struct OriginText: View {
     @EnvironmentObject private var theme: ThemeStore
 
     var body: some View {
-        text
-            .lineLimit(1)
-            .truncationMode(.tail)
+        // Long names scroll instead of staying cut (docs/06, "Metadatos").
+        MarqueeText(text, id: "\(origin.kind)|\(origin.name ?? "")")
     }
 
     private var text: Text {
@@ -254,11 +256,11 @@ struct TitleBlock: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Metrics.Player.titleArtistGap) {
-            Text(verbatim: item.title)
+            // Two lines; a title that still does not fit scrolls on one line instead.
+            WrappingMarqueeText(text: Text(verbatim: item.title), id: item.title,
+                                lineLimit: Metrics.Player.titleLineLimit)
                 .textStyle(.trackTitle)
                 .foregroundStyle(theme.palette.text.color)
-                .lineLimit(Metrics.Player.titleLineLimit)
-                .fixedSize(horizontal: false, vertical: true)
 
             if !item.subtitle.isEmpty || item.isExplicit {
                 HStack(spacing: 8) {
@@ -269,11 +271,9 @@ struct TitleBlock: View {
                             .foregroundStyle(theme.palette.secondaryText.color)
                             .accessibilityLabel(Text("Explícito"))
                     }
-                    Text(verbatim: item.subtitle)
+                    MarqueeText(verbatim: item.subtitle)
                         .textStyle(.artist)
                         .foregroundStyle(theme.palette.secondaryText.color)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
                 }
             }
         }
@@ -298,20 +298,21 @@ struct DeviceRow: View {
             if let device, !device.name.isEmpty {
                 Button(action: action) {
                     HStack(spacing: Layout.deviceIconGap) {
-                        Image(systemName: DeviceSymbol.name(for: device.type))
+                        DeviceSymbol.image(for: device.type)
                             .font(.system(size: Layout.deviceIconSize - 3, weight: .medium))
                             .frame(width: Layout.deviceIconSize, height: Layout.deviceIconSize)
-                        (Text("Reproduciendo en").font(TextStyle.devicePrefix.fixedFont)
-                            + Text(verbatim: " ")
-                            + Text(verbatim: device.name).font(TextStyle.deviceName.fixedFont))
-                            .lineLimit(1)
-                            .truncationMode(.tail)
+                            .accessibilityHidden(true)
+                        MarqueeText(Text("Reproduciendo en").font(TextStyle.devicePrefix.fixedFont)
+                                        + Text(verbatim: " ")
+                                        + Text(verbatim: device.name).font(TextStyle.deviceName.fixedFont),
+                                    id: device.name)
                     }
                     .foregroundStyle(theme.palette.accent.color)
                     .frame(height: Layout.deviceRowHeight)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityHint(Text("Abre la lista de dispositivos"))
             }
             if let notice = freshnessNotice {
                 Text(notice)
@@ -335,7 +336,20 @@ struct DeviceRow: View {
 }
 
 /// SF Symbol for a Spotify Connect device type.
+///
+/// The mockups draw devices as outlines (`Dispositivos.dc.html`). Recent iOS versions draw
+/// some of these symbols (`laptopcomputer`, `tv`, `iphone`, `ipad`…) with a translucent
+/// fill inside the screen by default; `.monochrome` keeps them as plain outlines. There are
+/// no separate outline-only symbols for a computer or a TV.
 enum DeviceSymbol {
+    static func image(for type: String) -> Image {
+        image(named: name(for: type))
+    }
+
+    static func image(named name: String) -> Image {
+        Image(systemName: name).symbolRenderingMode(.monochrome)
+    }
+
     static func name(for type: String) -> String {
         switch type.lowercased() {
         case "computer": return "laptopcomputer"

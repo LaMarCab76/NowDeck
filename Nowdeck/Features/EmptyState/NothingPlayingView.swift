@@ -85,12 +85,14 @@ struct NothingPlayingView: View {
                     .textStyle(.openSpotifyLink)
                 Image(systemName: "arrow.up.right")
                     .font(.system(size: Layout.linkIconSize, weight: .bold))
+                    .accessibilityHidden(true)
             }
             .foregroundStyle(theme.palette.text.color)
             .frame(height: Metrics.minTouchTarget)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(.isLink)
     }
 
     private var title: LocalizedStringKey {

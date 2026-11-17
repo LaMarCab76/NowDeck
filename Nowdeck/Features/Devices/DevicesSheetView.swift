@@ -226,8 +226,8 @@ private struct CurrentDeviceHeader: View {
     var body: some View {
         HStack(spacing: Layout.headerGap) {
             HStack(spacing: Layout.headerGap) {
-                Image(systemName: device.map { DeviceSymbol.name(for: $0.type) }
-                      ?? "speaker.slash")
+                DeviceSymbol.image(named: device.map { DeviceSymbol.name(for: $0.type) }
+                                            ?? "speaker.slash")
                     .font(.system(size: Layout.currentIconSize - 4, weight: .semibold))
                     .foregroundStyle(device == nil
                         ? theme.palette.tertiaryText.color : theme.palette.textOnAccent.color)
@@ -299,7 +299,7 @@ private struct DeviceChoiceRow: View {
     var body: some View {
         Button(action: choose) {
             HStack(spacing: Layout.rowGap) {
-                Image(systemName: DeviceSymbol.name(for: device.type))
+                DeviceSymbol.image(for: device.type)
                     .font(.system(size: Layout.rowIconSize - 4, weight: .regular))
                     .frame(width: Layout.rowIconSize, height: Layout.rowIconSize)
                     .accessibilityHidden(true)

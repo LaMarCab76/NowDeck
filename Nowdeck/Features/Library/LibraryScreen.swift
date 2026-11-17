@@ -30,7 +30,7 @@ struct LibraryScreen: View {
     }
 
     var body: some View {
-        LibraryContent(model: model, player: player, tab: $tab,
+        LibraryContent(model: model, player: player, controls: player.controls, tab: $tab,
                        onPlay: play, onOpenPlayer: { dismiss() },
                        onPlayPause: onPlayPause, onShowDevices: onShowDevices)
             .orientationLock(.landscape)
@@ -74,6 +74,9 @@ struct LibraryContent: View {
 
     @ObservedObject var model: LibraryModel
     @ObservedObject var player: PlayerModel
+    /// The player's commands: the mini player's play button can fail while the library
+    /// covers the player, so their notices show here.
+    @ObservedObject var controls: PlayerControlsModel
     @Binding var tab: Tab
     var onPlay: (LibraryEntry) -> Void
     var onOpenPlayer: () -> Void
@@ -138,9 +141,14 @@ struct LibraryContent: View {
                 LibraryNoticeView(notice: notice)
                     .padding(.top, Metrics.Notice.top)
                     .transition(.opacity)
+            } else if let notice = controls.notice {
+                ControlNoticeView(notice: notice)
+                    .padding(.top, Metrics.Notice.top)
+                    .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.2), value: model.notice)
+        .animation(.easeInOut(duration: 0.2), value: controls.notice)
     }
 
     private var header: some View {
@@ -229,9 +237,9 @@ struct LibraryNoticeView: View {
         .shadow(color: Palette.noticeShadow, radius: Metrics.Notice.shadowRadius,
                 y: Metrics.Notice.shadowY)
         .accessibilityElement(children: .combine)
-        .onAppear {
-            UIAccessibility.post(notification: .announcement, argument: String(localized: message))
-        }
+        // Announced like the player's notices, again if it changes while on screen.
+        .onAppear { AccessibilityAnnouncement.post(message) }
+        .onChange(of: notice) { _ in AccessibilityAnnouncement.post(message) }
     }
 
     private var message: LocalizedStringResource {

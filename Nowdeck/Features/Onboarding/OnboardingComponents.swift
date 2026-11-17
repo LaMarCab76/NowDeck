@@ -54,6 +54,7 @@ struct OnboardingStepHeader: View {
                 HStack(spacing: 6) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 16, weight: .semibold))
+                        .accessibilityHidden(true)
                     Text("Atrás")
                         .textStyle(.backButton)
                 }
