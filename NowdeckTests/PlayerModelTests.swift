@@ -108,6 +108,19 @@ final class PlayerModelTests: XCTestCase {
         progress.value = 2_500
         await model.poll()
         XCTAssertEqual(model.itemStarts, 3)
+
+        // A skip right after an answer at 0.5 s: 3 s later it is at 3 s, only 0.5 s
+        // behind the expected 3.5 s. The changed timestamp is enough.
+        clock.advance(3)
+        progress.value = 500
+        timestamp.value += 6_000
+        await model.poll()
+        XCTAssertEqual(model.itemStarts, 4)
+        clock.advance(3)
+        progress.value = 3_000
+        timestamp.value += 3_000
+        await model.poll()
+        XCTAssertEqual(model.itemStarts, 5)
     }
 
     func testUnreadablePlaylistShowsOnlyTheType() async throws {

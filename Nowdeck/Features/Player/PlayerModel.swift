@@ -340,9 +340,6 @@ final class PlayerModel: ObservableObject {
     /// How far behind the expected position an answer for the same item must be to count
     /// as a new start. Small differences are just Spotify's clock against the local one.
     private static let restartJumpMs = 5_000
-    /// The same, when Spotify says the state changed (`timestamp`): then a smaller jump
-    /// back is already a skip, such as Next early in a track queued twice in a row.
-    private static let changedStateJumpMs = 1_000
 
     /// Whether `item` started since the last answer: a different item, or the same one
     /// behind the position interpolated from the last answer.
@@ -357,11 +354,12 @@ final class PlayerModel: ObservableObject {
             progressMs: previousProgress, durationMs: previous.durationMs,
             isPlaying: playback.isPlaying, fetchedAt: fetchedAt, now: date)
         // Spotify's `timestamp` changes when the state changes (play, pause, skip, seek…).
-        // A pause or a seek between two answers may count as a start too; that only costs
-        // Cola one more read of the queue.
+        // Then any position behind the expected one is a start: a skip right after the
+        // last answer, early in a track queued twice in a row, is only a few hundred ms
+        // behind. A pause or a seek back may count too; that only costs Cola one more read.
         let stateChanged = state.timestamp != nil && state.timestamp != playback.timestamp
-        let tolerance = stateChanged ? Self.changedStateJumpMs : Self.restartJumpMs
-        return progressMs + tolerance < expected
+        if stateChanged { return progressMs < expected }
+        return progressMs + Self.restartJumpMs < expected
     }
 
     /// The origin with its name filled from the cache, starting a lookup if needed.
