@@ -145,6 +145,13 @@ final class PlayerModelTests: XCTestCase {
         clock.advance(3)
         await model.poll()
         XCTAssertEqual(model.itemStarts, beforeResume + 2)
+
+        // And when the previous answer had none: the next change still counts.
+        progress.value = 1_000
+        timestamp.value += 3_000
+        clock.advance(3)
+        await model.poll()
+        XCTAssertEqual(model.itemStarts, beforeResume + 3)
     }
 
     func testUnreadablePlaylistShowsOnlyTheType() async throws {
