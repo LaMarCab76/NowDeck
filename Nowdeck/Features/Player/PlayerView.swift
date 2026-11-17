@@ -9,6 +9,9 @@ struct PlayerView: View {
     var showsLyricsButton: Bool
     /// Full screen width, to adapt to the iPhone 8 Plus (736 pt).
     var screenWidth: CGFloat
+    /// The edge swipe (`PlayerContent`): moves the cover and title, and shows the next or
+    /// previous item beside them.
+    var swipe: TrackSwipePhase = .idle
 
     private typealias Layout = Metrics.Player
 
@@ -72,32 +75,76 @@ struct PlayerView: View {
 
     /// The origin row across the whole width, so "Desde la playlist …" always sits in the
     /// top-left corner, and below it the artwork with the title, artist and device.
+    ///
+    /// The cover, title and device row form a page that follows the edge swipe; the page of
+    /// the next or previous item comes in one screen width away, from the edge the finger
+    /// started at. The device row moves with its page: if it stayed still, the moving cover
+    /// would pass under it (docs/06: nothing on top of the cover). The origin and everything
+    /// below stay still.
     private var normalTopBlock: some View {
         VStack(spacing: Layout.topRowBottomGap) {
             PlayerTopRow(origin: model.origin, logoURL: model.nowPlaying?.itemURL,
                          actions: actions)
-            HStack(alignment: .top, spacing: Layout.artworkGap) {
-                ArtworkView(image: model.artwork, side: artworkSide)
-                VStack(alignment: .leading, spacing: 0) {
-                    Spacer(minLength: 0)
-                    ZStack(alignment: .leading) {
-                        if let item = model.nowPlaying {
-                            // A new track: the old title rises away and the new one comes in.
-                            TitleBlock(item: item)
-                                .id(item.transitionKey)
-                                .transition(Motion.rise(Motion.trackRise, reduceMotion: reduceMotion))
-                        }
-                    }
-                    .animation(Motion.trackChange, value: model.nowPlaying?.transitionKey)
-                    Spacer(minLength: 0)
-                    DeviceRow(device: model.playback?.device, freshness: model.freshness,
-                              action: actions.devices)
+            ZStack(alignment: .topLeading) {
+                currentPage
+                    .offset(x: swipe.offset(pageWidth: screenWidth))
+                if let edge = swipe.edge {
+                    previewPage(edge: edge)
+                        .offset(x: swipe.offset(pageWidth: screenWidth)
+                                   + (edge == .right ? screenWidth : -screenWidth))
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(height: Layout.topBlockHeight, alignment: .top)
         }
         .frame(height: Layout.upperAreaHeight, alignment: .top)
+    }
+
+    /// While a swiped-in item settles in the middle, the current page swaps to it without
+    /// its usual cross-fade and rise: it is off screen, and comes back already showing it.
+    private var animatesTrackChange: Bool { !swipe.isLanding }
+
+    private var currentPage: some View {
+        TrackPage(artworkSide: artworkSide, artwork: model.artwork,
+                  animatesArtwork: animatesTrackChange,
+                  deviceRow: DeviceRow(device: model.playback?.device, freshness: model.freshness,
+                                       action: actions.devices)) {
+            ZStack(alignment: .leading) {
+                if let item = model.nowPlaying {
+                    // A new track: the old title rises away and the new one comes in.
+                    TitleBlock(item: item)
+                        .id(item.transitionKey)
+                        .transition(Motion.rise(Motion.trackRise, reduceMotion: reduceMotion))
+                }
+            }
+            .animation(animatesTrackChange ? Motion.trackChange : nil,
+                       value: model.nowPlaying?.transitionKey)
+        }
+    }
+
+    private func previewPage(edge: EdgeSwipe.Edge) -> some View {
+        let preview: TrackPreview?
+        switch swipe {
+        case .landing(_, let frozen, _): preview = frozen
+        default: preview = edge == .right ? model.upNext : model.previousTrack
+        }
+        return TrackPage(artworkSide: artworkSide, artwork: preview?.artwork,
+                         animatesArtwork: true,
+                         // The same device: the item will play there too.
+                         deviceRow: DeviceRow(device: model.playback?.device,
+                                              freshness: model.freshness, action: {}),
+                         placeholderSymbol: preview == nil
+                             ? (edge == .right ? "forward.end.fill" : "backward.end.fill") : nil) {
+            if let item = preview?.item {
+                TitleBlock(item: item)
+            } else {
+                // Not known yet (queue not read, or nothing seen before this one).
+                Text(edge == .right ? "Siguiente" : "Anterior")
+                    .textStyle(.trackTitle)
+                    .foregroundStyle(theme.palette.secondaryText.color)
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     // MARK: Bottom block
@@ -131,6 +178,10 @@ struct PlayerView: View {
 struct ArtworkView: View {
     var image: UIImage?
     var side: CGFloat
+    /// `false` swaps covers at once (an item that arrived by swiping).
+    var animates = true
+    /// Drawn on the empty square (never on a cover): the swipe preview of an unknown item.
+    var placeholderSymbol: String?
 
     var body: some View {
         ZStack {
@@ -142,15 +193,49 @@ struct ArtworkView: View {
                 } else {
                     // While it loads, or when the item has no cover (local files, ads).
                     Palette.subtleSurface
+                        .overlay {
+                            if let placeholderSymbol {
+                                Image(systemName: placeholderSymbol)
+                                    .font(.system(size: Metrics.Player.previewSymbolSize,
+                                                  weight: .semibold))
+                                    .opacity(0.5)
+                            }
+                        }
                 }
             }
             .id(image.map(ObjectIdentifier.init))
             .transition(.opacity)
         }
-        .animation(Motion.artworkCrossfade, value: image.map(ObjectIdentifier.init))
+        .animation(animates ? Motion.artworkCrossfade : nil,
+                   value: image.map(ObjectIdentifier.init))
         .frame(width: side, height: side)
         .clipShape(RoundedRectangle(cornerRadius: Radius.artwork, style: .continuous))
         .accessibilityHidden(true)
+    }
+}
+
+/// One page of the edge swipe: the cover and, beside it, the title centered above the device
+/// row.
+private struct TrackPage<Title: View, DeviceSpace: View>: View {
+    var artworkSide: CGFloat
+    var artwork: UIImage?
+    var animatesArtwork: Bool
+    var deviceRow: DeviceSpace
+    var placeholderSymbol: String?
+    @ViewBuilder var title: Title
+
+    var body: some View {
+        HStack(alignment: .top, spacing: Metrics.Player.artworkGap) {
+            ArtworkView(image: artwork, side: artworkSide, animates: animatesArtwork,
+                        placeholderSymbol: placeholderSymbol)
+            VStack(alignment: .leading, spacing: 0) {
+                Spacer(minLength: 0)
+                title
+                Spacer(minLength: 0)
+                deviceRow
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 }
 
@@ -172,12 +257,17 @@ struct PlayerTopRow: View {
             HStack(spacing: Layout.iconClearSpace) {
                 SpotifyLogoLink(url: origin?.url ?? logoURL, variant: .icon)
                 if let origin {
+                    // A pill as high as Biblioteca's, so the two ends of the row match
+                    // (owner's request, 2026-11-17). The logo stays outside it, with its
+                    // clear space (docs/06).
                     Button {
                         SpotifyLink.open(origin.url)
                     } label: {
                         OriginText(origin: origin)
+                            .padding(.horizontal, Layout.originPillPadding)
                             .frame(height: Metrics.minTouchTarget)
-                            .contentShape(Rectangle())
+                            .background(Capsule().fill(Palette.subtleSurface))
+                            .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
                     .accessibilityHint(Text("Abre en Spotify"))

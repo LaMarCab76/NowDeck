@@ -25,12 +25,6 @@ final class AppPreferences: ObservableObject {
         didSet { defaults.set(usesPlaylistFolders, forKey: Keys.usesPlaylistFolders) }
     }
 
-    /// The artist's photo behind the player, like Spotify's TV app (owner's request,
-    /// 2026-11-17). On by default; off saves one `GET /artists/{id}` per new artist.
-    @Published var showsArtistPhoto: Bool {
-        didSet { defaults.set(showsArtistPhoto, forKey: Keys.showsArtistPhoto) }
-    }
-
     /// Whether the user already answered the folders step of the setup. A new login after an
     /// expired session does not ask again.
     @Published private(set) var hasAnsweredPlaylistFolders: Bool {
@@ -47,8 +41,6 @@ final class AppPreferences: ObservableObject {
         lyricsOffsetMs = Self.clampedOffset(defaults.integer(forKey: Keys.lyricsOffsetMs))
         usesPlaylistFolders = defaults.bool(forKey: Keys.usesPlaylistFolders)
         hasAnsweredPlaylistFolders = defaults.bool(forKey: Keys.answeredPlaylistFolders)
-        // `bool(forKey:)` is `false` when nothing was saved; this one starts on.
-        showsArtistPhoto = defaults.object(forKey: Keys.showsArtistPhoto) as? Bool ?? true
     }
 
     func answerPlaylistFolders(enabled: Bool) {
@@ -67,6 +59,5 @@ final class AppPreferences: ObservableObject {
         static let lyricsOffsetMs = "lyricsOffsetMs"
         static let usesPlaylistFolders = "usesPlaylistFolders"
         static let answeredPlaylistFolders = "answeredPlaylistFolders"
-        static let showsArtistPhoto = "showsArtistPhoto"
     }
 }

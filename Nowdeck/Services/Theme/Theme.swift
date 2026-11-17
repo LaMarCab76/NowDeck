@@ -17,6 +17,10 @@ struct Theme: Codable, Equatable, Sendable {
     var name: String
     var colors: Colors?
     var playerBackground: PlayerBackground?
+    /// How blurred the artist's photo is (`fondoReproductor: "artista"`), 0 to 100. Missing
+    /// means 0; it is not filled in by the merge, so themes that never touched it (the
+    /// presets) do not grow the field.
+    var backgroundBlur: Int?
     var player: Player?
     var lyrics: Lyrics?
 
@@ -25,6 +29,7 @@ struct Theme: Codable, Equatable, Sendable {
         case name = "nombre"
         case colors = "colores"
         case playerBackground = "fondoReproductor"
+        case backgroundBlur = "desenfoqueFondo"
         case player = "reproductor"
         case lyrics = "letras"
     }
@@ -52,7 +57,15 @@ struct Theme: Codable, Equatable, Sendable {
         case solid = "solido"
         /// Uses a soft color taken from the artwork.
         case artwork = "caratula"
+        /// The artist's photo over the artwork color (owner's request, 2026-11-17).
+        case artistPhoto = "artista"
+
+        /// `caratula` and `artista` both start from the artwork color.
+        var usesArtworkColor: Bool { self != .solid }
     }
+
+    /// `desenfoqueFondo`: 0 (sharp) to 100.
+    static let backgroundBlurRange = 0...100
 
     struct Player: Codable, Equatable, Sendable {
         var artworkPosition: ArtworkPosition?
@@ -133,6 +146,7 @@ extension Theme {
                 textOnAccent: colors?.textOnAccent ?? baseColors.textOnAccent
             ),
             playerBackground: playerBackground ?? base.playerBackground,
+            backgroundBlur: backgroundBlur,
             player: Player(
                 artworkPosition: player?.artworkPosition ?? base.player?.artworkPosition,
                 controls: player?.controls ?? base.player?.controls

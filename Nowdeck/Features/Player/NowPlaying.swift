@@ -19,7 +19,32 @@ struct NowPlaying: Equatable {
 
     /// `nil` when there is nothing to show: no item, or an item type the app doesn't know.
     init?(state: PlaybackState) {
-        switch state.item {
+        if state.item == nil, state.currentlyPlayingType == "ad" {
+            // During ads `item` is null. Keep the player on screen instead of jumping to
+            // "Nada sonando" for thirty seconds.
+            self.init(adTitle: String(localized: "Publicidad",
+                                      comment: "Player title while Spotify plays an ad"))
+            return
+        }
+        guard let item = state.item else { return nil }
+        self.init(item: item)
+    }
+
+    private init(adTitle: String) {
+        title = adTitle
+        subtitle = ""
+        isExplicit = false
+        durationMs = 0
+        artworkURL = nil
+        artworkCacheKey = nil
+        itemURL = nil
+        isAd = true
+    }
+
+    /// A track or an episode, also from the queue (`GET /me/player/queue`). `nil` for item
+    /// types the app doesn't know.
+    init?(item: PlaybackItem) {
+        switch item {
         case .track(let track):
             title = track.name
             subtitle = track.artists.map(\.name).filter { !$0.isEmpty }.joined(separator: ", ")
@@ -40,20 +65,7 @@ struct NowPlaying: Equatable {
             artworkCacheKey = nil
             itemURL = Self.pageURL(externalURL: episode.externalUrls?.spotify, uri: episode.uri)
 
-        case nil where state.currentlyPlayingType == "ad":
-            // During ads `item` is null. Keep the player on screen instead of jumping to
-            // "Nada sonando" for thirty seconds.
-            title = String(localized: "Publicidad",
-                           comment: "Player title while Spotify plays an ad")
-            subtitle = ""
-            isExplicit = false
-            durationMs = 0
-            artworkURL = nil
-            artworkCacheKey = nil
-            itemURL = nil
-            isAd = true
-
-        case nil, .unsupported:
+        case .unsupported:
             return nil
         }
     }

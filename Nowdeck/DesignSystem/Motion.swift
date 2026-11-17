@@ -6,6 +6,12 @@ import SwiftUI
 enum Motion {
     /// Title, artist and origin when a new track starts.
     static let trackChange = Animation.easeInOut(duration: 0.35)
+    /// Edge swipe released past the threshold: the other item slides to the middle.
+    static let swipeLand = Animation.easeOut(duration: 0.25)
+    /// Edge swipe released short (or a forbidden skip): back into place.
+    static let swipeSettle = Animation.spring(response: 0.3, dampingFraction: 0.85)
+    /// How long the other item waits in the middle for Spotify to report it.
+    static let swipeLandingTimeout: TimeInterval = 2.5
     /// One cover fading into the next.
     static let artworkCrossfade = Animation.easeInOut(duration: 0.45)
     /// Normal view ⇄ lyrics mode.

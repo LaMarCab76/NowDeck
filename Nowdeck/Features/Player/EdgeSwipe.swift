@@ -2,16 +2,17 @@ import SwiftUI
 import UIKit
 
 /// A drag that starts next to the left or right edge of the screen (owner's request,
-/// 2026-11-17): from the right edge toward the center plays the next track, from the left
-/// edge the previous one. On podcast episodes it seeks ±15 s, like the buttons.
+/// 2026-11-17): from the right edge toward the center plays the next item of the queue, from
+/// the left edge the previous one. The cover and title follow the finger and the other item
+/// slides in from that edge (`TrackSwipePhase`, `PlayerView`).
 ///
 /// Pure logic, so it can be tested without touches. The edges are physical (left and
 /// right), as the screen is always in landscape and the app is only in Spanish for now.
 struct EdgeSwipe: Equatable {
     enum Edge: Equatable {
-        /// Starts at the left edge and moves right: previous (or −15 s).
+        /// Starts at the left edge and moves right: previous.
         case left
-        /// Starts at the right edge and moves left: next (or +15 s).
+        /// Starts at the right edge and moves left: next.
         case right
     }
 
@@ -55,114 +56,100 @@ struct EdgeSwipe: Equatable {
     }
 }
 
+/// Where the swipe is, for the player to draw it.
+enum TrackSwipePhase: Equatable {
+    case idle
+    /// The finger is down. `isAllowed` is `false` when Spotify forbids that skip: the content
+    /// then resists and nothing happens on release.
+    case dragging(edge: EdgeSwipe.Edge, distance: CGFloat, isAllowed: Bool)
+    /// Released past the threshold: the other item sits in the middle until Spotify reports
+    /// it (`PlayerContent` then goes back to `idle` without animation). `preview` is frozen
+    /// at release, so a new queue read cannot change the card meanwhile; `fromKey` is the
+    /// item that was playing.
+    case landing(edge: EdgeSwipe.Edge, preview: TrackPreview?, fromKey: String?)
+
+    var edge: EdgeSwipe.Edge? {
+        switch self {
+        case .idle: return nil
+        case .dragging(let edge, _, _), .landing(let edge, _, _): return edge
+        }
+    }
+
+    var isLanding: Bool {
+        if case .landing = self { return true }
+        return false
+    }
+
+    /// Horizontal shift of the current cover and title. The preview sits one `pageWidth`
+    /// further, on the side of `edge`.
+    func offset(pageWidth: CGFloat) -> CGFloat {
+        switch self {
+        case .idle:
+            return 0
+        case let .dragging(edge, distance, isAllowed):
+            let moved = min(isAllowed ? distance : Self.resisted(distance), pageWidth)
+            return edge == .right ? -moved : moved
+        case .landing(let edge, _, _):
+            return edge == .right ? -pageWidth : pageWidth
+        }
+    }
+
+    /// A forbidden skip moves a third as far, and never more than `maxResisted`.
+    static func resisted(_ distance: CGFloat) -> CGFloat {
+        min(distance / 3, maxResisted)
+    }
+
+    static let maxResisted: CGFloat = 40
+}
+
 extension View {
-    /// Adds the edge swipe to the player. `isEnabled` follows `ControlAvailability`: a
-    /// forbidden action shows the indicator dimmed and does nothing on release.
-    func edgeSwipe(isActive: Bool, isEpisode: Bool,
-                   isEnabled: @escaping (EdgeSwipe.Edge) -> Bool,
-                   onCommit: @escaping (EdgeSwipe.Edge) -> Void) -> some View {
-        modifier(EdgeSwipeModifier(isActive: isActive, isEpisode: isEpisode,
-                                   isEnabled: isEnabled, onCommit: onCommit))
+    /// Reports drags that start at the left or right edge of the screen. `onChange` gets
+    /// `nil` for drags that started elsewhere; `onEnd` gets the swipe and whether its release
+    /// commits it.
+    func edgeSwipe(isActive: Bool,
+                   onChange: @escaping (EdgeSwipe) -> Void,
+                   onEnd: @escaping (EdgeSwipe, _ commits: Bool) -> Void) -> some View {
+        modifier(EdgeSwipeModifier(isActive: isActive, onChange: onChange, onEnd: onEnd))
     }
 }
 
 private struct EdgeSwipeModifier: ViewModifier {
     var isActive: Bool
-    var isEpisode: Bool
-    var isEnabled: (EdgeSwipe.Edge) -> Bool
-    var onCommit: (EdgeSwipe.Edge) -> Void
+    var onChange: (EdgeSwipe) -> Void
+    var onEnd: (EdgeSwipe, Bool) -> Void
 
-    @State private var swipe: EdgeSwipe?
     @State private var screenWidth: CGFloat = 0
-    @EnvironmentObject private var theme: ThemeStore
-
-    private typealias Layout = Metrics.EdgeSwipeIndicator
 
     func body(content: Content) -> some View {
         content
-            .overlay {
-                // Full screen, safe area included: the drag reports window coordinates and
-                // the indicators slide in from the physical edges.
+            .background {
+                // Full screen, safe area included: the drag reports window coordinates.
                 GeometryReader { proxy in
-                    ZStack {
-                        indicator(for: .left, screen: proxy.size)
-                        indicator(for: .right, screen: proxy.size)
-                    }
-                    .onAppear { screenWidth = proxy.size.width }
-                    .onChange(of: proxy.size.width) { screenWidth = $0 }
+                    Color.clear
+                        .onAppear { screenWidth = proxy.size.width }
+                        .onChange(of: proxy.size.width) { screenWidth = $0 }
                 }
                 .ignoresSafeArea()
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
             }
             .simultaneousGesture(drag, including: isActive ? .all : .subviews)
-            .onChange(of: swipe?.isCommitted == true) { committed in
-                if committed, let edge = swipe?.edge, isEnabled(edge) {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                }
-            }
     }
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: 8, coordinateSpace: .global)
             .onChanged { value in
-                swipe = EdgeSwipe(startX: value.startLocation.x, currentX: value.location.x,
-                                  screenWidth: screenWidth)
+                guard let swipe = EdgeSwipe(startX: value.startLocation.x,
+                                            currentX: value.location.x,
+                                            screenWidth: screenWidth)
+                else { return }
+                onChange(swipe)
             }
             .onEnded { value in
-                defer { withAnimation(.easeOut(duration: 0.2)) { swipe = nil } }
-                guard let current = EdgeSwipe(startX: value.startLocation.x,
-                                              currentX: value.location.x,
-                                              screenWidth: screenWidth),
-                      current.commitsOnRelease(predictedX: value.predictedEndLocation.x,
-                                               startX: value.startLocation.x),
-                      isEnabled(current.edge)
+                guard let swipe = EdgeSwipe(startX: value.startLocation.x,
+                                            currentX: value.location.x,
+                                            screenWidth: screenWidth)
                 else { return }
-                onCommit(current.edge)
+                onEnd(swipe, swipe.commitsOnRelease(predictedX: value.predictedEndLocation.x,
+                                                    startX: value.startLocation.x))
             }
     }
-
-    private func indicator(for edge: EdgeSwipe.Edge, screen: CGSize) -> some View {
-        let progress = swipe?.edge == edge ? swipe?.progress ?? 0 : 0
-        let enabled = isEnabled(edge)
-        let highlighted = enabled && swipe?.edge == edge && swipe?.isCommitted == true
-        // Center distance from the edge: hidden past it at 0, `inset` inside it at 1.
-        let fromEdge = (Layout.size + Layout.inset) * progress - Layout.size / 2
-        return Image(systemName: symbol(for: edge))
-            .font(.system(size: Layout.iconSize, weight: .semibold))
-            .foregroundStyle(highlighted ? Palette.playButtonIcon : theme.palette.text.color)
-            .frame(width: Layout.size, height: Layout.size)
-            .background(Circle().fill(highlighted ? theme.palette.text.color
-                                                  : Palette.edgeSwipeIndicator))
-            .opacity(progress * (enabled ? 1 : Palette.disabledControlOpacity))
-            .animation(.easeOut(duration: 0.15), value: highlighted)
-            .position(x: edge == .left ? fromEdge : screen.width - fromEdge,
-                      y: screen.height / 2)
-    }
-
-    private func symbol(for edge: EdgeSwipe.Edge) -> String {
-        switch (edge, isEpisode) {
-        case (.left, false): return "backward.end.fill"
-        case (.right, false): return "forward.end.fill"
-        case (.left, true): return "gobackward.15"
-        case (.right, true): return "goforward.15"
-        }
-    }
-}
-
-extension Metrics {
-    /// The circle that slides in from the edge while swiping.
-    /// It fits inside the 48 pt side margin (4 + 40), so it never covers the cover art, not
-    /// even for a moment (docs/06).
-    enum EdgeSwipeIndicator {
-        static let size: CGFloat = 40
-        static let iconSize: CGFloat = 16
-        /// Distance from the screen edge once the swipe is committed.
-        static let inset: CGFloat = 4
-    }
-}
-
-extension Palette {
-    /// The indicator before the swipe is committed: white at 16 %.
-    static let edgeSwipeIndicator = Color.white.opacity(0.16)
 }

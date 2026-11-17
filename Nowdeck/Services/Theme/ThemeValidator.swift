@@ -116,7 +116,8 @@ enum ThemeValidator {
     private static let supportedVersion = 1
 
     private static let topLevelFields: Set<String> = [
-        "formato", "nombre", "colores", "fondoReproductor", "reproductor", "letras",
+        "formato", "nombre", "colores", "fondoReproductor", "desenfoqueFondo", "reproductor",
+        "letras",
     ]
     private static let colorFields = ["fondo", "superficie", "texto", "textoSecundario",
                                       "acento", "textoSobreAcento"]
@@ -172,6 +173,13 @@ enum ThemeValidator {
             theme.playerBackground = background
         }
 
+        if let value = root["desenfoqueFondo"] {
+            guard let blur = validBlur(value) else {
+                return .failure(.invalidValue(field: "desenfoqueFondo"))
+            }
+            theme.backgroundBlur = blur
+        }
+
         if let value = root["reproductor"] {
             guard let player = value as? [String: Any] else {
                 return .failure(.invalidValue(field: "reproductor"))
@@ -224,11 +232,29 @@ enum ThemeValidator {
         return .success(ValidatedTheme(theme: theme, warnings: warnings, themeToApply: toApply))
     }
 
+    /// A whole number inside `Theme.backgroundBlurRange`. JSON booleans also arrive as
+    /// `NSNumber`, so they are rejected explicitly; so are fractions.
+    private static func validBlur(_ value: Any) -> Int? {
+        guard let number = value as? NSNumber,
+              CFGetTypeID(number) != CFBooleanGetTypeID()
+        else { return nil }
+        let double = number.doubleValue
+        guard double.rounded() == double,
+              Theme.backgroundBlurRange.contains(Int(exactly: double) ?? -1)
+        else { return nil }
+        return Int(double)
+    }
+
     /// Merges with the default theme, drops what has no design yet (artwork on the right) and
     /// corrects contrast. Also used by `ThemeStore` for its own edits.
     static func prepareForApplying(_ theme: Theme) -> (theme: Theme, issues: [ContrastIssue]) {
         var merged = theme.mergedWithDefault()
         merged.player?.artworkPosition = .left
+        // Themes built in code or decoded from storage skip `validBlur`: keep them in range.
+        if let blur = merged.backgroundBlur {
+            merged.backgroundBlur = min(max(blur, Theme.backgroundBlurRange.lowerBound),
+                                        Theme.backgroundBlurRange.upperBound)
+        }
         // After the merge every color is present; validated colors are well formed. A theme
         // built in code with a malformed color falls back to the default colors.
         let colors = ThemeColorSet(merged.colors) ?? ThemeColorSet(Theme.default.colors)!

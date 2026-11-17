@@ -88,9 +88,17 @@ Romper estas reglas puede hacer que Spotify revoque el acceso a la API.
   están bajo "For album and podcast artwork" y no nombran las fotos de artistas. El dueño lo
   considera aceptable porque es uso personal, sin distribución. Para limitar el riesgo:
   - la **carátula** sigue intacta (sin recortar ni tapar); la foto va solo en el fondo;
-  - se puede apagar en Ajustes → Apariencia → "Foto del artista" (y entonces no se pide);
+  - es una opción de Ajustes → Apariencia → FONDO DEL REPRODUCTOR, no viene activada (el
+    fondo por defecto sigue siendo "Según la carátula"), y con otra opción no se pide;
+  - el deslizador "Desenfoque" la difumina más (la guía nombra el *blurring* entre lo que no
+    se hace con las carátulas; acá, de nuevo, es la foto del artista, no la carátula);
   - el contenido sigue atribuido (ícono de Spotify y enlace de vuelta en la fila superior).
   El Canvas (video en loop) no está en la Web API y no se trae.
+- **Deslizar entre temas** (2026-11-17): mientras se arrastra, la carátula del tema actual y
+  la del siguiente o anterior se mueven enteras, una al lado de la otra; un borde puede quedar
+  fuera de la pantalla por un momento, como en cualquier carrusel. Nunca se recortan para
+  encajar, nunca se superponen y nada se dibuja encima. Cuando el ítem no se conoce, el
+  cuadrado vacío con un ícono no es una carátula.
 - **Controles "parecidos al Car Thing"** (pedido del dueño del 2026-11-17): se tomó solo la
   idea de una fila centrada con más aire entre los botones. Los botones, colores y medidas
   siguen siendo los de Nowdeck: no se copió la pantalla del Car Thing.

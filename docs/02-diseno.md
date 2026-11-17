@@ -100,8 +100,10 @@ Cambia lo anterior en estos puntos (no está en los mockups):
 
 - **Fila superior a todo el ancho** (44), arriba de la carátula: el ícono de Spotify y "Desde
   la playlist **Nombre**" en la esquina superior izquierda; la píldora **Biblioteca** a la
-  derecha. Margen de arriba 16 (era 24), y 4 entre la fila y la carátula. Con todo el ancho,
-  el origen tiene lugar visible para más de 25 caracteres.
+  derecha. El origen va en una píldora del mismo alto que Biblioteca (44, 16 a los costados,
+  blanco al 8 %), con el ícono afuera para respetar su espacio libre. Margen de arriba 16 (era
+  24), y 4 entre la fila y la carátula. Con todo el ancho, el origen tiene lugar visible para
+  más de 25 caracteres.
 - **Carátula de 216** (era 256) y alto del bloque de la carátula 216. El modo letras ocupa
   la fila y el bloque juntos (264). Cuenta vertical: 16 + 264 + 20 + 94 + 20 = 414.
 - **Ajustes** ya no está en el reproductor: se abre desde la cabecera de Biblioteca (ícono a
@@ -110,19 +112,35 @@ Cambia lo anterior en estos puntos (no está en los mockups):
   del tema se reparten a los dos lados igual que antes (`PlayerControlLayout`), y los dos lados
   ocupan el mismo ancho flexible, así que Play/Pausa queda siempre en el centro exacto. Con los
   siete botones la fila mide 584 (entra en los 640 del 8 Plus).
-- **Deslizar desde el borde**: un arrastre que empieza a 40 o menos del borde izquierdo o
-  derecho y avanza 96 hacia el centro (o un deslizamiento rápido) dispara Anterior o Siguiente;
-  en episodios, −15 s o +15 s. Respeta los controles deshabilitados. Un círculo de 40 entra
-  desde el borde mientras se arrastra (blanco al 16 %; relleno `texto` y ícono oscuro cuando ya
-  se puede soltar, con una vibración leve). Queda dentro del margen de 48: nunca tapa la
-  carátula.
-- **Foto del artista de fondo** (estilo app de TV de Spotify): la foto más grande de
-  `GET /artists/{id}` del primer artista, a pantalla completa (`fill`), al 45 % sobre el color
-  de fondo, invisible del lado de la carátula y plena desde el 60 % del ancho; la mitad de
-  abajo vuelve al color (85 %) detrás del progreso y los controles. Zoom lento de 1 a 1,06 en
-  30 s, ida y vuelta (sin zoom con *Reducir movimiento*), y fundido de 0,8 s al cambiar de
-  artista. Se apaga en Ajustes → Apariencia → "Foto del artista". Ver `docs/06`, "Zonas
-  grises".
+- **Deslizar desde el borde** para pasar de tema:
+  - Un arrastre que empieza a 40 o menos del borde izquierdo o derecho mueve la carátula y el
+    título con el dedo.
+  - Desde ese borde entra la "página" del otro ítem, una pantalla más allá: desde la derecha el
+    siguiente de la cola (`GET /me/player/queue`), desde la izquierda el anterior (el que la
+    app vio sonar antes; la Web API no lo da). La fila del dispositivo se mueve con su página
+    (si quedara quieta, la carátula pasaría por debajo); la fila del origen y todo lo de abajo
+    quedan quietos.
+  - Si el ítem no se conoce todavía, la página muestra un cuadrado vacío con el ícono de
+    siguiente o anterior y "Siguiente" o "Anterior".
+  - Al soltar después de 96 (o con un deslizamiento rápido), la página nueva termina de entrar
+    (0,25 s), el teléfono vibra (impacto medio) y se manda Siguiente o Anterior. Cuando Spotify
+    informa el ítem nuevo, las páginas vuelven a su lugar sin animación. Si en 2,5 s no
+    informa otro ítem (por ejemplo, "anterior" que solo reinició el tema), vuelve atrás.
+  - Si Spotify no permite ese salto, el contenido se resiste (un tercio del recorrido, hasta
+    40) y al soltar vuelve.
+  - También en episodios pasa de ítem (los botones de episodios siguen siendo ±15 s). En modo
+    letras no se desliza.
+- **Fondo "Foto del artista"** (estilo app de TV de Spotify): cuarta opción de FONDO DEL
+  REPRODUCTOR (`fondoReproductor: "artista"`). Usa la foto más grande de `GET /artists/{id}`
+  del primer artista, a pantalla completa (`fill`), al 45 % sobre el color de la carátula.
+  - Es invisible del lado de la carátula y plena desde el 60 % del ancho. La mitad de abajo
+    vuelve al color (85 %) detrás del progreso y los controles.
+  - Zoom lento de 1 a 1,06 en 30 s, ida y vuelta (sin zoom con *Reducir movimiento*), y
+    fundido de 0,8 s al cambiar de artista.
+  - Con esta opción aparece el deslizador **Desenfoque** (0 a 100 %, de a 5; `desenfoqueFondo`
+    del tema). El 100 % es un radio de 30. Se guarda al soltar.
+  - Spotify da una sola foto por artista (en tres tamaños), así que no rota entre fotos.
+  - Ver `docs/06`, "Zonas grises".
 
 ### Modo letras
 

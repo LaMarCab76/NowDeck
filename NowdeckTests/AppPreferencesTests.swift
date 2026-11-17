@@ -15,13 +15,6 @@ final class AppPreferencesTests: XCTestCase {
         XCTAssertEqual(preferences.lyricsOffsetMs, 0)
         XCTAssertFalse(preferences.usesPlaylistFolders)
         XCTAssertFalse(preferences.hasAnsweredPlaylistFolders)
-        XCTAssertTrue(preferences.showsArtistPhoto, "The artist photo starts on")
-    }
-
-    func testArtistPhotoOptionSurvivesANewInstance() {
-        let defaults = freshDefaults()
-        AppPreferences(defaults: defaults).showsArtistPhoto = false
-        XCTAssertFalse(AppPreferences(defaults: defaults).showsArtistPhoto)
     }
 
     func testValuesSurviveANewInstance() {

@@ -40,6 +40,10 @@ extension Metrics {
         static let libraryPillTrailingPadding: CGFloat = 16
         static let libraryPillIconGap: CGFloat = 8
         static let libraryIconSize: CGFloat = 20
+        /// The symbol on the empty cover of a swipe preview (next or previous unknown).
+        static let previewSymbolSize: CGFloat = 40
+        /// Side padding of the origin pill ("Desde la playlist …").
+        static let originPillPadding: CGFloat = 16
 
         static let titleArtistGap: CGFloat = 6
         static let titleLineLimit = 2

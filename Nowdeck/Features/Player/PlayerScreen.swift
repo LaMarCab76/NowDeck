@@ -93,10 +93,13 @@ struct PlayerScreen: View {
                     .environmentObject(preferences)
             }
             .onAppear {
-                model.loadsArtistImages = preferences.showsArtistPhoto
+                // Only "Foto del artista" asks Spotify for the photo.
+                model.loadsArtistImages = theme.playerBackground == .artistPhoto
                 if scenePhase == .active { model.start() }
             }
-            .onChange(of: preferences.showsArtistPhoto) { model.loadsArtistImages = $0 }
+            .onChange(of: theme.playerBackground) {
+                model.loadsArtistImages = $0 == .artistPhoto
+            }
             .onDisappear { model.stop() }
             // iOS 16 API (the two-value variant is iOS 17+).
             .onChange(of: scenePhase) { phase in
@@ -117,10 +120,13 @@ struct PlayerContent: View {
     /// `false` while another screen (the library) covers the player and shows the notices.
     var showsNotices = true
 
+    @State private var swipe: TrackSwipePhase = .idle
+
     var body: some View {
         ZStack {
             PlayerBackgroundView(color: backgroundColor,
-                                 artistImage: model.status == .active ? model.artistImage : nil)
+                                 artistImage: model.status == .active ? model.artistImage : nil,
+                                 blur: theme.backgroundBlur)
                 .ignoresSafeArea()
                 .animation(.easeInOut(duration: 0.5), value: backgroundColor)
 
@@ -130,7 +136,8 @@ struct PlayerContent: View {
             case .active:
                 ScreenMargins(top: Spacing.Player.top, bottom: Spacing.Player.bottom) { width in
                     PlayerView(model: model, lyrics: lyrics, actions: actions,
-                               showsLyricsButton: showsLyricsButton, screenWidth: width)
+                               showsLyricsButton: showsLyricsButton, screenWidth: width,
+                               swipe: swipe)
                 }
                 .overlay(alignment: .top) {
                     // A failed command is newer news than the lyrics notice: show it instead.
@@ -158,26 +165,57 @@ struct PlayerContent: View {
                 emptyState(.unavailable)
             }
         }
-        // Next / previous (±15 s on episodes) by dragging in from the right or left edge.
-        .edgeSwipe(isActive: model.status == .active, isEpisode: isEpisode,
-                   isEnabled: { [availability = ControlAvailability(playback: model.playback),
-                                 isEpisode] edge in
-                       if isEpisode { return availability.seek }
-                       return edge == .left ? availability.previous : availability.next
-                   },
-                   onCommit: { [actions, isEpisode] edge in
-                       switch (edge, isEpisode) {
-                       case (.left, false): actions.previous()
-                       case (.right, false): actions.next()
-                       case (.left, true): actions.skipBackward()
-                       case (.right, true): actions.skipForward()
-                       }
-                   })
+        // Next / previous by dragging in from the right or left edge: the cover and title
+        // follow the finger and the other item comes in from that edge.
+        .edgeSwipe(isActive: model.status == .active && !lyrics.showsLyricsMode,
+                   onChange: swipeChanged, onEnd: swipeEnded)
+        .onChange(of: model.nowPlaying?.transitionKey) { key in
+            // The item the swipe showed is now the current one: put the pages back without
+            // animation (both show the same item, so nothing moves on screen).
+            guard case let .landing(_, _, fromKey) = swipe, key != fromKey else { return }
+            var transaction = Transaction(animation: nil)
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { swipe = .idle }
+        }
+        .task(id: swipe.isLanding) {
+            // Spotify did not report another item (a failed command, or "previous" that only
+            // restarted the track): slide back.
+            guard swipe.isLanding else { return }
+            try? await Task.sleep(nanoseconds: UInt64(Motion.swipeLandingTimeout * 1_000_000_000))
+            guard !Task.isCancelled, swipe.isLanding else { return }
+            withAnimation(Motion.swipeSettle) { swipe = .idle }
+        }
     }
 
-    private var isEpisode: Bool {
-        if case .episode = model.playback?.item { return true }
-        return false
+    private func swipeChanged(_ edgeSwipe: EdgeSwipe) {
+        if swipe.isLanding { return }
+        if swipe == .idle, edgeSwipe.edge == .right { model.refreshUpNextIfStale() }
+        swipe = .dragging(edge: edgeSwipe.edge, distance: edgeSwipe.distance,
+                          isAllowed: isAllowed(edgeSwipe.edge))
+    }
+
+    private func swipeEnded(_ edgeSwipe: EdgeSwipe, commits: Bool) {
+        if swipe.isLanding { return }
+        guard commits, isAllowed(edgeSwipe.edge) else {
+            withAnimation(Motion.swipeSettle) { swipe = .idle }
+            return
+        }
+        // The track changes under the finger: the phone confirms it (owner's request).
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        let preview = edgeSwipe.edge == .right ? model.upNext : model.previousTrack
+        withAnimation(Motion.swipeLand) {
+            swipe = .landing(edge: edgeSwipe.edge, preview: preview,
+                             fromKey: model.nowPlaying?.transitionKey)
+        }
+        switch edgeSwipe.edge {
+        case .left: actions.previous()
+        case .right: actions.next()
+        }
+    }
+
+    private func isAllowed(_ edge: EdgeSwipe.Edge) -> Bool {
+        let availability = ControlAvailability(playback: model.playback)
+        return edge == .left ? availability.previous : availability.next
     }
 
     private func emptyState(_ kind: NothingPlayingView.Kind) -> some View {
@@ -190,7 +228,7 @@ struct PlayerContent: View {
     /// The artwork color, softened for the theme's text; the theme background otherwise
     /// (empty states, no artwork, all-black covers).
     private var backgroundColor: Color {
-        guard model.status == .active, theme.playerBackground == .artwork,
+        guard model.status == .active, theme.playerBackground.usesArtworkColor,
               let dominant = model.artworkColor else {
             return theme.palette.background.color
         }

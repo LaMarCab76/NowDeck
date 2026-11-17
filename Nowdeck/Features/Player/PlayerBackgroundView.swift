@@ -6,11 +6,13 @@ import SwiftUI
 /// The photo fills the screen, so it is cropped, and it is faded into the color. Spotify's
 /// "Get Artist" reference says its visual content "must be kept in its original form, e.g.
 /// you can not crop…". The owner decided to show it anyway: it is documented as a gray area
-/// in docs/06, and Ajustes → Apariencia can turn it off. The cover itself is still shown as
-/// Spotify sends it (`ArtworkView`).
+/// in docs/06, and it is only shown with Ajustes → Apariencia → FONDO DEL REPRODUCTOR →
+/// "Foto del artista". The cover itself is still shown as Spotify sends it (`ArtworkView`).
 struct PlayerBackgroundView: View {
     var color: Color
     var artistImage: UIImage?
+    /// The theme's `desenfoqueFondo`, 0 to 100.
+    var blur: Int = 0
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -18,7 +20,8 @@ struct PlayerBackgroundView: View {
         ZStack {
             color
             if let artistImage {
-                ArtistPhotoLayer(image: artistImage, tint: color, drifts: !reduceMotion)
+                ArtistPhotoLayer(image: artistImage, tint: color, drifts: !reduceMotion,
+                                 blurRadius: Layout.blurRadius(for: blur))
                     .id(ObjectIdentifier(artistImage))
                     .transition(.opacity)
             }
@@ -26,6 +29,8 @@ struct PlayerBackgroundView: View {
         .animation(Motion.artistPhotoCrossfade, value: artistImage.map(ObjectIdentifier.init))
         .accessibilityHidden(true)
     }
+
+    private typealias Layout = Metrics.ArtistPhoto
 }
 
 /// The photo, strongest at the right and faded out toward the cover at the left, with the
@@ -35,6 +40,7 @@ private struct ArtistPhotoLayer: View {
     var tint: Color
     /// A slow zoom in and out (off with Reduce Motion).
     var drifts: Bool
+    var blurRadius: CGFloat
 
     @State private var zoomedIn = false
     private typealias Layout = Metrics.ArtistPhoto
@@ -46,6 +52,8 @@ private struct ArtistPhotoLayer: View {
                 .scaledToFill()
                 .frame(width: proxy.size.width, height: proxy.size.height)
                 .scaleEffect(zoomedIn ? Layout.driftScale : 1)
+                // Opaque: the edges stay solid instead of fading into the color.
+                .blur(radius: blurRadius, opaque: true)
                 .clipped()
                 .opacity(Layout.opacity)
                 .mask(
@@ -78,6 +86,14 @@ extension Metrics {
         /// The bottom half fades back into the color, behind progress and controls.
         static let bottomTintOpacity: CGFloat = 0.85
         static let driftScale: CGFloat = 1.06
+        /// `desenfoqueFondo` 100 = this radius.
+        static let maxBlurRadius: CGFloat = 30
+
+        static func blurRadius(for value: Int) -> CGFloat {
+            let range = Theme.backgroundBlurRange
+            let clamped = min(max(value, range.lowerBound), range.upperBound)
+            return maxBlurRadius * CGFloat(clamped) / CGFloat(range.upperBound)
+        }
     }
 }
 
