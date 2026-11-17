@@ -17,6 +17,8 @@ struct PlayerActions {
     var library: () -> Void = {}
     /// "Reproduciendo en …" and "Elegir dispositivo".
     var devices: () -> Void = {}
+    /// Cola: what comes next.
+    var queue: () -> Void = {}
 }
 
 /// The landscape player: owns the polling model and picks between the player, "Nada
@@ -56,6 +58,8 @@ struct PlayerScreen: View {
         wired.devices = { [presentation] in presentation.showDevices() }
         // Milestone 5: library.
         wired.library = { [presentation] in presentation.showsLibrary = true }
+        // Playback queue (read-only).
+        wired.queue = { [presentation] in presentation.showsQueue = true }
         return wired
     }
 
@@ -75,6 +79,7 @@ struct PlayerScreen: View {
                 if !isOn { lyrics.turnOff() }
             }
             .devicesSheet(isPresented: $presentation.showsDevices, player: model)
+            .queueSheet(isPresented: $presentation.showsQueue, player: model)
             .fullScreenCover(isPresented: $presentation.showsLibrary) {
                 // While the library covers the player, the devices sheet ("Suena en …" in the
                 // mini player, a card or a command that finds no active device) is presented
