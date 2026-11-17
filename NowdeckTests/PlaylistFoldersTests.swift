@@ -81,9 +81,22 @@ final class PlaylistFoldersTests: XCTestCase {
         XCTAssertThrowsError(try RootlistPage.decode(data))
     }
 
+    func testHugeFieldLengthIsAnErrorInsteadOfACrash() {
+        // A length-delimited field claiming `UInt64.max` bytes, in a field that is read and
+        // in one that is skipped.
+        for field in [5, 9] {
+            let data = Data(Proto.key(field, 2) + Proto.varint(.max))
+            XCTAssertThrowsError(try RootlistPage.decode(data)) { error in
+                guard case .truncated = error as? ProtobufReader.Failure else {
+                    return XCTFail("Expected truncated, got \(error)")
+                }
+            }
+        }
+    }
+
     // MARK: Library
 
-    private func makeModel(rootlistStatus: Int = 200) -> (LibraryModel, StubRecorder) {
+    private func makeModel(rootlistStatus: StubBox<Int> = StubBox(200)) -> (LibraryModel, StubRecorder) {
         let playlists = LibraryJSON.page([LibraryJSON.playlist("Asado", id: "a"),
                                           LibraryJSON.playlist("Suelta", id: "s")])
         let rootlist = Proto.rootlist(length: 4, truncated: false, rows: [
@@ -101,7 +114,8 @@ final class PlaylistFoldersTests: XCTestCase {
             case ("api.spotify.com", "/v1/me/playlists"):
                 return (.stub(200), playlists)
             case ("spclient.wg.spotify.com", "/playlist/v2/user/lauti/rootlist"):
-                return (.stub(rootlistStatus), rootlistStatus == 200 ? rootlist : Data())
+                let status = rootlistStatus.value
+                return (.stub(status), status == 200 ? rootlist : Data())
             default:
                 return (.stub(204), Data())
             }
@@ -141,12 +155,30 @@ final class PlaylistFoldersTests: XCTestCase {
     }
 
     func testRejectedRootlistFallsBackToTheFlatListWithANotice() async {
-        let (model, _) = makeModel(rootlistStatus: 401)
+        let (model, _) = makeModel(rootlistStatus: StubBox(401))
 
         await model.load(.playlists)
 
         XCTAssertFalse(model.showsFolders)
         XCTAssertEqual(model.notice, .foldersUnavailable)
+        guard case .loaded(let items) = model.state(of: .playlists) else {
+            return XCTFail("Expected the flat list")
+        }
+        XCTAssertEqual(items.map(\.name), ["Asado", "Suelta"])
+    }
+
+    func testFailedReloadClosesTheOpenFolder() async {
+        let status = StubBox(200)
+        let (model, _) = makeModel(rootlistStatus: status)
+        await model.load(.playlists)
+        model.openFolder(id: "f1")
+        XCTAssertEqual(model.folderPath.map(\.name), ["Fin de semana"])
+
+        status.value = 401
+        await model.load(.playlists)
+
+        XCTAssertFalse(model.showsFolders)
+        XCTAssertTrue(model.folderPath.isEmpty, "The flat list shows no folder back bar")
         guard case .loaded(let items) = model.state(of: .playlists) else {
             return XCTFail("Expected the flat list")
         }

@@ -11,8 +11,10 @@ final class AppPreferences: ObservableObject {
     /// (useful when Spotify's position arrives late), negative later.
     @Published var lyricsOffsetMs: Int {
         didSet {
+            // Assigning inside `didSet` does not run the observer again, so the clamped
+            // value is written below in the same pass.
             let clamped = Self.clampedOffset(lyricsOffsetMs)
-            if clamped != lyricsOffsetMs { lyricsOffsetMs = clamped; return }
+            if clamped != lyricsOffsetMs { lyricsOffsetMs = clamped }
             defaults.set(lyricsOffsetMs, forKey: Keys.lyricsOffsetMs)
         }
     }

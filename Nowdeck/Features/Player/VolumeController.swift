@@ -8,9 +8,12 @@ import Foundation
 /// - Dragging on the bar moves the shown level with the finger. While it moves, the level is
 ///   sent at most once every `debounce` (a throttle, so the speaker follows along), and the
 ///   final level goes out as soon as the finger lifts.
+/// - Only one request is out at a time. Levels chosen while it travels are not queued: when
+///   it finishes, only the newest one goes out (a slow network never replays a whole drag).
 /// - The panel appears when the volume button, − or + are tapped, or when a poll brings a
 ///   level that the app did not set (changed on the computer, the speaker, another phone…),
-///   and hides `hideAfter` (3 s) after the last interaction.
+///   and hides `hideAfter` (3 s) after the last interaction. While the finger is on the bar
+///   it stays, however long the finger rests there.
 /// - Right after the app changes the volume, polls may still bring the old level for a
 ///   moment. Those answers are ignored for `settleTime` after the request; a poll with the
 ///   level the app sent ends that wait early.
@@ -47,8 +50,12 @@ final class VolumeController: ObservableObject {
     private var settleDeadline: Date?
     /// Running between a tap and the moment its request goes out.
     private var debounceTask: Task<Void, Never>?
-    private var lastRequest: Task<Void, Never>?
-    private var requestsInFlight = 0
+    /// A `PUT /me/player/volume` is on its way.
+    private var isRequestInFlight = false
+    /// A send was due while a request was on its way; `pendingLevel` goes out when it ends.
+    private var sendsWhenRequestEnds = false
+    /// The finger is on the bar: the panel does not hide on its own.
+    private var isDragging = false
     private var hideTask: Task<Void, Never>?
 
     init(api: SpotifyAPI,
@@ -90,6 +97,7 @@ final class VolumeController: ObservableObject {
 
     /// The finger is on the bar, at `target` (0–100).
     func drag(to target: Int) {
+        isDragging = true
         showPanel()
         guard isAdjustable, let current = level else { return }
         let target = min(100, max(0, target))
@@ -101,15 +109,21 @@ final class VolumeController: ObservableObject {
         scheduleSend()
     }
 
-    /// The finger left the bar: send the last level now instead of waiting.
+    /// The finger left the bar (or the gesture was cancelled): send the last level now
+    /// instead of waiting, and start the hide delay again. Calling it twice is harmless.
     func endDrag() {
-        guard let task = debounceTask else { return }
-        task.cancel()
-        sendPending()
+        guard isDragging else { return }
+        isDragging = false
+        showPanel()
+        if let task = debounceTask {
+            task.cancel()
+            sendPending()
+        }
     }
 
     func hidePanel() {
         hideTask?.cancel()
+        isDragging = false
         isPanelVisible = false
     }
 
@@ -138,10 +152,13 @@ final class VolumeController: ObservableObject {
     private func sendPending() {
         debounceTask = nil
         guard let target = pendingLevel else { return }
-        requestsInFlight += 1
-        let previous = lastRequest
-        lastRequest = Task { [weak self, api] in
-            await previous?.value
+        // One request at a time, and no queue: whatever is newest when it ends goes next.
+        guard !isRequestInFlight else {
+            sendsWhenRequestEnds = true
+            return
+        }
+        isRequestInFlight = true
+        Task { [weak self, api] in
             let result: Result<Void, Error>
             do {
                 try await api.sendCommand(.volume(target))
@@ -154,7 +171,7 @@ final class VolumeController: ObservableObject {
     }
 
     private func requestFinished(target: Int, result: Result<Void, Error>) {
-        requestsInFlight -= 1
+        isRequestInFlight = false
         switch result {
         case .success:
             settleDeadline = now().addingTimeInterval(settleTime)
@@ -167,6 +184,12 @@ final class VolumeController: ObservableObject {
                 hidePanel()
             }
             onFailure?(error)
+        }
+        if sendsWhenRequestEnds {
+            sendsWhenRequestEnds = false
+            // Nothing to send if the level that just went out is still the newest one
+            // (after a failure that undid it, `pendingLevel` is `nil`).
+            if pendingLevel != target { sendPending() }
         }
     }
 
@@ -197,7 +220,7 @@ final class VolumeController: ObservableObject {
         if let pending = pendingLevel {
             if reported == pending {
                 // Spotify caught up with the taps (unless more are still on their way).
-                if debounceTask == nil && requestsInFlight == 0 {
+                if debounceTask == nil && !isRequestInFlight {
                     pendingLevel = nil
                     settleDeadline = nil
                 }
@@ -226,7 +249,7 @@ final class VolumeController: ObservableObject {
     /// Still within the wait that follows a tap (debouncing, request on its way, or polls
     /// that may predate it).
     private var isWaitingForOwnChange: Bool {
-        if debounceTask != nil || requestsInFlight > 0 { return true }
+        if debounceTask != nil || isRequestInFlight { return true }
         if let settleDeadline, now() < settleDeadline { return true }
         return false
     }
@@ -240,6 +263,7 @@ final class VolumeController: ObservableObject {
         settleDeadline = nil
         debounceTask?.cancel()
         debounceTask = nil
+        sendsWhenRequestEnds = false
         if device == nil {
             isAdjustable = false
             hidePanel()
@@ -251,6 +275,8 @@ final class VolumeController: ObservableObject {
     private func showPanel() {
         isPanelVisible = true
         hideTask?.cancel()
+        // While the finger is on the bar the panel stays; `endDrag()` starts the wait again.
+        guard !isDragging else { return }
         let delay = hideAfter
         hideTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
