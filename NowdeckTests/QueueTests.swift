@@ -210,7 +210,7 @@ final class QueueTests: XCTestCase {
         XCTAssertNil(model.problem)
     }
 
-    func testConcurrentReloadsShareOneRequest() async {
+    func testConcurrentReloadsShareOneRequest() async throws {
         let body = Self.json(["queue": []])
         let gate = FirstRequestGate(started: expectation(description: "first read started"))
         let (api, recorder) = makeAPI { _ in
@@ -223,14 +223,14 @@ final class QueueTests: XCTestCase {
         await fulfillment(of: [gate.started], timeout: 2)
         // The first read is now waiting for its answer. The second reload joins it.
         let second = Task { await model.reload() }
-        await Task.yield()
+        try await waitUntil { model.waitingCalls == 2 }
         gate.open()
         _ = await (first.value, second.value)
 
         XCTAssertEqual(recorder.requests.count, 1)
     }
 
-    func testTrackChangeAlwaysReadsAgain() async {
+    func testTrackChangeAlwaysReadsAgain() async throws {
         let gate = FirstRequestGate(started: expectation(description: "first read started"))
         let answers = AnswerQueue([
             .success((.stub(200), Self.json(["queue": [Self.track("Viejo")]]))),
@@ -246,7 +246,7 @@ final class QueueTests: XCTestCase {
         await fulfillment(of: [gate.started], timeout: 2)
         // The track changes while the first read is still waiting: its answer may be old.
         let change = Task { await model.trackDidChange() }
-        await Task.yield()
+        try await waitUntil { model.waitingCalls == 2 }
         gate.open()
         _ = await (first.value, change.value)
 
@@ -254,7 +254,7 @@ final class QueueTests: XCTestCase {
         XCTAssertEqual(model.entries?.map(\.track.title), ["Nuevo"])
     }
 
-    func testSeveralTrackChangesDuringOneReadAskForOneMoreRead() async {
+    func testSeveralTrackChangesDuringOneReadAskForOneMoreRead() async throws {
         let gate = FirstRequestGate(started: expectation(description: "first read started"))
         let answers = AnswerQueue([
             .success((.stub(200), Self.json(["queue": [Self.track("Viejo")]]))),
@@ -272,12 +272,23 @@ final class QueueTests: XCTestCase {
         // where the older answer could land last.
         let change1 = Task { await model.trackDidChange() }
         let change2 = Task { await model.trackDidChange() }
-        await Task.yield()
+        try await waitUntil { model.waitingCalls == 3 }
         gate.open()
         _ = await (first.value, change1.value, change2.value)
 
         XCTAssertEqual(recorder.requests.count, 2)
         XCTAssertEqual(model.entries?.map(\.track.title), ["Nuevo"])
+    }
+}
+
+/// Polls `condition` on the main actor; the calls under test join the worker
+/// synchronously, so they show up as soon as their task runs.
+@MainActor
+private func waitUntil(timeout: TimeInterval = 2, _ condition: () -> Bool) async throws {
+    let deadline = Date().addingTimeInterval(timeout)
+    while !condition() {
+        guard Date() < deadline else { return XCTFail("Timed out") }
+        try await Task.sleep(nanoseconds: 5_000_000)
     }
 }
 

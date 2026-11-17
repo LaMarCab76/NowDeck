@@ -137,6 +137,9 @@ final class QueueModel: ObservableObject {
     /// Set when the track changed while the worker was reading: that read may carry the old
     /// queue, so the worker reads once more before finishing.
     private var needsAnotherRead = false
+    /// `reload()` and `trackDidChange()` calls waiting for the worker right now. Only read
+    /// by tests, to know that an overlapping call has really joined a running read.
+    private(set) var waitingCalls = 0
 
     init(api: SpotifyAPI) {
         self.api = api
@@ -145,6 +148,8 @@ final class QueueModel: ObservableObject {
     /// Reads the queue. A reload while a read is running waits for it instead of sending a
     /// second request.
     func reload() async {
+        waitingCalls += 1
+        defer { waitingCalls -= 1 }
         await worker().value
     }
 
@@ -152,6 +157,8 @@ final class QueueModel: ObservableObject {
     /// may carry the old queue, so the worker reads again after it. Several changes during
     /// one read ask for a single extra read.
     func trackDidChange() async {
+        waitingCalls += 1
+        defer { waitingCalls -= 1 }
         if loadTask != nil { needsAnotherRead = true }
         await worker().value
     }

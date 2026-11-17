@@ -67,7 +67,7 @@ final class PlayerModelTests: XCTestCase {
 
     func testItemStartsCountTheSameTrackStartingAgain() async throws {
         let fixture = try Fixture.data("playback-state-playing") // 84 s of 227 s, playing
-        let progress = LockedValue(84_000)
+        let progress = StubBox(84_000)
         let clock = TestClock()
         let (model, _) = makeModel(clock: clock) { request in
             if request.url?.host == "i.scdn.co" { return (.stub(404), Data()) }
@@ -181,20 +181,5 @@ final class PlayerModelTests: XCTestCase {
             guard Date() < deadline else { return XCTFail("Timed out") }
             try await Task.sleep(nanoseconds: 20_000_000)
         }
-    }
-}
-
-/// A value the stub reads on the loading thread while the test changes it.
-private final class LockedValue<Value>: @unchecked Sendable {
-    private let lock = NSLock()
-    private var stored: Value
-
-    init(_ value: Value) {
-        stored = value
-    }
-
-    var value: Value {
-        get { lock.withLock { stored } }
-        set { lock.withLock { stored = newValue } }
     }
 }
