@@ -80,6 +80,25 @@ final class PlayerControlsModelTests: XCTestCase {
         XCTAssertEqual(h.model.playback?.isPlaying, false)
     }
 
+    func testStartingThePlayerDuringACommandWaitsForTheCommand() async throws {
+        let h = try await make(PlaybackJSON(isPlaying: true), commandDelay: 0.3)
+        let readsBefore = h.playbackReads
+
+        h.controls.playPause()
+        // Cola opening, or the app coming back, while the pause is on its way.
+        h.model.start()
+        h.model.refresh()
+        try await settle()
+        XCTAssertEqual(h.playbackReads, readsBefore,
+                       "A read during the command could undo the optimistic pause")
+        XCTAssertEqual(h.model.playback?.isPlaying, false)
+
+        // The command ends: its confirmation read restarts the polling.
+        h.playback.value.isPlaying = false
+        try await eventually { h.playbackReads > readsBefore }
+        XCTAssertEqual(h.model.playback?.isPlaying, false)
+    }
+
     func testPausingFreezesTheProgressWhereItIs() async throws {
         let h = try await make(PlaybackJSON(isPlaying: true, progressMs: 84_000))
         h.controls.playPause()

@@ -73,6 +73,10 @@ final class PlayerModel: ObservableObject {
     private var pollTask: Task<Void, Never>?
     /// Between `start()` and `stop()`: the screen is visible and the app in the foreground.
     private var wantsPolling = false
+    /// Between `holdPolling()` and `resumePolling(after:)`: a command is waiting for its
+    /// answer. `start()` and `refresh(after:)` must not poll then (an opening cover or the
+    /// app coming back can call them): the answer could undo the optimistic state.
+    private var isHeldForCommand = false
     private var consecutiveFailures = 0
     private var quotaLimitedUntil: Date?
 
@@ -144,10 +148,11 @@ final class PlayerModel: ObservableObject {
 
     // MARK: Polling
 
-    /// Starts polling right away. Does nothing if it is already running.
+    /// Starts polling right away. Does nothing if it is already running, or while a command
+    /// holds it: `resumePolling(after:)` restarts it when the command ends.
     func start() {
         wantsPolling = true
-        guard pollTask == nil else { return }
+        guard pollTask == nil, !isHeldForCommand else { return }
         schedule(initialDelay: 0)
     }
 
@@ -161,20 +166,26 @@ final class PlayerModel: ObservableObject {
     /// command cannot overwrite the optimistic state. Cancelling also drops a poll that is
     /// already waiting for its answer.
     func holdPolling() {
+        isHeldForCommand = true
         pollTask?.cancel()
         pollTask = nil
     }
 
-    /// Polls again after `delay` and continues the cycle, unless the screen stopped polling
-    /// meanwhile (background).
+    /// Ends the hold. Polls again after `delay` and continues the cycle, unless the screen
+    /// stopped polling meanwhile (background).
     func resumePolling(after delay: TimeInterval) {
+        isHeldForCommand = false
         guard wantsPolling else { return }
-        holdPolling()
+        pollTask?.cancel()
+        pollTask = nil
         schedule(initialDelay: delay)
     }
 
-    /// Polls again after `delay` seconds and continues the regular cycle from there.
+    /// Polls again after `delay` seconds and continues the regular cycle from there. While a
+    /// command holds the polling it does nothing: the command's own confirmation read comes
+    /// when it ends.
     func refresh(after delay: TimeInterval = 0) {
+        guard !isHeldForCommand else { return }
         stop()
         schedule(initialDelay: delay)
     }
