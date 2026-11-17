@@ -12,7 +12,7 @@ options:
   developmentLanguage: es
   createIntermediateGroups: true
 
-# Only dependency (CLAUDE.md): Yams, MIT license, to read LRCLIB's Lyricsfile (YAML).
+# Only dependency (AGENTS.md): Yams, MIT license, to read LRCLIB's Lyricsfile (YAML).
 packages:
   Yams:
     url: https://github.com/jpsim/Yams

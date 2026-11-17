@@ -10,7 +10,7 @@ Trabajá en una rama por hito y frená al final de cada uno para que el dueño r
   - Bundle ID configurable (por defecto `com.lamarcab76.nowdeck`);
   - URL scheme `nowdeck`;
   - `UTType` exportado para `.nowdeck.json`.
-- Estructura de carpetas de `CLAUDE.md`, `.gitignore` (incluido `*.xcodeproj`), `README.md`
+- Estructura de carpetas de `AGENTS.md`, `.gitignore` (incluido `*.xcodeproj`), `README.md`
   inicial y `LICENSE` vacío para que el dueño elija.
 - `DesignSystem`: colores (desde `ThemeStore` con el tema por defecto), tipografías, espaciados
   y radios.
