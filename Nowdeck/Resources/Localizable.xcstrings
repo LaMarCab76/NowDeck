@@ -2,9 +2,31 @@
   "sourceLanguage" : "es",
   "strings" : {
     "%@ de %@" : {},
+    "%lld H" : {
+      "comment" : "Total duration in whole hours"
+    },
+    "%lld H %lld MIN" : {
+      "comment" : "Total duration: hours and minutes"
+    },
+    "%lld MIN" : {
+      "comment" : "Total duration under an hour"
+    },
+    "%lld TEMAS" : {
+      "comment" : "Detail track list label: number of tracks"
+    },
     "%lld de 100" : {},
+    "%lld temas" : {
+      "comment" : "Playlist detail: number of tracks"
+    },
+    "1 TEMA" : {
+      "comment" : "Detail track list label: one track"
+    },
+    "1 tema" : {
+      "comment" : "Playlist detail: a playlist with one track"
+    },
     "2/3" : {},
     "5 minutos" : {},
+    "ABRIR EN SPOTIFY" : {},
     "ABRIR SPOTIFY" : {},
     "ANTES DE ACTIVARLA" : {},
     "Abre en Spotify" : {},
@@ -72,6 +94,9 @@
     "Creá tu app en Spotify" : {},
     "DISPOSITIVO ACTUAL" : {},
     "DISPOSITIVO ACTUAL · SESIÓN PRIVADA" : {},
+    "De %@" : {
+      "comment" : "Playlist detail: the playlist's owner, verbatim"
+    },
     "Decodificador" : {},
     "Desactivado" : {},
     "Desde Tus me gusta" : {},
@@ -134,11 +159,13 @@
     "Mostrar las letras antes" : {},
     "Mostrar las letras más tarde" : {},
     "Mostrar letras" : {},
+    "Muestra los temas" : {},
     "NOWDECK VA A PEDIR PERMISO PARA" : {},
     "Nada sonando" : {},
     "Negro" : {},
     "Ninguno" : {},
     "No admite control remoto" : {},
+    "No disponible" : {},
     "No encontramos dispositivos. Abrí Spotify en la compu, el celu o el parlante donde quieras escuchar." : {},
     "No encontramos la letra de este tema" : {},
     "No es un tema de Nowdeck." : {},
@@ -151,6 +178,7 @@
     "No hay un dispositivo activo. Elegí uno para escuchar." : {},
     "No hay un dispositivo activo. Elegí uno para seguir." : {},
     "No pudimos buscar la letra. Probá de nuevo en un rato." : {},
+    "No pudimos cargar los temas. Revisá la conexión y probá de nuevo." : {},
     "No pudimos cargar tu biblioteca. Revisá la conexión y probá de nuevo." : {},
     "No pudimos conectar con Spotify. Probá de nuevo en un rato." : {},
     "No pudimos leer el archivo. Probá abrirlo de nuevo." : {},
@@ -231,16 +259,19 @@
     "Sin conexión con Spotify" : {},
     "Sin datos" : {},
     "Sincronía de las letras" : {},
+    "Solo deja ver los temas de las playlists que creaste o en las que colaborás. Podés reproducirla igual, o verla en Spotify." : {},
     "Son 32 letras y números. Se guarda solo en este iPhone, en el Llavero." : {},
     "Spotify Premium" : {},
     "Spotify no aceptó el comando. Revisá que tu cuenta tenga Premium." : {},
     "Spotify no deja leer tu biblioteca con esta cuenta. Revisá que siga en Users Management, en el panel de Spotify." : {},
     "Spotify no deja usar tu app" : {},
     "Spotify no deja usar tu app con esta cuenta. Entrá con la misma cuenta con la que creaste la app, o sumala en Users Management, en los ajustes de tu app en el panel de Spotify." : {},
+    "Spotify no deja ver estos temas con esta cuenta." : {},
     "Spotify no dejó leer tus carpetas. Se muestran tus playlists sin agrupar." : {},
     "Spotify no dejó reproducirlo. Revisá que tu cuenta tenga Premium." : {},
     "Spotify no la aprueba para apps de terceros." : {},
     "Spotify no les muestra tus carpetas a las apps como Nowdeck: la biblioteca muestra tus playlists sueltas, sin agrupar." : {},
+    "Spotify no muestra los temas de esta playlist" : {},
     "Spotify no reconoce este Client ID. Revisá que sea el de tu app." : {},
     "Spotify pide esperar un momento. Probá de nuevo en unos segundos." : {},
     "Spotify pide esperar. Probá de nuevo en un momento." : {},
@@ -259,12 +290,14 @@
     "Tiene que tener 32 letras y números, y ahora tiene %lld caracteres. Revisá que lo hayas copiado completo." : {},
     "Tocá **Create app**. En nombre y descripción poné lo que quieras." : {},
     "Tocá un resultado y empieza a sonar en el dispositivo activo." : {},
+    "Todavía no tiene temas." : {},
     "Transmisión de audio" : {},
     "Transmisión de video" : {},
     "Tu iPhone, ahora control de escritorio." : {},
     "Tu sesión de Spotify venció. Conectate de nuevo para seguir." : {},
     "Un navegador para entrar al panel de desarrolladores de Spotify" : {},
     "VAS A NECESITAR" : {},
+    "Ver en Spotify" : {},
     "Ver más en Spotify" : {},
     "Ver qué está sonando" : {},
     "Ver tus dispositivos y pasar la música de uno a otro" : {},
@@ -274,6 +307,7 @@
     "Volumen" : {},
     "Volumen: %lld de 100" : {},
     "Volver" : {},
+    "Volver a la biblioteca" : {},
     "Volver a la lista" : {},
     "Vuelve al reproductor" : {},
     "Ya tengo mi Client ID" : {},

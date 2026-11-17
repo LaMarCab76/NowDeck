@@ -157,11 +157,41 @@ Reemplaza el bloque superior:
   - "ABRIR SPOTIFY ↗" en monoespaciada a la derecha.
 - **Tarjetas**: carátula de 150×150 (radio 4), nombre en 16 semibold y subtítulo en 13, con 20
   entre tarjetas. La fila se desliza en horizontal y llega hasta el borde derecho de la
-  pantalla. Tocar una tarjeta la reproduce en el dispositivo activo y vuelve a Reproducción.
+  pantalla. Tocar una playlist o un álbum abre su detalle. Mantener la tarjeta apretada
+  ofrece "Reproducir" directamente. Los podcasts y audiolibros se abren en Spotify.
+- **Carpetas de playlists** (opción experimental): al abrir una carpeta, la fila muestra
+  su contenido y "‹ Volver" reemplaza los filtros. Al cerrar el detalle de una playlist
+  se vuelve a la carpeta desde la que se abrió.
 - **Buscar**: campo de 56 (radio 28, blanco al 10 %) con el placeholder "Temas, artistas,
   álbumes, podcasts o audiolibros" y una línea de ayuda.
 - **Mini reproductor** (56, radio 14, fondo según la carátula): carátula de 40, título y
   artista, "Suena en **Dispositivo**" en acento (abre Dispositivos) y Pausa (44).
+
+## Detalle de playlist o álbum (`Detalle.dc.html`)
+
+Se abre al tocar una tarjeta de playlist o álbum. Mantiene los márgenes de la Biblioteca y el
+mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle.
+
+- **Fila 1** (44): "‹ Biblioteca" a la izquierda (píldora de 36, radio 18, blanco al 8 %,
+  17 bold, relleno 10/16, corrida −4 como las pestañas). A la derecha, "ABRIR EN SPOTIFY ↗"
+  en monoespaciada (abre la playlist o el álbum) y el logo, con 20 entre los dos.
+- **Bloque central** (252), en dos columnas con 32 entre ellas:
+  - **Izquierda** (170): carátula de 150×150 (radio 4), nombre en 18 bold (interlineado 22,
+    una línea con marquesina si no entra) a 10 de la carátula, subtítulo en 13 `textoCuerpo`
+    ("De <dueño> · N temas" o "<artistas> · <año>") y, abajo, **Reproducir**: 150×44, radio
+    22, fondo `acento`, texto `textoSobreAcento` 16 bold con ícono de play de 16.
+  - **Derecha**: "48 TEMAS · 2 H 51 MIN" en monoespaciada 12 `etiqueta` (+0.08em, alto 22;
+    la duración aparece cuando están todos los temas cargados) y la lista con scroll vertical.
+    Filas de 50 con línea superior blanca al 10 %: número (monoespaciada 12 `textoTerciario`,
+    22 de ancho, alineado a la derecha), 14 de separación, título 16 semibold (interlineado 21)
+    con la marca "E" (15) si es explícito, artistas en 13 `textoCuerpo` y duración en
+    monoespaciada 12. Los temas no disponibles van al 40 %. Abajo, un desvanecido de 36 hacia
+    el fondo. Se cargan de a 50 al llegar al final.
+  - **Playlist de otra persona**: en lugar de la lista, candado (28, `etiqueta`), "Spotify no
+    muestra los temas de esta playlist" (20 bold, interlineado 26), una línea de ayuda (15/22)
+    y "Ver en Spotify ↗" (botón contorneado de 44, borde blanco al 35 %), todo en un ancho
+    máximo de 440 y centrado en vertical.
+- Mantener apretado un tema muestra el nombre completo y "Abrir en Spotify".
 
 ## Dispositivos (`Dispositivos.dc.html`)
 
@@ -246,3 +276,5 @@ Toda la configuración queda **fija en vertical**: girar el teléfono no la rota
 - Achicar los grupos laterales de controles de 200 a ~160.
 - La hoja de Importar tema baja a ~680 de ancho, y la columna derecha a 240.
 - En Biblioteca, la fila de tarjetas ya se desliza: no hace falta cambiarla.
+- En el detalle de playlist o álbum, la columna izquierda no cambia y la lista de temas se
+  angosta (unos 440 de ancho).

@@ -105,9 +105,18 @@ struct SimplifiedAlbum: Decodable, Equatable, Sendable {
     /// `album`, `single` or `compilation`.
     var albumType: String?
     var totalTracks: Int?
+    /// `"1981-12-15"`, `"1981-12"` or `"1981"`, depending on `release_date_precision`.
+    var releaseDate: String?
     var images: [SpotifyImage]?
     var artists: [ArtistSummary]?
     var externalUrls: ExternalURLs?
+
+    /// The year of `releaseDate`, the only part the detail screen shows.
+    var releaseYear: String? {
+        guard let releaseDate, releaseDate.count >= 4 else { return nil }
+        let year = releaseDate.prefix(4)
+        return year.allSatisfy(\.isNumber) ? String(year) : nil
+    }
 }
 
 /// An item of `GET /me/albums`: `{added_at, album}`.
@@ -146,6 +155,52 @@ struct SimplifiedAudiobook: Decodable, Equatable, Sendable {
     var narrators: [Person]?
     var totalChapters: Int?
     var externalUrls: ExternalURLs?
+}
+
+/// A track of `GET /albums/{id}/tracks` (`SimplifiedTrackObject`), or the track or episode
+/// inside a playlist item (`TrackObject` / `EpisodeObject`). One type for the three, since
+/// the detail screen shows the same things for all of them.
+struct CollectionItem: Decodable, Equatable, Sendable {
+    /// Any object with a `name`. Unlike `ArtistSummary`, a missing name does not drop the
+    /// whole track.
+    struct Named: Decodable, Equatable, Sendable {
+        var name: String?
+    }
+
+    /// `track` or `episode`.
+    var type: String?
+    var name: String?
+    var uri: String?
+    var durationMs: Int?
+    var explicit: Bool?
+    /// "Part of the response when Track Relinking is applied" (only with `market`, which the
+    /// app does not send), so it is usually absent.
+    var isPlayable: Bool?
+    /// "Included in the response when a content restriction is applied" (`market`,
+    /// `product`, `explicit`, and maybe others in the future).
+    var restrictions: Restrictions?
+    var isLocal: Bool?
+    /// Tracks.
+    var artists: [Named]?
+    /// Episodes.
+    var show: Named?
+    var externalUrls: ExternalURLs?
+
+    struct Restrictions: Decodable, Equatable, Sendable {
+        var reason: String?
+    }
+}
+
+/// An item of `GET /playlists/{id}/items`: `{added_at, added_by, is_local, item}`.
+///
+/// Since February 2026 the content is in `item`; `track` holds the same thing and is
+/// marked "Deprecated: Use `item` instead" (checked 2026-11-17). Both are read.
+struct PlaylistItem: Decodable, Equatable, Sendable {
+    var isLocal: Bool?
+    var item: CollectionItem?
+    var track: CollectionItem?
+
+    var content: CollectionItem? { item ?? track }
 }
 
 /// `GET /search`. Only the types the app asks for are read; each one is a paging object

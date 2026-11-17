@@ -208,15 +208,3 @@ final class LibraryModelTests: XCTestCase {
         XCTAssertTrue(recorder.requests.isEmpty)
     }
 }
-
-/// Collects values from `@Sendable` closures.
-private final class OffsetRecorder: @unchecked Sendable {
-    private let lock = NSLock()
-    private var stored: [Int] = []
-
-    var values: [Int] { lock.withLock { stored } }
-
-    func record(_ value: Int) {
-        lock.withLock { stored.append(value) }
-    }
-}
