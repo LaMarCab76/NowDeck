@@ -66,7 +66,7 @@ struct QueueSheetView: View {
                         .padding(.bottom, Spacing.xs)
                 }
                 if entries.isEmpty {
-                    QueueEmptyView()
+                    emptyQueue
                 } else {
                     list(entries)
                 }
@@ -119,6 +119,21 @@ struct QueueSheetView: View {
         }
     }
 
+    /// "No hay nada en la cola", inside a scroll view so that pull to refresh still works:
+    /// the queue is not polled, and something added from another Spotify app would
+    /// otherwise only show up after closing and opening the sheet.
+    private var emptyQueue: some View {
+        GeometryReader { proxy in
+            ScrollView(.vertical, showsIndicators: false) {
+                QueueEmptyView()
+                    // At least the visible height, so the message stays centered.
+                    .frame(width: proxy.size.width, alignment: .leading)
+                    .frame(minHeight: proxy.size.height)
+            }
+            .refreshable { await model.reload() }
+        }
+    }
+
     /// The 40×5 handle. Dragging it down closes the sheet, like in Dispositivos.
     private var handle: some View {
         Capsule()
@@ -165,10 +180,20 @@ private struct QueueHeader: View {
                         // Long names scroll instead of staying cut (docs/06, "Metadatos").
                         MarqueeText(verbatim: nowPlaying.title)
                             .textStyle(.queueCurrentTitle)
-                        if !nowPlaying.subtitle.isEmpty {
-                            MarqueeText(verbatim: nowPlaying.subtitle)
-                                .textStyle(.queueCurrentSubtitle)
-                                .foregroundStyle(theme.palette.bodyText.color)
+                        if !nowPlaying.subtitle.isEmpty || nowPlaying.isExplicit {
+                            // The mark goes before the artists, as in the player (TitleBlock).
+                            HStack(spacing: Layout.titleGap) {
+                                if nowPlaying.isExplicit {
+                                    // Spotify asks to mark explicit content (docs/06).
+                                    Image(systemName: "e.square.fill")
+                                        .font(.system(size: Layout.explicitSize))
+                                        .foregroundStyle(theme.palette.bodyText.color)
+                                        .accessibilityLabel(Text("Explícito"))
+                                }
+                                MarqueeText(verbatim: nowPlaying.subtitle)
+                                    .textStyle(.queueCurrentSubtitle)
+                                    .foregroundStyle(theme.palette.bodyText.color)
+                            }
                         }
                     } else {
                         Text("Nada sonando")
