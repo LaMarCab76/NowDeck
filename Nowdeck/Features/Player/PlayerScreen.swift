@@ -96,7 +96,11 @@ struct PlayerScreen: View {
                               onShowDevices: { [presentation] in presentation.showDevices() })
                     .devicesSheet(isPresented: $presentation.showsLibraryDevices, player: model)
             }
-            .onAppear { if scenePhase == .active { model.start() } }
+            .onAppear {
+                model.loadsArtistImages = preferences.showsArtistPhoto
+                if scenePhase == .active { model.start() }
+            }
+            .onChange(of: preferences.showsArtistPhoto) { model.loadsArtistImages = $0 }
             .onDisappear { model.stop() }
             // iOS 16 API (the two-value variant is iOS 17+).
             .onChange(of: scenePhase) { phase in
@@ -119,7 +123,8 @@ struct PlayerContent: View {
 
     var body: some View {
         ZStack {
-            backgroundColor
+            PlayerBackgroundView(color: backgroundColor,
+                                 artistImage: model.status == .active ? model.artistImage : nil)
                 .ignoresSafeArea()
                 .animation(.easeInOut(duration: 0.5), value: backgroundColor)
 

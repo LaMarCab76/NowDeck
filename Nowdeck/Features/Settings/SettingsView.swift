@@ -132,6 +132,7 @@ struct SettingsColumn<Content: View>: View {
 struct AppearanceSettingsView: View {
     var bottomMargin: CGFloat = 28
     @EnvironmentObject private var theme: ThemeStore
+    @EnvironmentObject private var preferences: AppPreferences
     @EnvironmentObject private var importer: ThemeImportCoordinator
     @State private var isPickingFile = false
 
@@ -175,6 +176,25 @@ struct AppearanceSettingsView: View {
                     onSelect: { theme.setBackgroundOption($0) }
                 )
             }
+
+            Toggle(isOn: $preferences.showsArtistPhoto) {
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
+                    Text("Foto del artista")
+                        .textStyle(.settingsRowTitle)
+                    Text("Muestra una foto del artista detrás del reproductor, sobre el color de fondo.")
+                        .textStyle(.helper)
+                        .foregroundStyle(theme.palette.bodyText.color)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .toggleStyle(SettingsSwitchStyle())
+            .padding(.vertical, Spacing.m)
+            .padding(.horizontal, Spacing.l)
+            .background(
+                RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
+                    .fill(Palette.settingsCard)
+            )
 
             Spacer(minLength: 0)
 

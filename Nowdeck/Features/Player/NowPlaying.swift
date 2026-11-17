@@ -12,6 +12,9 @@ struct NowPlaying: Equatable {
     var artworkCacheKey: String?
     /// The item's page on Spotify (link back from the logo).
     var itemURL: URL?
+    /// The first artist with an ID (tracks only), for the background photo
+    /// (`GET /artists/{id}`).
+    var artistID: String?
     var isAd: Bool = false
 
     /// `nil` when there is nothing to show: no item, or an item type the app doesn't know.
@@ -25,6 +28,7 @@ struct NowPlaying: Equatable {
             artworkURL = Self.bestImage(track.album?.images ?? [])
             artworkCacheKey = track.album?.id
             itemURL = Self.pageURL(externalURL: track.externalUrls?.spotify, uri: track.uri)
+            artistID = track.artists.lazy.compactMap(\.id).first { !$0.isEmpty }
 
         case .episode(let episode):
             title = episode.name

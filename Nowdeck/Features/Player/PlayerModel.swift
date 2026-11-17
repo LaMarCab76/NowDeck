@@ -42,6 +42,9 @@ final class PlayerModel: ObservableObject {
     /// Dominant color of the artwork; the view softens it with the theme
     /// (`ArtworkColor.playerBackground`). `nil` = theme background.
     @Published private(set) var artworkColor: RGBColor?
+    /// Photo of the track's first artist, shown behind the player (`PlayerBackgroundView`).
+    /// `nil` for episodes, ads, artists without photos, or with the option off.
+    @Published private(set) var artistImage: UIImage?
     @Published private(set) var freshness: Freshness = .live
 
     /// Commands and the volume panel. Created on first use, so that it shares this model;
@@ -74,6 +77,31 @@ final class PlayerModel: ObservableObject {
 
     private var artworkURL: URL?
     private var artworkTask: Task<Void, Never>?
+
+    /// Ajustes → Apariencia → "Foto del artista". Off: no `GET /artists/{id}` at all.
+    var loadsArtistImages = true {
+        didSet {
+            guard loadsArtistImages != oldValue else { return }
+            artistImageKey = nil
+            artistImageTask?.cancel()
+            artistImage = nil
+            if loadsArtistImages { updateArtistImage(nowPlaying) }
+        }
+    }
+
+    private enum ArtistPhotoLookup {
+        /// The widest photo, or `nil` when the artist has none.
+        case found(URL?)
+        /// `403`/`404`: don't ask again for this artist.
+        case unavailable
+        /// Temporary failure; try again after this date.
+        case retry(after: Date)
+    }
+    /// One `GET /artists/{id}` per artist while the app runs.
+    private var artistPhotos: [String: ArtistPhotoLookup] = [:]
+    /// The artist whose photo is on screen or on its way.
+    private var artistImageKey: String?
+    private var artistImageTask: Task<Void, Never>?
 
     init(api: SpotifyAPI, artworkLoader: ArtworkLoader = ArtworkLoader(),
          policy: PollingPolicy = PollingPolicy(), now: @escaping () -> Date = { Date() }) {
@@ -201,6 +229,7 @@ final class PlayerModel: ObservableObject {
         nowPlaying = nil
         origin = nil
         updateArtwork(nil)
+        updateArtistImage(nil)
         freshness = .live
     }
 
@@ -249,6 +278,7 @@ final class PlayerModel: ObservableObject {
         let newOrigin = resolvedOrigin(for: state)
         if origin != newOrigin { origin = newOrigin }
         updateArtwork(item)
+        updateArtistImage(item)
     }
 
     /// The origin with its name filled from the cache, starting a lookup if needed.
@@ -321,6 +351,67 @@ final class PlayerModel: ObservableObject {
                     // Try again on the next poll.
                     self.artworkURL = nil
                 }
+            }
+        }
+    }
+
+    // MARK: Artist photo
+
+    /// Fetches the photo of the item's first artist when the artist changes. Tracks of the
+    /// same artist keep the photo on screen without asking again.
+    private func updateArtistImage(_ item: NowPlaying?) {
+        let artistID = loadsArtistImages ? item?.artistID : nil
+        guard artistID != artistImageKey else { return }
+        artistImageKey = artistID
+        artistImageTask?.cancel()
+
+        guard let artistID else {
+            artistImage = nil
+            return
+        }
+        // The previous artist's photo stays until the new one is ready: one cross-fade.
+        artistImageTask = Task { [weak self, api, artworkLoader] in
+            guard let self else { return }
+            let photoURL: URL?
+            /// A temporary failure: the next polls look again, until `retry(after:)` passes.
+            var retriesLater = false
+            switch self.artistPhotos[artistID] {
+            case .found(let url):
+                photoURL = url
+            case .unavailable:
+                photoURL = nil
+            case .retry(let after) where self.now() < after:
+                photoURL = nil
+                retriesLater = true
+            case .retry, nil:
+                do {
+                    let url = NowPlaying.bestImage(try await api.artistImages(id: artistID))
+                    self.artistPhotos[artistID] = .found(url)
+                    photoURL = url
+                } catch is CancellationError {
+                    return
+                } catch SpotifyAPIError.forbidden, SpotifyAPIError.notFound {
+                    self.artistPhotos[artistID] = .unavailable
+                    photoURL = nil
+                } catch {
+                    self.artistPhotos[artistID] = .retry(after: self.now().addingTimeInterval(60))
+                    photoURL = nil
+                    retriesLater = true
+                }
+            }
+            guard !Task.isCancelled, self.artistImageKey == artistID else { return }
+            guard let photoURL else {
+                self.artistImage = nil
+                if retriesLater { self.artistImageKey = nil }
+                return
+            }
+            do {
+                let image = try await artworkLoader.loadImage(photoURL)
+                guard !Task.isCancelled, self.artistImageKey == artistID else { return }
+                self.artistImage = image
+            } catch {
+                guard self.artistImageKey == artistID else { return }
+                self.artistImage = nil
             }
         }
     }
