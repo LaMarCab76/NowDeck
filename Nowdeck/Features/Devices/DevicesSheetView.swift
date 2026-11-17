@@ -441,8 +441,9 @@ private struct DevicesHelpPane: View {
     }
 }
 
-/// "Actualizar lista" / "Reintentar": accent capsule of 48, hugging its text.
-private struct DevicesRefreshButtonStyle: ButtonStyle {
+/// "Actualizar lista" / "Reintentar": accent capsule of 48, hugging its text. Cola uses it
+/// for "Reintentar" too.
+struct DevicesRefreshButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         Label(configuration: configuration)
     }
