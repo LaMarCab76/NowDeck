@@ -7,17 +7,25 @@ import SwiftUI
 extension Metrics {
     /// Player screen (`Main.dc.html`). Margins are in `Spacing.Player`.
     enum Player {
-        /// Height of the top block (artwork and text column).
-        static let topBlockHeight: CGFloat = 256
-        static let artworkSize: CGFloat = 256
+        /// Row across the whole width, at the top: the Spotify icon and "Desde la playlist …"
+        /// at the left, Biblioteca at the right (owner's request, 2026-11-17: the origin
+        /// always in the top-left corner; Ajustes moved to the library).
+        static let topRowHeight: CGFloat = 44
+        /// Between the top row and the artwork row. The row's 44 pt include the touch
+        /// padding around 24 pt of content, so the visible gap is about 14 pt.
+        static let topRowBottomGap: CGFloat = 4
+        /// Height of the artwork row (artwork and text column). Was 256 before the top row
+        /// moved above it; the cover shrinks so everything still fits in 414 pt.
+        static let topBlockHeight: CGFloat = 216
+        static let artworkSize: CGFloat = 216
+        /// The whole upper area (top row and artwork row). Lyrics mode replaces all of it.
+        static let upperAreaHeight: CGFloat = topRowHeight + topRowBottomGap + topBlockHeight
         /// Between the artwork and the text column.
         static let artworkGap: CGFloat = 32
         /// Artwork side on narrow screens: `min(top block height, screen width × 0.3)`
         /// (docs/02-diseno.md, "Adaptación al iPhone 8 Plus").
         static let artworkWidthFraction: CGFloat = 0.3
 
-        /// Row with the logo, origin, Biblioteca and Ajustes.
-        static let topRowHeight: CGFloat = 44
         static let topRowGap: CGFloat = 12
         /// Full Spotify logo (Biblioteca): 108×30 inside a 44 pt tap zone.
         static let logoSize = CGSize(width: 108, height: 30)
@@ -28,12 +36,14 @@ extension Metrics {
         /// Space between the icon and "Desde la playlist": half the icon height, as Spotify's
         /// guidelines ask for the clear space (docs/06).
         static let iconClearSpace: CGFloat = 12
-        static let topButtonsGap: CGFloat = 6
         static let libraryPillLeadingPadding: CGFloat = 12
         static let libraryPillTrailingPadding: CGFloat = 16
         static let libraryPillIconGap: CGFloat = 8
         static let libraryIconSize: CGFloat = 20
-        static let settingsIconSize: CGFloat = 22
+        /// The symbol on the empty cover of a swipe preview (next or previous unknown).
+        static let previewSymbolSize: CGFloat = 40
+        /// Side padding of the origin pill ("Desde la playlist …").
+        static let originPillPadding: CGFloat = 16
 
         static let titleArtistGap: CGFloat = 6
         static let titleLineLimit = 2
@@ -50,15 +60,12 @@ extension Metrics {
         static let progressBarHeight: CGFloat = 4
 
         static let controlsHeight: CGFloat = 64
-        /// Width of the side groups (shuffle/repeat and lyrics/volume).
-        static let sideGroupWidth: CGFloat = 200
-        /// …on screens narrower than `narrowScreenWidth` (iPhone 8 Plus: 736).
-        static let narrowSideGroupWidth: CGFloat = 160
-        static let narrowScreenWidth: CGFloat = 800
+        /// One centered row with the same gap between every button (owner's request,
+        /// 2026-11-17), instead of the mockup's three groups pinned to the edges. With the
+        /// default seven buttons the row is 584 pt wide: it fits the 640 pt of the 8 Plus.
+        static let controlsGap: CGFloat = 36
         static let sideButtonSize: CGFloat = 48
-        static let sideButtonGap: CGFloat = 4
         static let sideIconSize: CGFloat = 22
-        static let centerGap: CGFloat = 20
         static let skipButtonSize: CGFloat = 56
         static let skipIconSize: CGFloat = 28
         static let playButtonSize: CGFloat = 64

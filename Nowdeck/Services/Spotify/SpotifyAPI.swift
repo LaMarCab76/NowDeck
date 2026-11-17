@@ -94,6 +94,17 @@ final class SpotifyAPI: Sendable {
         return try Self.decode(PlaylistName.self, from: data).name
     }
 
+    /// `GET /artists/{id}`, only for the artist's photos, widest first.
+    ///
+    /// Verified on 2026-11-17: "Get Artist" is in the "Endpoints still available" list of the
+    /// February 2026 changelog (Development Mode). That change removed `followers` and
+    /// `popularity` from artists, not `images` ("Images of the artist in various sizes, widest
+    /// first"). The reference lists no scope.
+    func artistImages(id: String) async throws -> [SpotifyImage] {
+        let (data, _) = try await send(Request(path: "/artists/\(Self.pathComponent(id))"))
+        return try Self.decode(ArtistImages.self, from: data).images ?? []
+    }
+
     /// `GET /me`, only for the user's `id` (the experimental playlist folders need it). The
     /// reference lists scopes for the email and the subscription fields, not for `id`.
     func currentUserID() async throws -> String {
@@ -247,6 +258,10 @@ final class SpotifyAPI: Sendable {
 
     private struct PlaylistName: Decodable {
         let name: String
+    }
+
+    private struct ArtistImages: Decodable {
+        let images: [SpotifyImage]?
     }
 
     private struct CurrentUser: Decodable {

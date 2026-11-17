@@ -165,15 +165,18 @@ struct AppearanceSettingsView: View {
             }
 
             SettingsSection(title: "FONDO DEL REPRODUCTOR") {
-                SettingsSegmentedControl(
-                    options: [
-                        .init(value: PlayerBackgroundOption.black, title: "Negro"),
-                        .init(value: .darkGray, title: "Gris oscuro"),
-                        .init(value: .artwork, title: "Según la carátula"),
-                    ],
-                    selection: theme.backgroundOption,
-                    onSelect: { theme.setBackgroundOption($0) }
-                )
+                // Four options do not fit the iPhone 8 Plus column (400 pt) with the full
+                // names: there the shorter ones are used.
+                ViewThatFits(in: .horizontal) {
+                    backgroundControl(short: false)
+                    backgroundControl(short: true)
+                }
+
+                if theme.backgroundOption == .artistPhoto {
+                    BackgroundBlurRow(value: theme.backgroundBlur,
+                                      onCommit: { theme.setBackgroundBlur($0) })
+                        .padding(.top, Spacing.xs)
+                }
             }
 
             Spacer(minLength: 0)
@@ -208,6 +211,19 @@ struct AppearanceSettingsView: View {
         }
     }
 
+    private func backgroundControl(short: Bool) -> some View {
+        SettingsSegmentedControl(
+            options: [
+                .init(value: PlayerBackgroundOption.black, title: "Negro"),
+                .init(value: .darkGray, title: short ? "Gris" : "Gris oscuro"),
+                .init(value: .artwork, title: short ? "Carátula" : "Según la carátula"),
+                .init(value: .artistPhoto, title: short ? "Artista" : "Foto del artista"),
+            ],
+            selection: theme.backgroundOption,
+            onSelect: { theme.setBackgroundOption($0) }
+        )
+    }
+
     /// "Personalizado": the last imported or edited theme. Before there is one, it shows the
     /// mockup's neutral sample and does nothing.
     private var customChip: some View {
@@ -220,6 +236,49 @@ struct AppearanceSettingsView: View {
             theme.selectCustom()
         }
         .disabled(custom == nil)
+    }
+}
+
+/// "Desenfoque" of the artist's photo, shown only with "Foto del artista". The theme is saved
+/// when the finger lifts, not on every step of the drag.
+struct BackgroundBlurRow: View {
+    var value: Int
+    var onCommit: (Int) -> Void
+
+    @State private var draft: Double?
+    @EnvironmentObject private var theme: ThemeStore
+
+    private var shown: Int { draft.map { Int($0) } ?? value }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xxs) {
+            HStack(spacing: Spacing.l) {
+                Text("Desenfoque")
+                    .textStyle(.settingsOptionTitle)
+                Slider(
+                    value: Binding(get: { draft ?? Double(value) }, set: { draft = $0 }),
+                    in: Double(Theme.backgroundBlurRange.lowerBound)...Double(Theme.backgroundBlurRange.upperBound),
+                    step: 5
+                ) { editing in
+                    guard !editing, let draft else { return }
+                    onCommit(Int(draft))
+                    self.draft = nil
+                }
+                .tint(theme.palette.accent.color)
+                .accessibilityLabel(Text("Desenfoque"))
+                .accessibilityValue(Text(verbatim: "\(shown) %"))
+                Text(verbatim: "\(shown) %")
+                    .textStyle(.settingsOptionTitle)
+                    .monospacedDigit()
+                    .frame(minWidth: 52, alignment: .trailing)
+                    .accessibilityHidden(true)
+            }
+            Text("Suaviza la foto del artista para que el título se lea mejor.")
+                .textStyle(.helper)
+                .foregroundStyle(theme.palette.bodyText.color)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, Spacing.xxs)
     }
 }
 

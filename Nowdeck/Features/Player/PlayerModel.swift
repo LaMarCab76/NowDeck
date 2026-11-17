@@ -42,7 +42,17 @@ final class PlayerModel: ObservableObject {
     /// Dominant color of the artwork; the view softens it with the theme
     /// (`ArtworkColor.playerBackground`). `nil` = theme background.
     @Published private(set) var artworkColor: RGBColor?
+    /// Photo of the track's first artist, shown behind the player (`PlayerBackgroundView`).
+    /// `nil` for episodes, ads, artists without photos, or with the option off.
+    @Published private(set) var artistImage: UIImage?
     @Published private(set) var freshness: Freshness = .live
+
+    /// The first item of Spotify's queue, shown when swiping left (next).
+    /// `nil` while unknown (not read yet, empty queue, or the read failed).
+    @Published private(set) var upNext: TrackPreview?
+    /// The item that played before, from what this app saw (the Web API has no "previous
+    /// item"). Shown when swiping right. `nil` right after opening the app.
+    @Published private(set) var previousTrack: TrackPreview?
 
     /// Commands and the volume panel. Created on first use, so that it shares this model;
     /// it keeps only a weak reference back.
@@ -74,6 +84,50 @@ final class PlayerModel: ObservableObject {
 
     private var artworkURL: URL?
     private var artworkTask: Task<Void, Never>?
+
+    /// Covers already downloaded for the swipe previews (next and previous items). When one of
+    /// them starts playing, its cover appears at once instead of loading again.
+    private var preloadedArtwork: [URL: ArtworkLoader.Artwork] = [:]
+    private var preloadedOrder: [URL] = []
+    private static let preloadedLimit = 6
+
+    /// The items that played before the current one, newest last.
+    private var history: [TrackPreview] = []
+    private static let historyLimit = 20
+
+    private var upNextTask: Task<Void, Never>?
+    private var upNextFetchedAt: Date?
+    /// The queue is read again when a swipe starts and the last read is older than this:
+    /// the user may have queued something in Spotify meanwhile.
+    static let upNextMaxAge: TimeInterval = 15
+
+    /// Ajustes → Apariencia → "Foto del artista". Off: no `GET /artists/{id}` at all.
+    var loadsArtistImages = true {
+        didSet {
+            guard loadsArtistImages != oldValue else { return }
+            artistImageKey = nil
+            artistImageTask?.cancel()
+            artistImage = nil
+            if loadsArtistImages { updateArtistImage(nowPlaying) }
+        }
+    }
+
+    private enum ArtistPhotoLookup {
+        /// The widest photo, or `nil` when the artist has none.
+        case found(URL?)
+        /// Keep the resolved URL when only the image download failed.
+        case imageRetry(URL, after: Date)
+        /// `403`/`404`: don't ask again for this artist.
+        case unavailable
+        /// Temporary failure; try again after this date.
+        case retry(after: Date)
+    }
+    private static let artistPhotoRetryDelay: TimeInterval = 60
+    /// One `GET /artists/{id}` per artist while the app runs.
+    private var artistPhotos: [String: ArtistPhotoLookup] = [:]
+    /// The artist whose photo is on screen or on its way.
+    private var artistImageKey: String?
+    private var artistImageTask: Task<Void, Never>?
 
     init(api: SpotifyAPI, artworkLoader: ArtworkLoader = ArtworkLoader(),
          policy: PollingPolicy = PollingPolicy(), now: @escaping () -> Date = { Date() }) {
@@ -201,6 +255,10 @@ final class PlayerModel: ObservableObject {
         nowPlaying = nil
         origin = nil
         updateArtwork(nil)
+        updateArtistImage(nil)
+        upNextTask?.cancel()
+        upNext = nil
+        upNextFetchedAt = nil
         freshness = .live
     }
 
@@ -243,12 +301,20 @@ final class PlayerModel: ObservableObject {
         }
         playback = state
         fetchedAt = date
-        if nowPlaying != item { nowPlaying = item }
+        if nowPlaying != item {
+            if let previous = nowPlaying, previous.transitionKey != item.transitionKey {
+                itemDidChange(from: previous, to: item)
+            } else if nowPlaying == nil {
+                refreshUpNext()
+            }
+            nowPlaying = item
+        }
         status = .active
 
         let newOrigin = resolvedOrigin(for: state)
         if origin != newOrigin { origin = newOrigin }
         updateArtwork(item)
+        updateArtistImage(item)
     }
 
     /// The origin with its name filled from the cache, starting a lookup if needed.
@@ -305,6 +371,11 @@ final class PlayerModel: ObservableObject {
             artworkColor = nil
             return
         }
+        if let preloaded = preloadedArtwork[url] {
+            artwork = preloaded.image
+            artworkColor = preloaded.dominantColor
+            return
+        }
         let cacheKey = item?.artworkCacheKey
         artworkTask = Task { [weak self, artworkLoader] in
             do {
@@ -323,5 +394,175 @@ final class PlayerModel: ObservableObject {
                 }
             }
         }
+    }
+
+    // MARK: Swipe previews
+
+    /// Another item started: the one that ended goes to the history, unless the user went
+    /// back to the item on top of it (then that one leaves the history).
+    private func itemDidChange(from previous: NowPlaying, to item: NowPlaying) {
+        if history.last?.item.transitionKey == item.transitionKey {
+            history.removeLast()
+        } else if !previous.isAd {
+            if let url = previous.artworkURL, let artwork {
+                remember(ArtworkLoader.Artwork(image: artwork, dominantColor: artworkColor),
+                         for: url)
+            }
+            history.append(TrackPreview(item: previous, artwork: artwork))
+            if history.count > Self.historyLimit { history.removeFirst() }
+        }
+        previousTrack = history.last
+        upNext = nil
+        upNextFetchedAt = nil
+        refreshUpNext()
+    }
+
+    /// Reads the queue again if the last read is older than `upNextMaxAge`. Called when a
+    /// swipe toward the next item starts.
+    func refreshUpNextIfStale() {
+        guard status == .active, upNextTask == nil else { return }
+        if let upNextFetchedAt, now().timeIntervalSince(upNextFetchedAt) < Self.upNextMaxAge {
+            return
+        }
+        refreshUpNext()
+    }
+
+    /// One `GET /me/player/queue` and the cover of its first item. A failure only leaves the
+    /// preview empty: the swipe still works, with a generic card.
+    private func refreshUpNext() {
+        upNextTask?.cancel()
+        upNextTask = Task { [weak self, api, artworkLoader] in
+            guard let self else { return }
+            defer { if !Task.isCancelled { self.upNextTask = nil } }
+            let next: NowPlaying?
+            do {
+                let queue = try await api.playbackQueue()
+                next = queue.queue.lazy.compactMap(NowPlaying.init(item:)).first
+            } catch is CancellationError {
+                return
+            } catch {
+                guard !Task.isCancelled else { return }
+                self.upNext = nil
+                self.upNextFetchedAt = nil
+                return
+            }
+            guard !Task.isCancelled else { return }
+            self.upNextFetchedAt = self.now()
+            guard let next else {
+                self.upNext = nil
+                return
+            }
+            // The title right away; the cover when it arrives.
+            let cached = next.artworkURL.flatMap { self.preloadedArtwork[$0] }
+            self.upNext = TrackPreview(item: next, artwork: cached?.image)
+            guard cached == nil, let url = next.artworkURL else { return }
+            guard let loaded = try? await artworkLoader.load(url, cacheKey: next.artworkCacheKey),
+                  !Task.isCancelled
+            else { return }
+            self.remember(loaded, for: url)
+            if self.upNext?.item == next {
+                self.upNext = TrackPreview(item: next, artwork: loaded.image)
+            }
+        }
+    }
+
+    private func remember(_ artwork: ArtworkLoader.Artwork, for url: URL) {
+        if preloadedArtwork[url] == nil {
+            preloadedOrder.append(url)
+        }
+        preloadedArtwork[url] = artwork
+        if preloadedOrder.count > Self.preloadedLimit {
+            preloadedArtwork[preloadedOrder.removeFirst()] = nil
+        }
+    }
+
+    // MARK: Artist photo
+
+    /// Fetches the photo of the item's first artist when the artist changes. Tracks of the
+    /// same artist keep the photo on screen without asking again.
+    private func updateArtistImage(_ item: NowPlaying?) {
+        let artistID = loadsArtistImages ? item?.artistID : nil
+        guard artistID != artistImageKey else { return }
+        artistImageKey = artistID
+        artistImageTask?.cancel()
+
+        guard let artistID else {
+            artistImage = nil
+            return
+        }
+        // The previous artist's photo stays until the new one is ready: one cross-fade.
+        artistImageTask = Task { [weak self, api, artworkLoader] in
+            guard let self else { return }
+            let photoURL: URL?
+            /// A temporary failure: the next polls look again, until `retry(after:)` passes.
+            var retriesLater = false
+            switch self.artistPhotos[artistID] {
+            case .found(let url):
+                photoURL = url
+            case .imageRetry(let url, let after):
+                retriesLater = self.now() < after
+                photoURL = retriesLater ? nil : url
+                if !retriesLater { self.artistPhotos[artistID] = .found(url) }
+            case .unavailable:
+                photoURL = nil
+            case .retry(let after) where self.now() < after:
+                photoURL = nil
+                retriesLater = true
+            case .retry, nil:
+                do {
+                    let url = NowPlaying.bestImage(try await api.artistImages(id: artistID))
+                    self.artistPhotos[artistID] = .found(url)
+                    photoURL = url
+                } catch is CancellationError {
+                    return
+                } catch SpotifyAPIError.forbidden, SpotifyAPIError.notFound {
+                    self.artistPhotos[artistID] = .unavailable
+                    photoURL = nil
+                } catch {
+                    self.artistPhotos[artistID] = .retry(
+                        after: self.now().addingTimeInterval(Self.artistPhotoRetryDelay))
+                    photoURL = nil
+                    retriesLater = true
+                }
+            }
+            guard !Task.isCancelled, self.artistImageKey == artistID else { return }
+            guard let photoURL else {
+                self.artistImage = nil
+                if retriesLater { self.artistImageKey = nil }
+                return
+            }
+            do {
+                let image = try await artworkLoader.loadImage(photoURL)
+                guard !Task.isCancelled, self.artistImageKey == artistID else { return }
+                self.artistImage = image
+            } catch {
+                guard !Task.isCancelled, self.artistImageKey == artistID else { return }
+                self.artistImage = nil
+                let shouldRetry: Bool
+                switch error {
+                case ArtworkLoader.LoadError.network:
+                    shouldRetry = true
+                case ArtworkLoader.LoadError.http(let status):
+                    shouldRetry = status == 408 || status == 429 || (500..<600).contains(status)
+                default:
+                    shouldRetry = false
+                }
+                if shouldRetry {
+                    self.artistPhotos[artistID] = .imageRetry(
+                        photoURL, after: self.now().addingTimeInterval(Self.artistPhotoRetryDelay))
+                    self.artistImageKey = nil
+                }
+            }
+        }
+    }
+}
+
+/// What the swipe shows of the next or previous item: the same cover and title as the player.
+struct TrackPreview: Equatable {
+    var item: NowPlaying
+    var artwork: UIImage?
+
+    static func == (lhs: TrackPreview, rhs: TrackPreview) -> Bool {
+        lhs.item == rhs.item && lhs.artwork === rhs.artwork
     }
 }
