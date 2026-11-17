@@ -57,6 +57,57 @@ final class VolumeControllerTests: XCTestCase {
         XCTAssertEqual(sentLevels(recorder), ["45", "40"])
     }
 
+    // MARK: Dragging
+
+    func testDraggingMovesTheLevelAtOnceAndLiftingSendsTheFinalValue() async throws {
+        let (volume, recorder, _, _) = make()
+        volume.observe(device(50))
+
+        volume.drag(to: 52)
+        volume.drag(to: 57)
+        volume.drag(to: 63)
+        XCTAssertEqual(volume.level, 63)
+        XCTAssertTrue(volume.isPanelVisible)
+        volume.endDrag()
+
+        try await eventually { !recorder.requests.isEmpty }
+        try await Task.sleep(nanoseconds: 150_000_000)
+        XCTAssertEqual(sentLevels(recorder), ["63"], "Lifting sends right away, once")
+    }
+
+    func testLongDragSendsWhileMovingWithoutWaitingForTheFingerToStop() async throws {
+        let (volume, recorder, _, _) = make()
+        volume.observe(device(50))
+
+        volume.drag(to: 40)
+        // The throttle sends the latest level once the wait passes, even if the finger
+        // keeps moving.
+        try await eventually { recorder.requests.count == 1 }
+        volume.drag(to: 30)
+        volume.drag(to: 20)
+        volume.endDrag()
+        try await eventually { recorder.requests.count == 2 }
+        try await Task.sleep(nanoseconds: 150_000_000)
+        XCTAssertEqual(sentLevels(recorder), ["40", "20"])
+    }
+
+    func testDraggingOnADeviceWithoutVolumeSendsNothing() async throws {
+        let (volume, recorder, _, _) = make()
+        volume.observe(device(50, supportsVolume: false))
+        volume.drag(to: 80)
+        volume.endDrag()
+        try await Task.sleep(nanoseconds: 150_000_000)
+        XCTAssertEqual(volume.level, 50)
+        XCTAssertTrue(recorder.requests.isEmpty)
+    }
+
+    func testLevelUnderTheFingerIsClampedAndRounded() {
+        XCTAssertEqual(VolumePanelView.level(atX: -10, width: 200), 0)
+        XCTAssertEqual(VolumePanelView.level(atX: 101, width: 200), 51)
+        XCTAssertEqual(VolumePanelView.level(atX: 250, width: 200), 100)
+        XCTAssertEqual(VolumePanelView.level(atX: 10, width: 0), 0)
+    }
+
     func testLevelStaysBetweenZeroAndOneHundred() async throws {
         let (volume, recorder, _, _) = make()
         volume.observe(device(98))

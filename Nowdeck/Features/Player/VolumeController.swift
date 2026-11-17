@@ -5,6 +5,9 @@ import Foundation
 /// - Each tap on − or + moves the shown level 5 % at once. Taps are **coalesced**: only one
 ///   `PUT /me/player/volume` goes out, `debounce` (250 ms) after the last tap, with the final
 ///   value. Requests go out one after the other, never in parallel.
+/// - Dragging on the bar moves the shown level with the finger. While it moves, the level is
+///   sent at most once every `debounce` (a throttle, so the speaker follows along), and the
+///   final level goes out as soon as the finger lifts.
 /// - The panel appears when the volume button, − or + are tapped, or when a poll brings a
 ///   level that the app did not set (changed on the computer, the speaker, another phone…),
 ///   and hides `hideAfter` (3 s) after the last interaction.
@@ -85,6 +88,26 @@ final class VolumeController: ObservableObject {
         change(by: -Self.step)
     }
 
+    /// The finger is on the bar, at `target` (0–100).
+    func drag(to target: Int) {
+        showPanel()
+        guard isAdjustable, let current = level else { return }
+        let target = min(100, max(0, target))
+        guard target != current else { return }
+        level = target
+        pendingLevel = target
+        // Throttle: a send already scheduled will carry this newer value.
+        guard debounceTask == nil else { return }
+        scheduleSend()
+    }
+
+    /// The finger left the bar: send the last level now instead of waiting.
+    func endDrag() {
+        guard let task = debounceTask else { return }
+        task.cancel()
+        sendPending()
+    }
+
     func hidePanel() {
         hideTask?.cancel()
         isPanelVisible = false
@@ -100,6 +123,10 @@ final class VolumeController: ObservableObject {
 
         // Coalescing: every tap restarts the wait; only the last value is sent.
         debounceTask?.cancel()
+        scheduleSend()
+    }
+
+    private func scheduleSend() {
         let wait = debounce
         debounceTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
