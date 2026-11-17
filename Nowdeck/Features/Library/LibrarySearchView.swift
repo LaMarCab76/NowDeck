@@ -36,7 +36,9 @@ struct LibrarySearchView: View {
                 .frame(width: Layout.searchFieldIconSize, height: Layout.searchFieldIconSize)
                 .accessibilityHidden(true)
 
-            TextField("", text: $text)
+            // `String()`: an empty, non-localized title (a literal would add an empty key
+            // to the String Catalog).
+            TextField(String(), text: $text)
                 .textStyle(.searchInput)
                 .foregroundStyle(theme.palette.text.color)
                 .tint(theme.palette.accent.color)
