@@ -62,7 +62,7 @@ Leé este archivo completo antes de cada tarea. El detalle está en `docs/`:
 6. **Tests**: lógica pura con tests unitarios (XCTest). Red con `URLProtocol` de prueba, sin
    pegarle a Spotify ni a LRCLIB en los tests.
 7. **Git**: trabajá en una rama por hito (`hito/NN-nombre`), con commits chicos y mensajes
-   descriptivos en español. **No hagas push ni abras PRs sin que te lo pida.**
+   descriptivos en inglés. **No hagas push ni abras PRs sin que te lo pida.**
 8. **Idioma**: textos de la UI en español rioplatense (voseo), en un *String Catalog*
    (`Localizable.xcstrings`) para poder sumar inglés después. Identificadores de código y
    comentarios en inglés.
