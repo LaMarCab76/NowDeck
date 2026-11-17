@@ -217,7 +217,8 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
 - La misma hoja que Dispositivos: 640×398 sobre fondo negro, superficie `#161616`, radio 20
   arriba, manija de 40×5 (arrastrarla hacia abajo la cierra).
 - **Cabecera** (alto 56): carátula de 56, "SONANDO" en acento (12 mono, +0,08em), el título en
-  20 bold y los artistas en 14 `textoCuerpo`; a la derecha, el logo de Spotify (enlace al tema)
+  20 bold y los artistas en 14 `textoCuerpo` (con la marca de explícito delante, como en el
+  reproductor); a la derecha, el logo de Spotify (enlace al tema)
   y Cerrar (44). Título y artistas largos se desplazan (marquesina).
 - "A CONTINUACIÓN" (12 mono, `etiqueta`) y filas de 56 con separadores blancos al 10 %:
   número (12 mono), carátula de 40 (sin recortar, radio 4), título 16 semibold con la marca
@@ -231,7 +232,8 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
   440).
 - **Error**: la línea de aviso de Dispositivos y "Reintentar" (cápsula de acento de 48).
 - Se lee al abrir, cuando el reproductor cambia de tema con la hoja abierta y al deslizar
-  hacia abajo la lista. No hace polling propio.
+  hacia abajo la lista (también con la cola vacía). No hace polling propio: usa el del
+  reproductor, que sigue andando mientras la hoja está abierta.
 - Diferencia con el mockup: el ícono del botón es el símbolo `list.bullet` de SF Symbols (tres
   renglones con viñetas); el mockup dibuja renglones con un triángulo de reproducción.
 
