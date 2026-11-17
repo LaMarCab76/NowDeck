@@ -13,4 +13,5 @@ reales.
 | `saved-albums-reference.json` | Ejemplo de *Get User's Saved Albums* (`GET /me/albums`), mismo origen y fecha |
 | `saved-shows-reference.json` | Ejemplo de *Get User's Saved Shows* (`GET /me/shows`), mismo origen y fecha |
 | `saved-audiobooks-reference.json` | Ejemplo de *Get User's Saved Audiobooks* (`GET /me/audiobooks`), mismo origen y fecha |
+| `queue-playing.json` | Armado a mano con la forma de *Get the User's Queue* (`GET /me/player/queue`, consultado el 2026-11-17): `currently_playing` y `queue` con un tema, un episodio, un archivo local y un tipo que la app no conoce |
 | `search-reference.json` | Ejemplo de *Search for Item* (`GET /search`), mismo origen y fecha |
