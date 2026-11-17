@@ -16,8 +16,10 @@ struct VolumePanelView: View {
     /// Last time VoiceOver changed the level by swiping on the bar. VoiceOver reads the new
     /// value itself in that case, so no announcement follows.
     @State private var lastAdjustment = Date.distantPast
-    /// While the finger moves on the bar, the fill follows it without animation.
-    @State private var isDragging = false
+    /// While the finger moves on the bar, the fill follows it without animation. A gesture
+    /// state goes back to `false` by itself also when the system cancels the gesture (an
+    /// alert, a call), when `onEnded` is not called.
+    @GestureState private var isDragging = false
     private typealias Layout = Metrics.VolumePanel
 
     /// How long the announcement waits for the taps to settle.
@@ -97,16 +99,20 @@ struct VolumePanelView: View {
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
+                    .updating($isDragging) { _, isDragging, _ in isDragging = true }
                     .onChanged { drag in
-                        isDragging = true
                         volume.drag(to: Self.level(atX: drag.location.x, width: proxy.size.width))
                     }
                     .onEnded { drag in
                         volume.drag(to: Self.level(atX: drag.location.x, width: proxy.size.width))
                         volume.endDrag()
-                        isDragging = false
                     }
             )
+            // Covers a cancelled gesture, so the panel can hide again. After a normal lift
+            // `endDrag()` already ran and this second call does nothing.
+            .onChange(of: isDragging) { dragging in
+                if !dragging { volume.endDrag() }
+            }
         }
         .frame(height: Metrics.minTouchTarget)
         .accessibilityElement()

@@ -158,8 +158,11 @@ struct ProtobufReader {
     }
 
     mutating func readBytes() throws -> [UInt8] {
-        let length = Int(try readVarint())
-        guard length >= 0, index + length <= bytes.count else { throw Failure.truncated }
+        // Check the length while it is still unsigned: a malformed one (up to `UInt64.max`)
+        // would trap in `Int(_:)` or overflow `index + length`.
+        let rawLength = try readVarint()
+        guard rawLength <= UInt64(bytes.count - index) else { throw Failure.truncated }
+        let length = Int(rawLength)
         defer { index += length }
         return Array(bytes[index..<index + length])
     }

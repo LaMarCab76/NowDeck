@@ -191,6 +191,8 @@ final class LibraryModel: ObservableObject {
             return true
         } catch {
             tree = nil
+            // The flat list has no folders: a path left open would keep the back bar.
+            folderPath = []
             show(.foldersUnavailable)
             return false
         }

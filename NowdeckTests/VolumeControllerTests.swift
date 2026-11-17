@@ -91,6 +91,31 @@ final class VolumeControllerTests: XCTestCase {
         XCTAssertEqual(sentLevels(recorder), ["40", "20"])
     }
 
+    func testRequestsDoNotPileUpWhileOneIsSlow() async throws {
+        // Every answer takes 300 ms, longer than the 50 ms throttle.
+        let (session, recorder) = StubURLProtocol.session { _ in
+            Thread.sleep(forTimeInterval: 0.3)
+            return (.stub(204), Data())
+        }
+        let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session,
+                             sleep: { _ in }, jitter: { 0 })
+        let volume = VolumeController(api: api, debounce: 0.05, hideAfter: 30)
+        volume.observe(device(50))
+
+        volume.drag(to: 40)
+        try await eventually { recorder.requests.count == 1 }
+        for target in [35, 30, 25] {
+            volume.drag(to: target)
+            try await Task.sleep(nanoseconds: 80_000_000)
+        }
+        volume.endDrag()
+
+        try await eventually { recorder.requests.count == 2 }
+        try await Task.sleep(nanoseconds: 500_000_000)
+        XCTAssertEqual(sentLevels(recorder), ["40", "25"],
+                       "Only the newest level follows the slow request")
+    }
+
     func testDraggingOnADeviceWithoutVolumeSendsNothing() async throws {
         let (volume, recorder, _, _) = make()
         volume.observe(device(50, supportsVolume: false))
@@ -254,6 +279,21 @@ final class VolumeControllerTests: XCTestCase {
         XCTAssertTrue(volume.isPanelVisible)
         volume.toggleButton()
         XCTAssertFalse(volume.isPanelVisible)
+    }
+
+    func testPanelStaysWhileTheFingerRestsOnTheBar() async throws {
+        let (session, _) = StubURLProtocol.session { _ in (.stub(204), Data()) }
+        let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session)
+        let volume = VolumeController(api: api, hideAfter: 0.1)
+        volume.observe(device(50))
+
+        volume.drag(to: 60)
+        try await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertTrue(volume.isPanelVisible, "Holding the finger still keeps the panel")
+
+        volume.endDrag()
+        XCTAssertTrue(volume.isPanelVisible)
+        try await eventually { !volume.isPanelVisible }
     }
 
     func testPanelHidesAfterTheDelay() async throws {

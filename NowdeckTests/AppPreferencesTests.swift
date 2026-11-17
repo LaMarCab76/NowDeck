@@ -35,9 +35,12 @@ final class AppPreferencesTests: XCTestCase {
         XCTAssertEqual(AppPreferences.clampedOffset(9_000), 3_000)
         XCTAssertEqual(AppPreferences.clampedOffset(-9_000), -3_000)
 
-        let preferences = AppPreferences(defaults: freshDefaults())
+        let defaults = freshDefaults()
+        let preferences = AppPreferences(defaults: defaults)
         preferences.lyricsOffsetMs = 5_000
         XCTAssertEqual(preferences.lyricsOffsetMs, 3_000)
+        XCTAssertEqual(AppPreferences(defaults: defaults).lyricsOffsetMs, 3_000,
+                       "The clamped value is the one saved")
     }
 
     func testOffsetMovesTheLyricsPosition() {
