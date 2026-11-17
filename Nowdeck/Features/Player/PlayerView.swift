@@ -26,10 +26,20 @@ struct PlayerView: View {
     }
 
     @EnvironmentObject private var theme: ThemeStore
+    @EnvironmentObject private var preferences: AppPreferences
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// The normal top block, or lyrics mode in its place (docs/02, "Modo letras").
-    @ViewBuilder
+    /// The normal top block, or lyrics mode in its place (docs/02, "Modo letras"). They
+    /// cross-fade.
     private var topBlock: some View {
+        ZStack {
+            topBlockContent
+        }
+        .animation(Motion.modeChange, value: lyrics.showsLyricsMode)
+    }
+
+    @ViewBuilder
+    private var topBlockContent: some View {
         if lyrics.showsLyricsMode, let item = model.nowPlaying, let playback = model.playback {
             LyricsModeView(
                 content: LyricsModeContent(item: item, origin: model.origin,
@@ -38,6 +48,7 @@ struct PlayerView: View {
                 lyrics: lyrics.lyrics,
                 playback: playback.lyricsPlayback(fetchedAt: model.fetchedAt),
                 width: theme.lyricsWidth,
+                offsetMs: preferences.lyricsOffsetMs,
                 artwork: model.artwork.map(Image.init(uiImage:)),
                 onOpenSource: { [origin = model.origin] in
                     if let url = origin?.url { SpotifyLink.open(url) }
@@ -48,8 +59,10 @@ struct PlayerView: View {
                 onShowDevices: actions.devices
             )
             .frame(height: Layout.topBlockHeight)
+            .transition(.opacity)
         } else {
             normalTopBlock
+                .transition(.opacity)
         }
     }
 
@@ -60,9 +73,15 @@ struct PlayerView: View {
                 PlayerTopRow(origin: model.origin, logoURL: model.nowPlaying?.itemURL,
                              actions: actions)
                 Spacer(minLength: 0)
-                if let item = model.nowPlaying {
-                    TitleBlock(item: item)
+                ZStack(alignment: .leading) {
+                    if let item = model.nowPlaying {
+                        // A new track: the old title rises away and the new one comes in.
+                        TitleBlock(item: item)
+                            .id(item.transitionKey)
+                            .transition(Motion.rise(Motion.trackRise, reduceMotion: reduceMotion))
+                    }
                 }
+                .animation(Motion.trackChange, value: model.nowPlaying?.transitionKey)
                 Spacer(minLength: 0)
                 DeviceRow(device: model.playback?.device, freshness: model.freshness,
                           action: actions.devices)
@@ -99,21 +118,29 @@ struct PlayerView: View {
 
 /// The cover as Spotify sends it: fitted (never cropped), with the 4 pt radius of the
 /// guidelines, and nothing on top of it (docs/06-cumplimiento.md).
+///
+/// A new cover cross-fades over the previous one (only covers are layered, never text or
+/// controls).
 struct ArtworkView: View {
     var image: UIImage?
     var side: CGFloat
 
     var body: some View {
-        Group {
-            if let image {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            } else {
-                // While it loads, or when the item has no cover (local files, ads).
-                Palette.subtleSurface
+        ZStack {
+            Group {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                } else {
+                    // While it loads, or when the item has no cover (local files, ads).
+                    Palette.subtleSurface
+                }
             }
+            .id(image.map(ObjectIdentifier.init))
+            .transition(.opacity)
         }
+        .animation(Motion.artworkCrossfade, value: image.map(ObjectIdentifier.init))
         .frame(width: side, height: side)
         .clipShape(RoundedRectangle(cornerRadius: Radius.artwork, style: .continuous))
         .accessibilityHidden(true)
@@ -134,8 +161,8 @@ struct PlayerTopRow: View {
 
     var body: some View {
         HStack(spacing: Layout.topRowGap) {
-            HStack(spacing: Layout.logoClearSpace) {
-                SpotifyLogoLink(url: origin?.url ?? logoURL)
+            HStack(spacing: Layout.iconClearSpace) {
+                SpotifyLogoLink(url: origin?.url ?? logoURL, variant: .icon)
                 if let origin {
                     Button {
                         SpotifyLink.open(origin.url)
@@ -188,26 +215,54 @@ struct PlayerTopRow: View {
 
 /// The official Spotify logo, linking back to Spotify.
 ///
-/// The image set `SpotifyLogo` ships **empty** on purpose: the owner adds the official white
-/// logo from Spotify's Design Resources. It must never be drawn or approximated
-/// (docs/06-cumplimiento.md). Until then the 108×30 slot is empty but still tappable.
+/// Both images come from Spotify's Design Resources (white RGB versions, 2024 kit), only
+/// re-saved with the fill inlined so the asset catalog renders them: never drawn or
+/// approximated (docs/06-cumplimiento.md). On dark backgrounds the white version is the
+/// one allowed, so the code never tints them.
+/// - `.icon` (`SpotifyIcon`): next to the playback origin, in the player and in lyrics mode.
+/// - `.full` (`SpotifyLogo`): the library header.
 struct SpotifyLogoLink: View {
+    enum Variant {
+        case full
+        case icon
+    }
+
     var url: URL?
+    var variant: Variant = .full
 
     var body: some View {
         Button {
             SpotifyLink.open(url)
         } label: {
-            Image("SpotifyLogo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: Metrics.Player.logoSize.width, height: Metrics.Player.logoSize.height,
-                       alignment: .leading)
+            SpotifyLogoImage(variant: variant)
                 .frame(height: Metrics.minTouchTarget)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text("Abrir en Spotify"))
+    }
+}
+
+/// The logo image alone, at its size, for places where the button is drawn around it.
+struct SpotifyLogoImage: View {
+    var variant: SpotifyLogoLink.Variant
+
+    var body: some View {
+        switch variant {
+        case .full:
+            Image("SpotifyLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: Metrics.Player.logoSize.width, height: Metrics.Player.logoSize.height,
+                       alignment: .leading)
+                .accessibilityHidden(true)
+        case .icon:
+            Image("SpotifyIcon")
+                .resizable()
+                .scaledToFit()
+                .frame(width: Metrics.Player.iconSize, height: Metrics.Player.iconSize)
+                .accessibilityHidden(true)
+        }
     }
 }
 

@@ -19,11 +19,15 @@ extension Metrics {
         /// Row with the logo, origin, Biblioteca and Ajustes.
         static let topRowHeight: CGFloat = 44
         static let topRowGap: CGFloat = 12
-        /// Spotify logo: 108×30 inside a 44 pt tap zone.
+        /// Full Spotify logo (Biblioteca): 108×30 inside a 44 pt tap zone.
         static let logoSize = CGSize(width: 108, height: 30)
-        /// Space between the logo and "Desde la playlist". The mockup has 10, but Spotify's
-        /// guidelines ask for a clear space of half the logo height (15): see docs/06.
-        static let logoClearSpace: CGFloat = 15
+        /// Spotify icon next to "Desde la playlist" (owner's decision, 2026-11-17: the icon
+        /// instead of the full logo, in the normal view and in lyrics mode). Spotify's minimum
+        /// for the icon alone is 21 px.
+        static let iconSize: CGFloat = 24
+        /// Space between the icon and "Desde la playlist": half the icon height, as Spotify's
+        /// guidelines ask for the clear space (docs/06).
+        static let iconClearSpace: CGFloat = 12
         static let topButtonsGap: CGFloat = 6
         static let libraryPillLeadingPadding: CGFloat = 12
         static let libraryPillTrailingPadding: CGFloat = 16

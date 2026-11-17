@@ -10,6 +10,9 @@ import Foundation
 ///   one audiobook. Audiobooks exist only in a few markets and `GET /me` no longer says the
 ///   user's country (removed in February 2026), so "has saved audiobooks" is the only
 ///   honest signal. A failed or empty answer keeps the filter hidden.
+/// - With the experimental playlist folders on (`folders` is set), the Playlists row shows
+///   the account's tree level by level: folders open in place and "‹ Volver" goes back. If
+///   the folder service fails, the row falls back to the flat list and a notice says so.
 @MainActor
 final class LibraryModel: ObservableObject {
     enum RowState: Equatable {
@@ -40,6 +43,8 @@ final class LibraryModel: ObservableObject {
         case failed
         /// Another card is still starting.
         case ignored
+        /// A folder card: the row now shows its contents.
+        case openedFolder
     }
 
     /// Short messages shown as a pill at the top of the screen.
@@ -48,6 +53,8 @@ final class LibraryModel: ObservableObject {
         case forbidden
         case rateLimited
         case playbackFailed
+        /// The experimental folders could not be read; the flat list is shown instead.
+        case foldersUnavailable
     }
 
     static let rowLimit = SpotifyAPI.libraryPageSize
@@ -59,15 +66,26 @@ final class LibraryModel: ObservableObject {
     /// URI of the card whose playback is starting.
     @Published private(set) var startingURI: String?
     @Published private(set) var notice: Notice?
+    /// The open folders, from the outermost. Empty at the top of the tree.
+    @Published private(set) var folderPath: [PlaylistFolder] = []
     /// The playlist or album whose detail screen is open, if any.
     @Published private(set) var detail: CollectionDetailModel?
 
     private let api: SpotifyAPI
+    private let folders: PlaylistFolderClient?
     private var noticeTask: Task<Void, Never>?
+    /// Loaded folder tree and the cards of its playlists, by URI.
+    private var tree: [PlaylistTreeNode]?
+    private var playlistsByURI: [String: LibraryEntry] = [:]
 
-    init(api: SpotifyAPI) {
+    /// `folders` turns on the experimental playlist folders (Ajustes → Reproductor).
+    init(api: SpotifyAPI, folders: PlaylistFolderClient? = nil) {
         self.api = api
+        self.folders = folders
     }
+
+    /// Whether the Playlists row shows the folder tree.
+    var showsFolders: Bool { tree != nil }
 
     /// The filters to show, in the mockup's order.
     var filters: [LibraryFilter] {
@@ -103,6 +121,9 @@ final class LibraryModel: ObservableObject {
     func load(_ filter: LibraryFilter) async {
         if case .loading = state(of: filter) { return }
         rows[filter] = .loading
+        if filter == .playlists, folders != nil, await loadFolderTree() {
+            return
+        }
         do {
             let items = try await Self.collectRow(fetch: fetcher(for: filter))
             rows[filter] = .loaded(items)
@@ -119,8 +140,7 @@ final class LibraryModel: ObservableObject {
     typealias PageFetch = @Sendable (_ offset: Int) async throws
         -> (items: [LibraryEntry], nextOffset: Int?)
 
-    /// Fetches pages until the row has `rowLimit` items, there are no more pages, or
-    /// `maxPages` pages were read. Duplicate URIs are dropped.
+    /// Collects unique cards until the item or page limit is reached, or pagination ends.
     static func collectRow(limit: Int = rowLimit, maxPages: Int = maxPages,
                            fetch: PageFetch) async throws -> [LibraryEntry] {
         var items: [LibraryEntry] = []
@@ -133,9 +153,104 @@ final class LibraryModel: ObservableObject {
             for item in page.items where seen.insert(item.uri).inserted {
                 items.append(item)
             }
-            offset = page.nextOffset
+            offset = page.nextOffset.flatMap { $0 > current ? $0 : nil }
         }
         return Array(items.prefix(limit))
+    }
+
+    // MARK: Folders (experimental)
+
+    /// Maximum number of saved playlist cards to load for the folder tree.
+    static let maxFolderPlaylists = 1_000
+    private static let folderPlaylistPageSize = 50
+    /// Allow extra pages for null, invalid or duplicate entries while bounding requests.
+    static let maxFolderPlaylistPages = 2 * maxFolderPlaylists / folderPlaylistPageSize
+
+    /// Reads the tree and the playlists' cards. Returns `false` (after showing a notice) when
+    /// the folder service fails, so the caller loads the flat list instead.
+    private func loadFolderTree() async -> Bool {
+        guard let folders else { return false }
+        do {
+            async let rootlist = folders.rootlist()
+            async let cards = allPlaylistCards()
+            let (rows, entries) = try await (rootlist, cards)
+
+            var byURI = Dictionary(entries.map { ($0.uri, $0) }, uniquingKeysWith: { first, _ in first })
+            // Playlists the Web API did not return (Spotify's own, for instance) get a card
+            // from the rootlist's name, without artwork.
+            for row in rows where byURI[row.uri] == nil && row.uri.hasPrefix("spotify:playlist:") {
+                if let name = row.name, !name.isEmpty,
+                   let entry = LibraryEntry(rootlistPlaylistURI: row.uri, name: name,
+                                            itemCount: row.length) {
+                    byURI[row.uri] = entry
+                }
+            }
+            playlistsByURI = byURI
+            tree = PlaylistTree.build(from: rows.map(\.uri))
+            folderPath = []
+            showCurrentFolderLevel()
+            return true
+        } catch is CancellationError {
+            rows[.playlists] = .idle
+            return true
+        } catch {
+            tree = nil
+            // The flat list has no folders: a path left open would keep the back bar.
+            folderPath = []
+            show(.foldersUnavailable)
+            return false
+        }
+    }
+
+    private func allPlaylistCards() async throws -> [LibraryEntry] {
+        let api = self.api
+        return try await Self.collectRow(limit: Self.maxFolderPlaylists,
+                                         maxPages: Self.maxFolderPlaylistPages) { offset in
+            let page = try await api.savedPlaylists(limit: Self.folderPlaylistPageSize, offset: offset)
+            return (page.items.compactMap(LibraryEntry.init(playlist:)), page.nextOffset)
+        }
+    }
+
+    /// The cards of the open folder: folders and playlists in Spotify's order, at most
+    /// `rowLimit` (Spotify's guidelines). Playlists without a card are skipped.
+    static func entries(for level: [PlaylistTreeNode],
+                        playlists: [String: LibraryEntry]) -> [LibraryEntry] {
+        let all = level.compactMap { node -> LibraryEntry? in
+            switch node {
+            case .playlist(let uri): return playlists[uri]
+            case .folder(let folder): return LibraryEntry(folder: folder)
+            }
+        }
+        return Array(all.prefix(rowLimit))
+    }
+
+    private func showCurrentFolderLevel() {
+        guard let tree,
+              let level = PlaylistTree.children(of: tree, at: folderPath.map(\.id)) else {
+            folderPath = []
+            return
+        }
+        rows[.playlists] = .loaded(Self.entries(for: level, playlists: playlistsByURI))
+    }
+
+    /// Opens a folder card of the current level.
+    func openFolder(id: String) {
+        guard let tree,
+              let level = PlaylistTree.children(of: tree, at: folderPath.map(\.id)) else { return }
+        for node in level {
+            if case .folder(let folder) = node, folder.id == id {
+                folderPath.append(folder)
+                showCurrentFolderLevel()
+                return
+            }
+        }
+    }
+
+    /// "‹ Volver": back to the parent level.
+    func closeFolder() {
+        guard !folderPath.isEmpty else { return }
+        folderPath.removeLast()
+        showCurrentFolderLevel()
     }
 
     private func fetcher(for filter: LibraryFilter) -> PageFetch {
@@ -190,6 +305,10 @@ final class LibraryModel: ObservableObject {
     /// Starts the card on the active device (albums and playlists), or says to open it in
     /// Spotify (podcasts and audiobooks, see `LibraryEntry.playsInPlace`).
     func play(_ item: LibraryEntry) async -> PlayOutcome {
+        if case .folder(let id) = item.kind {
+            openFolder(id: id)
+            return .openedFolder
+        }
         guard item.playsInPlace else { return .openInSpotify(item.pageURL) }
         guard startingURI == nil else { return .ignored }
 

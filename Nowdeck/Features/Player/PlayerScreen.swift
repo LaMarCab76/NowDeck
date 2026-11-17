@@ -26,6 +26,7 @@ struct PlayerScreen: View {
     @StateObject private var model: PlayerModel
     @StateObject private var lyrics = LyricsModeController()
     @EnvironmentObject private var theme: ThemeStore
+    @EnvironmentObject private var preferences: AppPreferences
     @Environment(\.scenePhase) private var scenePhase
     /// Settings, library and the two devices sheets (the player's and the library's).
     @StateObject private var presentation = PlayerPresentation()
@@ -77,13 +78,20 @@ struct PlayerScreen: View {
             }
             .fullScreenCover(isPresented: $presentation.showsSettings) {
                 SettingsView()
+                    // Passed explicitly: a cover is a new view hierarchy.
+                    .environmentObject(preferences)
             }
             .devicesSheet(isPresented: $presentation.showsDevices, player: model)
             .fullScreenCover(isPresented: $presentation.showsLibrary) {
                 // While the library covers the player, the devices sheet ("Suena en …" in the
                 // mini player, a card or a command that finds no active device) is presented
                 // from inside the library.
-                LibraryScreen(model: LibraryModel(api: model.api), player: model,
+                LibraryScreen(model: LibraryModel(
+                                  api: model.api,
+                                  // Experimental, only if the user turned it on.
+                                  folders: preferences.usesPlaylistFolders
+                                      ? PlaylistFolderClient(api: model.api) : nil),
+                              player: model,
                               onPlayPause: wiredActions.playPause,
                               onShowDevices: { [presentation] in presentation.showDevices() })
                     .devicesSheet(isPresented: $presentation.showsLibraryDevices, player: model)

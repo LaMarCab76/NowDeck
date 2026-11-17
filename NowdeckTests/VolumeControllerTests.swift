@@ -29,6 +29,21 @@ final class VolumeControllerTests: XCTestCase {
         recorder.requests.map { $0.queryValue("volume_percent") }
     }
 
+    private func holdFirstRequest(status: Int = 204)
+        -> (VolumeController, StubRecorder, DispatchSemaphore) {
+        let release = DispatchSemaphore(value: 0)
+        let isFirst = StubBox(true)
+        let (session, recorder) = StubURLProtocol.session { _ in
+            guard isFirst.value else { return (.stub(204), Data()) }
+            isFirst.value = false
+            guard release.wait(timeout: .now() + 3) == .success else { throw URLError(.timedOut) }
+            return (.stub(status), status == 204 ? Data() : spotifyErrorJSON(status: status, message: "x"))
+        }
+        let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session,
+                             sleep: { _ in }, jitter: { 0 })
+        return (VolumeController(api: api, debounce: 0.35, hideAfter: 30), recorder, release)
+    }
+
     // MARK: Coalescing
 
     func testQuickTapsSendOneRequestWithTheFinalLevel() async throws {
@@ -55,6 +70,99 @@ final class VolumeControllerTests: XCTestCase {
         volume.decrease()
         try await eventually { recorder.requests.count == 2 }
         XCTAssertEqual(sentLevels(recorder), ["45", "40"])
+    }
+
+    // MARK: Dragging
+
+    func testDraggingMovesTheLevelAtOnceAndLiftingSendsTheFinalValue() async throws {
+        let (volume, recorder, _, _) = make()
+        volume.observe(device(50))
+
+        volume.drag(to: 52)
+        volume.drag(to: 57)
+        volume.drag(to: 63)
+        XCTAssertEqual(volume.level, 63)
+        XCTAssertTrue(volume.isPanelVisible)
+        volume.endDrag()
+
+        try await eventually { !recorder.requests.isEmpty }
+        try await Task.sleep(nanoseconds: 150_000_000)
+        XCTAssertEqual(sentLevels(recorder), ["63"], "Lifting sends right away, once")
+    }
+
+    func testLongDragSendsWhileMovingWithoutWaitingForTheFingerToStop() async throws {
+        let (volume, recorder, _, _) = make()
+        volume.observe(device(50))
+
+        volume.drag(to: 40)
+        // The throttle sends the latest level once the wait passes, even if the finger
+        // keeps moving.
+        try await eventually { recorder.requests.count == 1 }
+        volume.drag(to: 30)
+        volume.drag(to: 20)
+        volume.endDrag()
+        try await eventually { recorder.requests.count == 2 }
+        try await Task.sleep(nanoseconds: 150_000_000)
+        XCTAssertEqual(sentLevels(recorder), ["40", "20"])
+    }
+
+    func testRequestsDoNotPileUpWhileOneIsSlow() async throws {
+        // Every answer takes 300 ms, longer than the 50 ms throttle.
+        let (session, recorder) = StubURLProtocol.session { _ in
+            Thread.sleep(forTimeInterval: 0.3)
+            return (.stub(204), Data())
+        }
+        let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session,
+                             sleep: { _ in }, jitter: { 0 })
+        let volume = VolumeController(api: api, debounce: 0.05, hideAfter: 30)
+        volume.observe(device(50))
+
+        volume.drag(to: 40)
+        try await eventually { recorder.requests.count == 1 }
+        for target in [35, 30, 25] {
+            volume.drag(to: target)
+            try await Task.sleep(nanoseconds: 80_000_000)
+        }
+        volume.endDrag()
+
+        try await eventually { recorder.requests.count == 2 }
+        try await Task.sleep(nanoseconds: 500_000_000)
+        XCTAssertEqual(sentLevels(recorder), ["40", "25"],
+                       "Only the newest level follows the slow request")
+    }
+
+    func testFlushingDeferredLevelCancelsTheNewerDebounce() async throws {
+        let (volume, recorder, release) = holdFirstRequest()
+        volume.observe(device(50))
+        volume.drag(to: 60)
+        volume.endDrag()
+        try await eventually { recorder.requests.count == 1 }
+
+        volume.drag(to: 65)
+        volume.endDrag()
+        volume.increase()
+        release.signal()
+
+        try await eventually { recorder.requests.count == 2 }
+        try await Task.sleep(nanoseconds: 500_000_000)
+        XCTAssertEqual(sentLevels(recorder), ["60", "70"])
+    }
+
+    func testDraggingOnADeviceWithoutVolumeSendsNothing() async throws {
+        let (volume, recorder, _, _) = make()
+        volume.observe(device(50, supportsVolume: false))
+        volume.drag(to: 80)
+        volume.endDrag()
+        try await Task.sleep(nanoseconds: 150_000_000)
+        XCTAssertEqual(volume.level, 50)
+        XCTAssertTrue(recorder.requests.isEmpty)
+    }
+
+    func testLevelUnderTheFingerIsClampedAndRounded() {
+        XCTAssertEqual(VolumePanelView.level(atX: -10, width: 200), 0)
+        XCTAssertEqual(VolumePanelView.level(atX: 101, width: 200), 51)
+        XCTAssertEqual(VolumePanelView.level(atX: 250, width: 200), 100)
+        XCTAssertEqual(VolumePanelView.level(atX: 10, width: 0), 0)
     }
 
     func testLevelStaysBetweenZeroAndOneHundred() async throws {
@@ -88,6 +196,29 @@ final class VolumeControllerTests: XCTestCase {
         volume.observe(device(20, id: "b"))
         XCTAssertFalse(volume.isPanelVisible)
         XCTAssertEqual(volume.level, 20)
+    }
+
+    func testSameTargetStillSendsAfterSwitchingDevicesDuringARequest() async throws {
+        for status in [204, 403] {
+            let (volume, recorder, release) = holdFirstRequest(status: status)
+            var failures = 0
+            volume.onFailure = { _ in failures += 1 }
+            volume.observe(device(50, id: "a"))
+            volume.drag(to: 60)
+            volume.endDrag()
+            try await eventually { recorder.requests.count == 1 }
+
+            volume.observe(device(20, id: "b"))
+            volume.drag(to: 60)
+            volume.endDrag()
+            release.signal()
+
+            try await eventually { recorder.requests.count == 2 }
+            XCTAssertEqual(sentLevels(recorder), ["60", "60"])
+            XCTAssertEqual(volume.level, 60)
+            XCTAssertTrue(volume.isPanelVisible)
+            XCTAssertEqual(failures, 0, "An old device's failure should not produce a notice")
+        }
     }
 
     func testOldPollsAfterATapAreIgnored() async throws {
@@ -203,6 +334,21 @@ final class VolumeControllerTests: XCTestCase {
         XCTAssertTrue(volume.isPanelVisible)
         volume.toggleButton()
         XCTAssertFalse(volume.isPanelVisible)
+    }
+
+    func testPanelStaysWhileTheFingerRestsOnTheBar() async throws {
+        let (session, _) = StubURLProtocol.session { _ in (.stub(204), Data()) }
+        let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session)
+        let volume = VolumeController(api: api, hideAfter: 0.1)
+        volume.observe(device(50))
+
+        volume.drag(to: 60)
+        try await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertTrue(volume.isPanelVisible, "Holding the finger still keeps the panel")
+
+        volume.endDrag()
+        XCTAssertTrue(volume.isPanelVisible)
+        try await eventually { !volume.isPanelVisible }
     }
 
     func testPanelHidesAfterTheDelay() async throws {
