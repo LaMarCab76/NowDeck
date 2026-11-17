@@ -27,11 +27,8 @@ struct PlayerScreen: View {
     @StateObject private var lyrics = LyricsModeController()
     @EnvironmentObject private var theme: ThemeStore
     @Environment(\.scenePhase) private var scenePhase
-    @State private var showsSettings = false
-    @State private var showsDevices = false
-    @State private var showsLibrary = false
-    /// The devices sheet opened from the library, which covers the player.
-    @State private var showsLibraryDevices = false
+    /// Settings, library and the two devices sheets (the player's and the library's).
+    @StateObject private var presentation = PlayerPresentation()
 
     var actions = PlayerActions()
 
@@ -45,7 +42,7 @@ struct PlayerScreen: View {
     private var wiredActions: PlayerActions {
         var wired = actions
         wired.lyrics = { [lyrics, model] in lyrics.toggle(for: model.playback?.lyricsTrack) }
-        wired.settings = { showsSettings = true }
+        wired.settings = { [presentation] in presentation.showsSettings = true }
         // Milestone 3: playback controls and volume.
         let controls = model.controls
         wired.playPause = { controls.playPause() }
@@ -57,17 +54,20 @@ struct PlayerScreen: View {
         wired.repeatMode = { controls.cycleRepeat() }
         wired.volume = { controls.volume.toggleButton() }
         // Milestone 4: devices sheet.
-        wired.devices = { showsDevices = true }
+        wired.devices = { [presentation] in presentation.showDevices() }
         // Milestone 5: library.
-        wired.library = { showsLibrary = true }
+        wired.library = { [presentation] in presentation.showsLibrary = true }
         return wired
     }
 
     var body: some View {
         PlayerContent(model: model, lyrics: lyrics, controls: model.controls,
-                      actions: wiredActions, showsLyricsButton: theme.showsLyricsButton)
-            // A command answered "no active device": offer the device list (milestone 4).
-            .onReceive(model.controls.noActiveDevice) { wiredActions.devices() }
+                      actions: wiredActions, showsLyricsButton: theme.showsLyricsButton,
+                      // With the library open, it shows the control notices itself.
+                      showsNotices: presentation.visibleSurface == .player)
+            // A command answered "no active device": offer the device list (milestone 4) on
+            // the screen the user is looking at, the player or the library.
+            .onReceive(model.controls.noActiveDevice) { presentation.showDevices() }
             .onChange(of: model.playback?.lyricsTrack) { track in
                 lyrics.trackDidChange(to: track)
             }
@@ -75,18 +75,18 @@ struct PlayerScreen: View {
             .onChange(of: theme.showsLyricsButton) { isOn in
                 if !isOn { lyrics.turnOff() }
             }
-            .fullScreenCover(isPresented: $showsSettings) {
+            .fullScreenCover(isPresented: $presentation.showsSettings) {
                 SettingsView()
             }
-            .devicesSheet(isPresented: $showsDevices, player: model)
-            .fullScreenCover(isPresented: $showsLibrary) {
+            .devicesSheet(isPresented: $presentation.showsDevices, player: model)
+            .fullScreenCover(isPresented: $presentation.showsLibrary) {
                 // While the library covers the player, the devices sheet ("Suena en …" in the
-                // mini player, or a card that finds no active device) is presented from
-                // inside the library.
+                // mini player, a card or a command that finds no active device) is presented
+                // from inside the library.
                 LibraryScreen(model: LibraryModel(api: model.api), player: model,
                               onPlayPause: wiredActions.playPause,
-                              onShowDevices: { showsLibraryDevices = true })
-                    .devicesSheet(isPresented: $showsLibraryDevices, player: model)
+                              onShowDevices: { [presentation] in presentation.showDevices() })
+                    .devicesSheet(isPresented: $presentation.showsLibraryDevices, player: model)
             }
             .onAppear { if scenePhase == .active { model.start() } }
             .onDisappear { model.stop() }
@@ -106,6 +106,8 @@ struct PlayerContent: View {
     @EnvironmentObject private var theme: ThemeStore
     var actions: PlayerActions
     var showsLyricsButton: Bool
+    /// `false` while another screen (the library) covers the player and shows the notices.
+    var showsNotices = true
 
     var body: some View {
         ZStack {
@@ -123,7 +125,9 @@ struct PlayerContent: View {
                 }
                 .overlay(alignment: .top) {
                     // A failed command is newer news than the lyrics notice: show it instead.
-                    if let notice = controls.notice {
+                    if !showsNotices {
+                        EmptyView()
+                    } else if let notice = controls.notice {
                         ControlNoticeView(notice: notice)
                             .padding(.top, Metrics.Notice.top)
                             .transition(.opacity)
