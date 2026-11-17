@@ -154,7 +154,7 @@ struct LibraryContent: View {
         HStack(spacing: Layout.rowGap) {
             LibraryTabs(tab: $tab)
             Spacer(minLength: 0)
-            SpotifyLogoLink(url: SpotifyLink.home)
+            SpotifyLogoLink(url: SpotifyLink.home, variant: .full)
         }
         .frame(height: Layout.rowHeight)
     }

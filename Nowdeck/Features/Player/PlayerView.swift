@@ -134,8 +134,8 @@ struct PlayerTopRow: View {
 
     var body: some View {
         HStack(spacing: Layout.topRowGap) {
-            HStack(spacing: Layout.logoClearSpace) {
-                SpotifyLogoLink(url: origin?.url ?? logoURL)
+            HStack(spacing: Layout.iconClearSpace) {
+                SpotifyLogoLink(url: origin?.url ?? logoURL, variant: .icon)
                 if let origin {
                     Button {
                         SpotifyLink.open(origin.url)
@@ -188,26 +188,54 @@ struct PlayerTopRow: View {
 
 /// The official Spotify logo, linking back to Spotify.
 ///
-/// The image set `SpotifyLogo` ships **empty** on purpose: the owner adds the official white
-/// logo from Spotify's Design Resources. It must never be drawn or approximated
-/// (docs/06-cumplimiento.md). Until then the 108×30 slot is empty but still tappable.
+/// Both images come from Spotify's Design Resources (white RGB versions, 2024 kit), only
+/// re-saved with the fill inlined so the asset catalog renders them: never drawn or
+/// approximated (docs/06-cumplimiento.md). On dark backgrounds the white version is the
+/// one allowed, so the code never tints them.
+/// - `.icon` (`SpotifyIcon`): next to the playback origin, in the player and in lyrics mode.
+/// - `.full` (`SpotifyLogo`): the library header.
 struct SpotifyLogoLink: View {
+    enum Variant {
+        case full
+        case icon
+    }
+
     var url: URL?
+    var variant: Variant = .full
 
     var body: some View {
         Button {
             SpotifyLink.open(url)
         } label: {
-            Image("SpotifyLogo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: Metrics.Player.logoSize.width, height: Metrics.Player.logoSize.height,
-                       alignment: .leading)
+            SpotifyLogoImage(variant: variant)
                 .frame(height: Metrics.minTouchTarget)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text("Abrir en Spotify"))
+    }
+}
+
+/// The logo image alone, at its size, for places where the button is drawn around it.
+struct SpotifyLogoImage: View {
+    var variant: SpotifyLogoLink.Variant
+
+    var body: some View {
+        switch variant {
+        case .full:
+            Image("SpotifyLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: Metrics.Player.logoSize.width, height: Metrics.Player.logoSize.height,
+                       alignment: .leading)
+                .accessibilityHidden(true)
+        case .icon:
+            Image("SpotifyIcon")
+                .resizable()
+                .scaledToFit()
+                .frame(width: Metrics.Player.iconSize, height: Metrics.Player.iconSize)
+                .accessibilityHidden(true)
+        }
     }
 }
 

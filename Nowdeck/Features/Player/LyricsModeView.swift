@@ -26,7 +26,8 @@ struct LyricsModeContent: Equatable {
 /// It replaces the player's top block, so the player gives it that block's frame (256 pt
 /// high on the reference screen). Progress and controls stay below it, owned by the player.
 ///
-/// - Top row (44): source on the left, Spotify logo on the right. Both open Spotify.
+/// - Top row (44): Spotify icon and source on the left, as in the normal view (the owner moved
+///   the logo there on 2026-11-17; the mockup had it on the right). It opens Spotify.
 /// - Center: current stanza (30 pt) and next stanza (22 pt), `width` of the usable width.
 /// - Bottom row (56): artwork, title, artist and device.
 struct LyricsModeView: View {
@@ -59,18 +60,19 @@ struct LyricsModeView: View {
     // MARK: - Top row
 
     private var header: some View {
-        HStack(spacing: Metrics.Lyrics.headerSpacing) {
+        HStack(spacing: 0) {
             if let sourceName = content.sourceName {
                 LyricsSourceButton(label: content.sourceLabel, name: sourceName, action: onOpenSource)
+            } else {
+                Button(action: onOpenSpotify) {
+                    SpotifyLogoImage(variant: .icon)
+                        .frame(height: Metrics.minTouchTarget)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Abrir en Spotify"))
             }
             Spacer(minLength: 0)
-            Button(action: onOpenSpotify) {
-                SpotifyLogoSlot()
-                    .frame(height: Metrics.minTouchTarget)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text("Abrir en Spotify"))
         }
     }
 
@@ -197,7 +199,8 @@ private extension String {
 
 // MARK: - Pieces
 
-/// Music-list icon, "Desde la playlist" and the name in two lines.
+/// Spotify icon, "Desde la playlist" and the name in two lines. All of it opens the source in
+/// Spotify.
 private struct LyricsSourceButton: View {
     let label: String?
     let name: String
@@ -206,12 +209,8 @@ private struct LyricsSourceButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: Metrics.Lyrics.headerIconSpacing) {
-                Image(systemName: "music.note.list")
-                    .font(.system(size: 15, weight: .medium))
-                    .frame(width: Metrics.Lyrics.headerIconSize, height: Metrics.Lyrics.headerIconSize)
-                    .foregroundColor(theme.palette.secondaryText.color)
-                    .accessibilityHidden(true)
+            HStack(spacing: Metrics.Player.iconClearSpace) {
+                SpotifyLogoImage(variant: .icon)
                 VStack(alignment: .leading, spacing: 0) {
                     if let label {
                         Text(verbatim: label)
@@ -229,33 +228,6 @@ private struct LyricsSourceButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityHint(Text("Abre en Spotify"))
-    }
-}
-
-/// The official Spotify logo, if the asset is in the catalog (`SpotifyLogo`, downloaded from
-/// Spotify's Design Resources, never drawn by hand: docs/06-cumplimiento.md). Until then, the
-/// mockup's dashed placeholder.
-private struct SpotifyLogoSlot: View {
-    static let assetName = "SpotifyLogo"
-    @EnvironmentObject private var theme: ThemeStore
-
-    var body: some View {
-        if let logo = UIImage(named: Self.assetName) {
-            Image(uiImage: logo)
-                .resizable()
-                .scaledToFit()
-                .frame(width: Metrics.Lyrics.logoSize.width, height: Metrics.Lyrics.logoSize.height)
-        } else {
-            Text(verbatim: "LOGO SPOTIFY")
-                .font(.system(size: 10, design: .monospaced))
-                .tracking(0.6)
-                .foregroundColor(theme.palette.secondaryText.color)
-                .frame(width: Metrics.Lyrics.logoSize.width, height: Metrics.Lyrics.logoSize.height)
-                .overlay(
-                    RoundedRectangle(cornerRadius: Radius.artwork)
-                        .strokeBorder(Color.white.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
-                )
-        }
     }
 }
 
