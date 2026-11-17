@@ -30,7 +30,8 @@ final class PlayerControlsModelTests: XCTestCase {
 
     /// A model with one poll answered, not polling on its own (unless the test starts it).
     private func make(_ initial: PlaybackJSON = PlaybackJSON(),
-                      commandDelay: TimeInterval = 0) async throws -> Harness {
+                      commandDelay: TimeInterval = 0,
+                      commandGate: DispatchSemaphore? = nil) async throws -> Harness {
         let playback = StubBox(initial)
         let commandStatus = StubBox(204)
         let clock = TestClock()
@@ -40,6 +41,8 @@ final class PlayerControlsModelTests: XCTestCase {
             if path.hasPrefix("/v1/playlists") { return (.stub(404), Data()) }
             if request.httpMethod == "GET" { return (.stub(200), try playback.value.data()) }
             if commandDelay > 0 { Thread.sleep(forTimeInterval: commandDelay) }
+            // Commands wait here until the test signals the gate.
+            commandGate?.wait()
             let status = commandStatus.value
             let body = status == 204 ? Data() : spotifyErrorJSON(status: status, message: "test")
             return (.stub(status), body)
@@ -81,7 +84,10 @@ final class PlayerControlsModelTests: XCTestCase {
     }
 
     func testStartingThePlayerDuringACommandWaitsForTheCommand() async throws {
-        let h = try await make(PlaybackJSON(isPlaying: true), commandDelay: 0.3)
+        // The pause stays on its way until the gate opens, whatever the executor's timing.
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal() } // never leave the stub blocked
+        let h = try await make(PlaybackJSON(isPlaying: true), commandGate: gate)
         let readsBefore = h.playbackReads
 
         h.controls.playPause()
@@ -95,6 +101,7 @@ final class PlayerControlsModelTests: XCTestCase {
 
         // The command ends: its confirmation read restarts the polling.
         h.playback.value.isPlaying = false
+        gate.signal()
         try await eventually { h.playbackReads > readsBefore }
         XCTAssertEqual(h.model.playback?.isPlaying, false)
     }
