@@ -25,6 +25,7 @@ struct PlayerScreen: View {
     @EnvironmentObject private var theme: ThemeStore
     @Environment(\.scenePhase) private var scenePhase
     @State private var showsSettings = false
+    @State private var showsLibrary = false
 
     var actions = PlayerActions()
 
@@ -38,6 +39,7 @@ struct PlayerScreen: View {
         var wired = actions
         wired.lyrics = { [lyrics, model] in lyrics.toggle(for: model.playback?.lyricsTrack) }
         wired.settings = { showsSettings = true }
+        wired.library = { showsLibrary = true }
         return wired
     }
 
@@ -53,6 +55,15 @@ struct PlayerScreen: View {
             }
             .fullScreenCover(isPresented: $showsSettings) {
                 SettingsView()
+            }
+            .fullScreenCover(isPresented: $showsLibrary) {
+                // HOOKS for milestones 3 and 4: the mini player's play/pause and its
+                // "Suena en …" (also used when a card finds no active device) call the
+                // player's actions. While the library covers the player, the devices sheet
+                // has to be presented from inside the library, not from this screen.
+                LibraryScreen(model: LibraryModel(api: model.api), player: model,
+                              onPlayPause: wiredActions.playPause,
+                              onShowDevices: wiredActions.devices)
             }
             .onAppear { if scenePhase == .active { model.start() } }
             .onDisappear { model.stop() }
