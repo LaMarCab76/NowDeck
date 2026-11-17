@@ -315,7 +315,7 @@ final class PlayerModel: ObservableObject {
             fetchedAt = date
             return
         }
-        if isNewStart(of: item, progressMs: state.progressMs, at: date) { itemStarts += 1 }
+        if isNewStart(of: item, state: state, at: date) { itemStarts += 1 }
         playback = state
         fetchedAt = date
         if nowPlaying != item {
@@ -337,19 +337,28 @@ final class PlayerModel: ObservableObject {
     /// How far behind the expected position an answer for the same item must be to count
     /// as a new start. Small differences are just Spotify's clock against the local one.
     private static let restartJumpMs = 5_000
+    /// The same, when Spotify says the state changed (`timestamp`): then a smaller jump
+    /// back is already a skip, such as Next early in a track queued twice in a row.
+    private static let changedStateJumpMs = 1_000
 
     /// Whether `item` started since the last answer: a different item, or the same one
-    /// clearly behind the position interpolated from the last answer.
-    private func isNewStart(of item: NowPlaying, progressMs: Int?, at date: Date) -> Bool {
+    /// behind the position interpolated from the last answer.
+    private func isNewStart(of item: NowPlaying, state: PlaybackState, at date: Date) -> Bool {
         guard let previous = nowPlaying else { return true }
         if previous.transitionKey != item.transitionKey { return true }
-        guard let progressMs, let playback, let previousProgress = playback.progressMs else {
+        guard let progressMs = state.progressMs, let playback,
+              let previousProgress = playback.progressMs else {
             return false
         }
         let expected = PlaybackProgress.interpolatedMs(
             progressMs: previousProgress, durationMs: previous.durationMs,
             isPlaying: playback.isPlaying, fetchedAt: fetchedAt, now: date)
-        return progressMs + Self.restartJumpMs < expected
+        // Spotify's `timestamp` changes when the state changes (play, pause, skip, seek…).
+        // A pause or a seek between two answers may count as a start too; that only costs
+        // Cola one more read of the queue.
+        let stateChanged = state.timestamp != nil && state.timestamp != playback.timestamp
+        let tolerance = stateChanged ? Self.changedStateJumpMs : Self.restartJumpMs
+        return progressMs + tolerance < expected
     }
 
     /// The origin with its name filled from the cache, starting a lookup if needed.
