@@ -131,36 +131,45 @@ final class QueueModel: ObservableObject {
     @Published private(set) var isLoading = false
 
     private let api: SpotifyAPI
+    /// The only worker that reads the queue. Reads never overlap, so an older answer can
+    /// never land after a newer one.
     private var loadTask: Task<Void, Never>?
+    /// Set when the track changed while the worker was reading: that read may carry the old
+    /// queue, so the worker reads once more before finishing.
+    private var needsAnotherRead = false
 
     init(api: SpotifyAPI) {
         self.api = api
     }
 
-    /// Reads the queue. A reload while another is running waits for that one instead of
-    /// sending a second request.
+    /// Reads the queue. A reload while a read is running waits for it instead of sending a
+    /// second request.
     func reload() async {
-        if let loadTask {
-            await loadTask.value
-            return
-        }
-        await startLoad()
+        await worker().value
     }
 
-    /// The player moved to another track: the queue moved with it. A read that started
-    /// before the change may carry the old queue, so this one always sends a new request
-    /// after it.
+    /// The player moved to another track: the queue moved with it. A read already running
+    /// may carry the old queue, so the worker reads again after it. Several changes during
+    /// one read ask for a single extra read.
     func trackDidChange() async {
-        if let loadTask { await loadTask.value }
-        await startLoad()
+        if loadTask != nil { needsAnotherRead = true }
+        await worker().value
     }
 
-    private func startLoad() async {
-        let task = Task { await self.fetch() }
+    /// The running worker, or a new one. Everything here runs on the main actor, and there
+    /// is no suspension between the last check of `needsAnotherRead` and clearing
+    /// `loadTask`, so a request for another read is never lost.
+    private func worker() -> Task<Void, Never> {
+        if let loadTask { return loadTask }
+        let task = Task {
+            repeat {
+                needsAnotherRead = false
+                await fetch()
+            } while needsAnotherRead
+            loadTask = nil
+        }
         loadTask = task
-        await task.value
-        // A newer read may have replaced it meanwhile.
-        if loadTask == task { loadTask = nil }
+        return task
     }
 
     private func fetch() async {

@@ -212,27 +212,101 @@ final class QueueTests: XCTestCase {
 
     func testConcurrentReloadsShareOneRequest() async {
         let body = Self.json(["queue": []])
-        let (api, recorder) = makeAPI { _ in (.stub(200), body) }
+        let gate = FirstRequestGate(started: expectation(description: "first read started"))
+        let (api, recorder) = makeAPI { _ in
+            gate.pass()
+            return (.stub(200), body)
+        }
         let model = QueueModel(api: api)
 
-        async let first: Void = model.reload()
-        async let second: Void = model.reload()
-        _ = await (first, second)
+        let first = Task { await model.reload() }
+        await fulfillment(of: [gate.started], timeout: 2)
+        // The first read is now waiting for its answer. The second reload joins it.
+        let second = Task { await model.reload() }
+        await Task.yield()
+        gate.open()
+        _ = await (first.value, second.value)
 
         XCTAssertEqual(recorder.requests.count, 1)
     }
 
     func testTrackChangeAlwaysReadsAgain() async {
-        let body = Self.json(["queue": []])
-        let (api, recorder) = makeAPI { _ in (.stub(200), body) }
+        let gate = FirstRequestGate(started: expectation(description: "first read started"))
+        let answers = AnswerQueue([
+            .success((.stub(200), Self.json(["queue": [Self.track("Viejo")]]))),
+            .success((.stub(200), Self.json(["queue": [Self.track("Nuevo")]]))),
+        ])
+        let (api, recorder) = makeAPI { _ in
+            gate.pass()
+            return try answers.next()
+        }
         let model = QueueModel(api: api)
 
-        // A track change while the first read is still running must not reuse its answer.
-        async let first: Void = model.reload()
-        async let change: Void = model.trackDidChange()
-        _ = await (first, change)
+        let first = Task { await model.reload() }
+        await fulfillment(of: [gate.started], timeout: 2)
+        // The track changes while the first read is still waiting: its answer may be old.
+        let change = Task { await model.trackDidChange() }
+        await Task.yield()
+        gate.open()
+        _ = await (first.value, change.value)
 
         XCTAssertEqual(recorder.requests.count, 2)
+        XCTAssertEqual(model.entries?.map(\.track.title), ["Nuevo"])
+    }
+
+    func testSeveralTrackChangesDuringOneReadAskForOneMoreRead() async {
+        let gate = FirstRequestGate(started: expectation(description: "first read started"))
+        let answers = AnswerQueue([
+            .success((.stub(200), Self.json(["queue": [Self.track("Viejo")]]))),
+            .success((.stub(200), Self.json(["queue": [Self.track("Nuevo")]]))),
+        ])
+        let (api, recorder) = makeAPI { _ in
+            gate.pass()
+            return try answers.next()
+        }
+        let model = QueueModel(api: api)
+
+        let first = Task { await model.reload() }
+        await fulfillment(of: [gate.started], timeout: 2)
+        // Two changes wait for the same read. They must not start two overlapping reads,
+        // where the older answer could land last.
+        let change1 = Task { await model.trackDidChange() }
+        let change2 = Task { await model.trackDidChange() }
+        await Task.yield()
+        gate.open()
+        _ = await (first.value, change1.value, change2.value)
+
+        XCTAssertEqual(recorder.requests.count, 2)
+        XCTAssertEqual(model.entries?.map(\.track.title), ["Nuevo"])
+    }
+}
+
+/// Holds the first request open until the test calls `open()`, so the test can start a
+/// second operation while that read is certainly still waiting. Later requests answer at
+/// once.
+private final class FirstRequestGate: @unchecked Sendable {
+    let started: XCTestExpectation
+    private let release = DispatchSemaphore(value: 0)
+    private let lock = NSLock()
+    private var count = 0
+
+    init(started: XCTestExpectation) {
+        self.started = started
+    }
+
+    /// Called by the stub on the loading thread for each request.
+    func pass() {
+        let isFirst = lock.withLock { () -> Bool in
+            count += 1
+            return count == 1
+        }
+        guard isFirst else { return }
+        started.fulfill()
+        release.wait()
+    }
+
+    func open() {
+        release.signal()
     }
 }
 
