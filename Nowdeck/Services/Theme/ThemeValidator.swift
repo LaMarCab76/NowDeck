@@ -102,7 +102,7 @@ struct ValidatedTheme: Equatable, Sendable {
 
 /// Validates untrusted theme data (a file, AirDrop, the clipboard).
 ///
-/// Security (CLAUDE.md, docs/05 "Seguridad"): a theme is **data only**. This code reads a
+/// Security (AGENTS.md, docs/05 "Seguridad"): a theme is **data only**. This code reads a
 /// bounded amount of JSON, picks the known fields one by one with strict types, and builds a
 /// `Theme` from them. Nothing in the file is executed, loaded or used as a URL, path or
 /// format string; unknown fields are dropped (only their names are shown, shortened).
