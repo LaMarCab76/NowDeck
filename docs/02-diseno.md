@@ -90,12 +90,8 @@ inicio, sí.
     - izquierda, en 200 de ancho: Aleatorio y Repetir (48);
     - centro, separados 20: Anterior (56), Play/Pausa (64, círculo `texto` con ícono oscuro)
       y Siguiente (56);
-    - derecha, en 200 de ancho: **Cola** (48, siempre; abre la hoja de Cola), Letras (48;
-      solo si está activado en Ajustes; activo = acento sobre acento al 16 %) y Volumen (48).
-      Cola no es un control del tema (`reproductor.controles`): los temas guardados antes de
-      que existiera listan sus controles y nunca lo mostrarían. Como el tema pone a lo sumo
-      dos controles de este lado, los tres botones (152) entran también en los 160 del
-      iPhone 8 Plus.
+    - derecha, en 200 de ancho: Letras (48; solo si está activado en Ajustes; activo =
+      acento sobre acento al 16 %) y Volumen (48).
 - Deshabilitar u ocultar los controles que la API marque como no permitidos (`actions.disallows`).
 
 ### Rediseño del 2026-11-17 (pedido del dueño)
@@ -103,8 +99,8 @@ inicio, sí.
 Cambia lo anterior en estos puntos (no está en los mockups):
 
 - **Fila superior a todo el ancho** (44), arriba de la carátula: el ícono de Spotify y "Desde
-  la playlist **Nombre**" en la esquina superior izquierda; la píldora **Biblioteca** a la
-  derecha. El origen va en una píldora del mismo alto que Biblioteca (44, 16 a los costados,
+  la playlist **Nombre**" en la esquina superior izquierda; las píldoras **Cola** y
+  **Biblioteca** a la derecha (Cola primero, separadas 12; ver "Cola"). El origen va en una píldora del mismo alto que Biblioteca (44, 16 a los costados,
   blanco al 8 %), con el ícono afuera para respetar su espacio libre. Margen de arriba 16 (era
   24), y 4 entre la fila y la carátula. Con todo el ancho, el origen tiene lugar visible para
   más de 25 caracteres.
@@ -288,8 +284,17 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
   vuelve a empezar, por ejemplo porque estaba dos veces seguidas en la cola) y al deslizar
   hacia abajo la lista (también con la cola vacía). No hace polling propio: usa el del
   reproductor, que sigue andando mientras la hoja está abierta.
-- Diferencia con el mockup: el ícono del botón es el símbolo `list.bullet` de SF Symbols (tres
-  renglones con viñetas); el mockup dibuja renglones con un triángulo de reproducción.
+- **Botón**: una píldora "Cola" en la fila superior, a la izquierda de Biblioteca y con su
+  mismo estilo (44 de alto, ícono y texto 15 semibold sobre blanco al 8 %). Siempre está; no
+  aparece en modo letras, que no tiene esa fila.
+- Diferencias con el mockup (decisión del dueño, 2026-11-17):
+  - El mockup pone el botón en el grupo derecho de controles. Desde el rediseño los
+    controles van en una sola fila centrada con 36 entre botones, y uno más no entra en el
+    iPhone 8 Plus (ese lado necesitaría 216 y tiene 160), así que pasó a la fila superior.
+  - No es un control del tema (`reproductor.controles`): los temas guardados antes de que
+    existiera listan sus controles y nunca lo mostrarían.
+  - El ícono es el símbolo `list.bullet` de SF Symbols (tres renglones con viñetas); el
+    mockup dibuja renglones con un triángulo de reproducción.
 
 ## Ajustes (`Ajustes.dc.html`)
 

@@ -70,7 +70,7 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
    - Hoja inferior con el dispositivo actual destacado y la lista del resto.
    - Botón "¿No ves tu dispositivo?", que abre una ayuda de 3 pasos y "Actualizar lista".
 9. **Cola** (agregada el 2026-11-17, a pedido del dueño)
-   - Botón Cola en el grupo derecho de controles del reproductor (también en modo letras).
+   - Píldora Cola en la fila superior del reproductor, a la izquierda de Biblioteca.
    - Hoja inferior con lo que suena ahora y hasta 20 temas de "A continuación".
    - **Solo lectura**: la Web API no deja quitar, reordenar ni saltar a un tema de la cola. Los
      temas no se tocan; mantenerlos apretados muestra el nombre completo y "Abrir en Spotify".

@@ -245,8 +245,9 @@ private struct TrackPage<Title: View, DeviceSpace: View>: View {
 
 // MARK: - Top row
 
-/// Spotify icon and "Desde la playlist …" at the left, Cola and Biblioteca at the right. Ajustes is
-/// reached from the library (owner's request, 2026-11-17), so it is not always on screen.
+/// Spotify icon and "Desde la playlist …" at the left, Cola and Biblioteca at the right.
+/// Ajustes is reached from the library (owner's request, 2026-11-17), so it is not always on
+/// screen.
 struct PlayerTopRow: View {
     var origin: PlaybackOrigin?
     var logoURL: URL?
