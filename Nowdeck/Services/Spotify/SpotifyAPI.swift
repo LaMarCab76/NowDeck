@@ -154,7 +154,13 @@ final class SpotifyAPI: Sendable {
         guard var components = URLComponents(string: baseURL.absoluteString + request.path) else {
             throw SpotifyAPIError.invalidResponse
         }
-        if !request.query.isEmpty { components.queryItems = request.query }
+        if !request.query.isEmpty {
+            components.queryItems = request.query
+            // `URLComponents` leaves `+` as is, and servers read it as a space: a search
+            // for "AC+DC" would arrive as "AC DC".
+            components.percentEncodedQuery = components.percentEncodedQuery?
+                .replacingOccurrences(of: "+", with: "%2B")
+        }
 
         var urlRequest = URLRequest(url: components.url!)
         urlRequest.httpMethod = request.method

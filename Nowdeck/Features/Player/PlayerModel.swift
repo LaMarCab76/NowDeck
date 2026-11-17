@@ -49,7 +49,7 @@ final class PlayerModel: ObservableObject {
     private(set) lazy var controls = PlayerControlsModel(player: self)
 
     /// Shared with `controls` (playback commands) and the sheets that call the API on their
-    /// own (Dispositivos).
+    /// own (Dispositivos, Biblioteca).
     let api: SpotifyAPI
     private let artworkLoader: ArtworkLoader
     private let policy: PollingPolicy
