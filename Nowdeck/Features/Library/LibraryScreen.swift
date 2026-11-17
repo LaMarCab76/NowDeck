@@ -56,7 +56,7 @@ struct LibraryScreen: View {
                 SpotifyLink.open(url)
             case .noActiveDevice:
                 onShowDevices()
-            case .failed, .ignored:
+            case .failed, .ignored, .openedFolder:
                 break
             }
         }
@@ -101,8 +101,14 @@ struct LibraryContent: View {
                 Spacer(minLength: 0)
                 switch tab {
                 case .library:
-                    LibraryFilterBar(filters: model.filters, selected: model.filter) { filter in
-                        Task { await model.select(filter) }
+                    if model.filter == .playlists, let folder = model.folderPath.last {
+                        FolderBackBar(folderName: folder.name) {
+                            withAnimation(.easeInOut(duration: 0.2)) { model.closeFolder() }
+                        }
+                    } else {
+                        LibraryFilterBar(filters: model.filters, selected: model.filter) { filter in
+                            Task { await model.select(filter) }
+                        }
                     }
                     Spacer(minLength: 0)
                     LibraryRow(state: model.state(of: model.filter),
@@ -247,6 +253,8 @@ struct LibraryNoticeView: View {
         case .forbidden: return "Spotify no dejó reproducirlo. Revisá que tu cuenta tenga Premium."
         case .rateLimited: return "Spotify pidió esperar un momento. Probá de nuevo en un rato."
         case .playbackFailed: return "No pudimos reproducirlo. Probá de nuevo."
+        case .foldersUnavailable:
+            return "Spotify no dejó leer tus carpetas. Se muestran tus playlists sin agrupar."
         }
     }
 }

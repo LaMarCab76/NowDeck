@@ -29,6 +29,8 @@ struct LibraryEntry: Identifiable, Equatable, Sendable {
         case album
         case show
         case audiobook
+        /// A playlist folder (experimental, `PlaylistFolders.swift`). Opens in the row.
+        case folder(id: String)
     }
 
     var kind: Kind
@@ -49,7 +51,7 @@ struct LibraryEntry: Identifiable, Equatable, Sendable {
     var playsInPlace: Bool {
         switch kind {
         case .playlist, .album: return true
-        case .show, .audiobook: return false
+        case .show, .audiobook, .folder: return false
         }
     }
 }
@@ -70,6 +72,32 @@ extension LibraryEntry {
         }
         self.init(kind: .playlist, uri: playlist.uri, name: playlist.name, subtitle: subtitle,
                   images: playlist.images, externalURL: playlist.externalUrls?.spotify)
+    }
+
+    /// A folder card. Its id is not a Spotify URI: folders have no page on Spotify and
+    /// cannot be played, only opened.
+    init(folder: PlaylistFolder) {
+        let count = folder.playlistCount
+        let subtitle = count == 1
+            ? String(localized: "Carpeta · 1 playlist", comment: "Library card subtitle: a folder")
+            : String(localized: "Carpeta · \(count) playlists",
+                     comment: "Library card subtitle: number of playlists in a folder")
+        self.init(kind: .folder(id: folder.id), uri: "nowdeck:folder:\(folder.id)",
+                  name: folder.name, subtitle: subtitle, artworkURL: nil, pageURL: nil)
+    }
+
+    /// A playlist that only the rootlist knows about: its name and length, no artwork.
+    init?(rootlistPlaylistURI uri: String, name: String, itemCount: Int?) {
+        let subtitle: String
+        switch itemCount {
+        case 1?: subtitle = String(localized: "Playlist · 1 tema",
+                                   comment: "Library card subtitle: a playlist with one track")
+        case let count?: subtitle = String(localized: "Playlist · \(count) temas",
+                                           comment: "Library card subtitle: number of tracks")
+        case nil: subtitle = String(localized: "Playlist", comment: "Library card subtitle")
+        }
+        self.init(kind: .playlist, uri: uri, name: name, subtitle: subtitle, images: [],
+                  externalURL: nil)
     }
 
     init?(album: SimplifiedAlbum) {
