@@ -193,7 +193,10 @@ document.getElementById('f-empty').innerHTML = sheetShell(736, `
 function fit() {
   document.querySelectorAll('.frame').forEach(f => {
     const w = +f.dataset.w, h = +f.dataset.h;
-    const avail = f.parentElement.clientWidth;
+    // clientWidth includes the parent's padding: measure only its content box.
+    const parent = getComputedStyle(f.parentElement);
+    const avail = f.parentElement.clientWidth
+      - parseFloat(parent.paddingLeft) - parseFloat(parent.paddingRight);
     const scale = Math.min(1, avail / w);
     f.style.width = (w * scale) + 'px';
     f.style.height = (h * scale) + 'px';
