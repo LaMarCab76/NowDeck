@@ -79,6 +79,22 @@ Romper estas reglas puede hacer que Spotify revoque el acceso a la API.
   - si el servicio rechaza el pedido, la biblioteca muestra la lista plana con un aviso.
   Nadie lo probó todavía con una cuenta real; lo más probable es que Spotify rechace ese token.
 
+- **Foto del artista de fondo**: decisión del dueño del 2026-11-17, para parecerse a la app de
+  TV de Spotify. La referencia de *Get Artist* dice "Spotify visual content must be kept in its
+  original form, e.g. you can not crop album artwork, overlay images on album artwork…". La
+  foto se muestra recortada para llenar la pantalla, más tenue y desvanecida hacia el color de
+  fondo, así que esto choca con la letra de esa frase. Las reglas de la guía de diseño
+  ("Artwork must be kept in its original form… This includes applying overlays and blurring")
+  están bajo "For album and podcast artwork" y no nombran las fotos de artistas. El dueño lo
+  considera aceptable porque es uso personal, sin distribución. Para limitar el riesgo:
+  - la **carátula** sigue intacta (sin recortar ni tapar); la foto va solo en el fondo;
+  - se puede apagar en Ajustes → Apariencia → "Foto del artista" (y entonces no se pide);
+  - el contenido sigue atribuido (ícono de Spotify y enlace de vuelta en la fila superior).
+  El Canvas (video en loop) no está en la Web API y no se trae.
+- **Controles "parecidos al Car Thing"** (pedido del dueño del 2026-11-17): se tomó solo la
+  idea de una fila centrada con más aire entre los botones. Los botones, colores y medidas
+  siguen siendo los de Nowdeck: no se copió la pantalla del Car Thing.
+
 ## App Store (si algún día se publica)
 
 - Apple puede pedir pruebas de que podés mostrar las carátulas. En las capturas de la tienda,
