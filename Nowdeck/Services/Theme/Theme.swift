@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 
 /// A Nowdeck theme, format `nowdeck.tema/1` (see docs/05-temas.md and
 /// schemas/nowdeck.tema.v1.schema.json).
@@ -8,7 +9,7 @@ import Foundation
 /// fall back to the default theme when the theme is applied.
 ///
 /// This type is plain data. Colors stay as raw strings here; they are parsed and validated
-/// when building a `Palette` (and, in milestone 7, by the import validator).
+/// by `ThemeValidator` (files, clipboard, saved themes) and when building a `Palette`.
 struct Theme: Codable, Equatable, Sendable {
     static let currentFormat = "nowdeck.tema/1"
 
@@ -111,4 +112,43 @@ extension Theme {
         ),
         lyrics: Lyrics(width: .twoThirds)
     )
+}
+
+extension Theme {
+    /// The theme with every missing field taken from the default theme (docs/05: "Al aplicar,
+    /// se mezcla con el tema por defecto"). An explicit empty `controles` list is kept: it is
+    /// a valid choice (no optional controls), not a missing value.
+    func mergedWithDefault() -> Theme {
+        let base = Theme.default
+        let baseColors = base.colors!
+        return Theme(
+            format: Theme.currentFormat,
+            name: name,
+            colors: Colors(
+                background: colors?.background ?? baseColors.background,
+                surface: colors?.surface ?? baseColors.surface,
+                text: colors?.text ?? baseColors.text,
+                secondaryText: colors?.secondaryText ?? baseColors.secondaryText,
+                accent: colors?.accent ?? baseColors.accent,
+                textOnAccent: colors?.textOnAccent ?? baseColors.textOnAccent
+            ),
+            playerBackground: playerBackground ?? base.playerBackground,
+            player: Player(
+                artworkPosition: player?.artworkPosition ?? base.player?.artworkPosition,
+                controls: player?.controls ?? base.player?.controls
+            ),
+            lyrics: Lyrics(width: lyrics?.width ?? base.lyrics?.width)
+        )
+    }
+}
+
+extension Theme.LyricsWidth {
+    /// Share of the usable width taken by the lyrics (docs/02: 50 %, 66,7 % or 100 %).
+    var fraction: CGFloat {
+        switch self {
+        case .half: return 0.5
+        case .twoThirds: return 2.0 / 3.0
+        case .full: return 1
+        }
+    }
 }

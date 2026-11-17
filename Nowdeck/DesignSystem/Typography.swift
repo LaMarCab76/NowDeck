@@ -51,6 +51,45 @@ extension TextStyle {
                                 scalesWithDynamicType: true)
     static let callout = TextStyle(size: 15, weight: .regular, scalesWithDynamicType: true,
                                    relativeTo: .callout)
+    static let helper = TextStyle(size: 14, weight: .regular, lineHeight: 20,
+                                  scalesWithDynamicType: true, relativeTo: .subheadline)
+    static let footnote = TextStyle(size: 12, weight: .regular, lineHeight: 18,
+                                    scalesWithDynamicType: true, relativeTo: .footnote)
+
+    // MARK: Onboarding
+
+    /// "Nowdeck" next to the logo.
+    static let brandName = TextStyle(size: 22, weight: .bold, lineHeight: 28, trackingEm: -0.01,
+                                     scalesWithDynamicType: true, relativeTo: .title2)
+    /// "Tu iPhone, ahora control de escritorio."
+    static let welcomeTitle = TextStyle(size: 34, weight: .bold, lineHeight: 38, trackingEm: -0.02,
+                                        scalesWithDynamicType: true, relativeTo: .largeTitle)
+    /// Titles of the two steps.
+    static let stepTitle = TextStyle(size: 30, weight: .bold, lineHeight: 34, trackingEm: -0.02,
+                                     scalesWithDynamicType: true, relativeTo: .title)
+    /// Items of the check lists.
+    static let listItem = TextStyle(size: 16, weight: .regular, lineHeight: 22,
+                                    scalesWithDynamicType: true)
+    static let stepNumber = TextStyle(size: 13, weight: .regular, design: .monospaced,
+                                      scalesWithDynamicType: true, relativeTo: .footnote)
+    /// The Redirect URI.
+    static let code = TextStyle(size: 15, weight: .regular, design: .monospaced,
+                                scalesWithDynamicType: true, relativeTo: .callout)
+    /// The Client ID field.
+    static let codeInput = TextStyle(size: 16, weight: .regular, design: .monospaced,
+                                     scalesWithDynamicType: true)
+
+    // MARK: Buttons
+
+    static let primaryButton = TextStyle(size: 17, weight: .bold, scalesWithDynamicType: true,
+                                         relativeTo: .headline)
+    static let secondaryButton = TextStyle(size: 16, weight: .semibold,
+                                           scalesWithDynamicType: true)
+    static let backButton = TextStyle(size: 15, weight: .semibold, scalesWithDynamicType: true,
+                                      relativeTo: .callout)
+    static let smallButton = TextStyle(size: 14, weight: .semibold, scalesWithDynamicType: true,
+                                       relativeTo: .subheadline)
+
     /// Uppercase monospaced labels ("VAS A NECESITAR").
     static let label = TextStyle(size: 12, weight: .regular, design: .monospaced, lineHeight: 16,
                                  trackingEm: 0.08, scalesWithDynamicType: true,

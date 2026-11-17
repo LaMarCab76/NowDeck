@@ -29,9 +29,52 @@ User-Agent: Nowdeck/<versión> (https://github.com/<usuario>/Nowdeck)
 - **User-Agent identificado** (nombre, versión y URL o mail): sube el límite de ~45 a ~90
   pedidos por minuto por IP. LRCLIB también ofrece registrar la app (`Lrclib-App-Id`); eso
   queda para más adelante.
-- Ante `429`: respetar `Retry-After` con hasta un 30 % de *jitter*.
+- Ante `429` (y `503`): respetar `Retry-After` con hasta un 30 % de *jitter*.
 - **Caché** en disco por `item.id` de Spotify, incluidas las respuestas negativas (por ejemplo
   durante 7 días), para no volver a consultar temas sin letra.
+
+### Verificado en la documentación de LRCLIB (2026-11-17)
+
+Fuentes: `https://lrclib.net/docs.txt`, `https://lrclib.net/llms.txt` y la especificación del
+Lyricsfile (`github.com/tranxuanthang/lyricsfile`, `SPECIFICATION.md`, borrador 1.0, enlazada
+desde LRCLIB como "Lyricsfile format").
+
+- `GET /api/get` sigue igual: `track_name` y `artist_name` obligatorios; `album_name` y
+  `duration` opcionales pero recomendados. La duración tiene que estar entre **1 y 3600 s**
+  (fuera de ese rango es un `400 ValidationError`), así que la app no la manda si queda afuera.
+  Sin coincidencia responde `404 TrackNotFound`.
+- Campos del registro: `id`, `name` (alias viejo de `trackName`), `trackName`, `artistName`,
+  `albumName`, `duration` (segundos, puede tener decimales: `233.0`), `instrumental`,
+  `hasWordSync`, `plainLyrics`, `syncedLyrics` y `lyricsfile` (YAML; la documentación dice que
+  todo registro trae uno). Los registros publicados solo con `plainLyrics` o `syncedLyrics`
+  nunca tienen `hasWordSync`.
+- **User-Agent**: obligatorio identificarse con nombre, versión y página del proyecto o un mail
+  (si no se puede tocar el header, valen `X-User-Agent` o `Lrclib-Client`). Límites
+  aproximados: ~45 pedidos/min por IP sin identificar, ~90 identificado, ~180 con
+  `Lrclib-App-Id` (registro opcional en `lrclib.net/developers`; el ID no es secreto). Nowdeck
+  manda `Nowdeck/<versión> (https://github.com/<usuario>/Nowdeck)`: el `<usuario>` queda como
+  marcador hasta que el dueño elija el usuario u organización de GitHub
+  (`LRCLIBClient.projectURL`).
+- **429**: trae `Retry-After` en segundos; hay que esperarlo con un *jitter* chico (la doc
+  sugiere hasta 30 %) o LRCLIB puede banear temporalmente. **503 `ServerOverloaded`** también
+  trae `Retry-After` (normalmente 1 s). Los rechazos del borde de la red pueden no ser JSON:
+  mirar el código de estado y el header, no el cuerpo.
+- **LRC real de LRCLIB**: las estrofas casi nunca se separan con líneas en blanco sino con una
+  línea con tiempo y sin texto (`[00:49.72] `), y la letra suele terminar con una así. El parser
+  trata las dos formas como corte de estrofa; la línea vacía con tiempo además marca el fin de
+  la estrofa (durante el instrumental se muestra la siguiente, toda en `letraPendiente`).
+- **Lyricsfile** (borrador 1.0, puede cambiar): `version` (tiene que ser exactamente `"1.0"`;
+  la especificación pide no tratar otra versión como 1.0, así que la app vuelve al LRC),
+  `metadata` (`title`, `artist`, `album`, `duration_ms`, `offset_ms`, `language`,
+  `instrumental`), `lines[]` con `text`, `start_ms`, `end_ms` opcional y `words[]` opcional
+  (`text` con el espacio incluido, `start_ms`, `end_ms` opcional) y `plain`. Todo en
+  milisegundos enteros. **`offset_ms` se ignora**: la especificación dice que su significado no
+  está definido. En los Lyricsfile reales con palabras no aparecen líneas vacías ni pausas
+  (`end_ms` de una línea = `start_ms` de la siguiente), así que se agrupa de a 2 líneas.
+- **Estrofas de más de 2 líneas**: se cortan de a pares. A 30 pt con interlineado de 38, el
+  espacio del modo letras (156 pt en 896×414) entra 3 líneas de la estrofa actual y una de la
+  siguiente; una estrofa de 4 versos no entra. Si aun así no entra, el texto se achica (hasta
+  60 %) en lugar de cortarse.
 
 ## Qué modo usar
 
