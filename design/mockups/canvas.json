@@ -121,6 +121,14 @@
       "h": 414,
       "title": "Importar tema",
       "is_interactive": true
+    },
+    "Detalle.dc.html": {
+      "x": 5856,
+      "y": 774,
+      "w": 896,
+      "h": 414,
+      "title": "Biblioteca · detalle",
+      "is_interactive": true
     }
   },
   "order": [
@@ -130,6 +138,7 @@
     "SinLetra.dc.html",
     "Volumen.dc.html",
     "Biblioteca.dc.html",
+    "Detalle.dc.html",
     "Dispositivos.dc.html",
     "Ajustes.dc.html",
     "AjustesReproductor.dc.html",
@@ -152,7 +161,7 @@
       "y": 474,
       "text": "Biblioteca, dispositivos y ajustes",
       "kind": "title1",
-      "maxW": 5776
+      "maxW": 6752
     },
     "t-inicio": {
       "x": 0,
