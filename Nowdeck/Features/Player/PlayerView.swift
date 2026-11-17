@@ -3,6 +3,7 @@ import SwiftUI
 /// The player (`Main.dc.html`): artwork and text on top, progress and controls below.
 struct PlayerView: View {
     @ObservedObject var model: PlayerModel
+    @ObservedObject var lyrics: LyricsModeController
     var actions: PlayerActions
     var showsLyricsButton: Bool
     /// Full screen width, to adapt to the iPhone 8 Plus (736 pt).
@@ -24,7 +25,34 @@ struct PlayerView: View {
         min(Layout.artworkSize, (screenWidth * Layout.artworkWidthFraction).rounded(.down))
     }
 
+    @EnvironmentObject private var theme: ThemeStore
+
+    /// The normal top block, or lyrics mode in its place (docs/02, "Modo letras").
+    @ViewBuilder
     private var topBlock: some View {
+        if lyrics.showsLyricsMode, let item = model.nowPlaying, let playback = model.playback {
+            LyricsModeView(
+                content: LyricsModeContent(item: item, origin: model.origin,
+                                           deviceName: playback.device?.name),
+                lyrics: lyrics.lyrics,
+                playback: playback.lyricsPlayback(fetchedAt: model.fetchedAt),
+                width: theme.lyricsWidth,
+                artwork: model.artwork.map(Image.init(uiImage:)),
+                onOpenSource: { [origin = model.origin] in
+                    if let url = origin?.url { SpotifyLink.open(url) }
+                },
+                onOpenSpotify: { [url = model.origin?.url ?? item.itemURL] in
+                    if let url { SpotifyLink.open(url) }
+                },
+                onShowDevices: actions.devices
+            )
+            .frame(height: Layout.topBlockHeight)
+        } else {
+            normalTopBlock
+        }
+    }
+
+    private var normalTopBlock: some View {
         HStack(alignment: .top, spacing: Layout.artworkGap) {
             ArtworkView(image: model.artwork, side: artworkSide)
             VStack(alignment: .leading, spacing: 0) {
@@ -53,6 +81,7 @@ struct PlayerView: View {
             }
             PlayerControls(playback: model.playback, actions: actions,
                            showsLyricsButton: showsLyricsButton,
+                           lyricsActive: lyrics.isButtonActive,
                            sideGroupWidth: screenWidth < Layout.narrowScreenWidth
                                ? Layout.narrowSideGroupWidth : Layout.sideGroupWidth)
         }

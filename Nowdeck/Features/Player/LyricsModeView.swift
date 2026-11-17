@@ -30,7 +30,8 @@ struct LyricsModeView: View {
     /// `nil` while the lyrics of a new track load: the center stays empty.
     let lyrics: SyncedLyrics?
     let playback: LyricsPlayback
-    var width: LyricsWidth = .twoThirds
+    /// "Ancho de las letras" (Ajustes → Reproductor, stored in the theme).
+    var width: Theme.LyricsWidth = .twoThirds
     /// The track's artwork, already loaded by the player. Shown as is, never cropped.
     var artwork: Image?
     /// Opens the playlist or album in Spotify (milestone 2).
@@ -90,7 +91,7 @@ struct LyricsModeView: View {
 private struct LyricsStanzasView: View {
     let lyrics: SyncedLyrics?
     let playback: LyricsPlayback
-    let width: LyricsWidth
+    let width: Theme.LyricsWidth
 
     /// The snapshot used for interpolation. Polls closer than 1.5 s to it are ignored so the
     /// lyrics do not jitter (see `LyricsPlayback.reconciled(with:)`).
