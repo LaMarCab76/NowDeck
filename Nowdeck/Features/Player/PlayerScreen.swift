@@ -25,6 +25,7 @@ struct PlayerScreen: View {
     @EnvironmentObject private var theme: ThemeStore
     @Environment(\.scenePhase) private var scenePhase
     @State private var showsSettings = false
+    @State private var showsDevices = false
 
     var actions = PlayerActions()
 
@@ -38,6 +39,7 @@ struct PlayerScreen: View {
         var wired = actions
         wired.lyrics = { [lyrics, model] in lyrics.toggle(for: model.playback?.lyricsTrack) }
         wired.settings = { showsSettings = true }
+        wired.devices = { showsDevices = true }
         return wired
     }
 
@@ -54,6 +56,7 @@ struct PlayerScreen: View {
             .fullScreenCover(isPresented: $showsSettings) {
                 SettingsView()
             }
+            .devicesSheet(isPresented: $showsDevices, player: model)
             .onAppear { if scenePhase == .active { model.start() } }
             .onDisappear { model.stop() }
             // iOS 16 API (the two-value variant is iOS 17+).

@@ -43,7 +43,8 @@ final class PlayerModel: ObservableObject {
     @Published private(set) var artworkColor: RGBColor?
     @Published private(set) var freshness: Freshness = .live
 
-    private let api: SpotifyAPI
+    /// Also used by the sheets that call the API on their own (Dispositivos).
+    let api: SpotifyAPI
     private let artworkLoader: ArtworkLoader
     private let policy: PollingPolicy
     private let now: () -> Date
