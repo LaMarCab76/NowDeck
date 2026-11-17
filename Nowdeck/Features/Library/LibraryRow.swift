@@ -49,17 +49,21 @@ struct LibraryFilterBar: View {
     }
 }
 
-/// "ABRIR SPOTIFY ↗": the visible link the compliance checklist asks for.
+/// "ABRIR SPOTIFY ↗": the visible link the compliance checklist asks for. The detail screen
+/// uses it as "ABRIR EN SPOTIFY ↗", with the playlist's or album's page.
 struct OpenSpotifyLink: View {
+    var title: LocalizedStringKey = "ABRIR SPOTIFY"
+    var url: URL? = SpotifyLink.home
+
     @EnvironmentObject private var theme: ThemeStore
     private typealias Layout = Metrics.Library
 
     var body: some View {
         Button {
-            SpotifyLink.open(SpotifyLink.home)
+            SpotifyLink.open(url)
         } label: {
             HStack(spacing: Layout.openSpotifyIconGap) {
-                Text("ABRIR SPOTIFY")
+                Text(title)
                     .textStyle(.openSpotifyLink)
                     .lineLimit(1)
                 Image(systemName: "arrow.up.right")
@@ -87,6 +91,9 @@ struct LibraryRow: View {
     /// The right margin the row slides under, added back at the end of the content so the
     /// last card can scroll fully into view.
     var trailingMargin: CGFloat
+    /// Tapping a card: opens the detail of a playlist or album, or Spotify for the rest.
+    var onOpen: (LibraryEntry) -> Void
+    /// "Reproducir" in a card's menu: plays it without opening it.
     var onPlay: (LibraryEntry) -> Void
     var onRetry: () -> Void
 
@@ -107,6 +114,7 @@ struct LibraryRow: View {
                     LazyHStack(alignment: .top, spacing: Layout.cardGap) {
                         ForEach(items) { item in
                             LibraryCard(item: item, isStarting: item.uri == startingURI,
+                                        onOpen: { onOpen(item) },
                                         onPlay: { onPlay(item) })
                         }
                         MoreInSpotifyCard()
@@ -147,8 +155,9 @@ struct LibraryRow: View {
     }
 }
 
-/// A message in the row area, with an optional "Reintentar".
-private struct RowMessage: View {
+/// A message in the row area (also the detail screen's track list), with an optional
+/// "Reintentar".
+struct RowMessage: View {
     var text: LocalizedStringKey
     var onRetry: (() -> Void)?
 
@@ -188,19 +197,21 @@ private struct RetryButtonStyle: ButtonStyle {
 
 /// A 150 pt card: artwork (fitted, never cropped nor covered), name and subtitle.
 ///
-/// Names that don't fit are cut with "…"; a long press shows them whole, together with
-/// "Abrir en Spotify" (docs/06: truncated metadata must be readable somehow, and the name
-/// links back to Spotify).
+/// Tapping a playlist or an album opens its detail screen; podcasts and audiobooks open in
+/// Spotify. Names that don't fit are cut with "…"; a long press shows them whole, together
+/// with "Reproducir" and "Abrir en Spotify" (docs/06: truncated metadata must be readable
+/// somehow, and the name links back to Spotify).
 struct LibraryCard: View {
     var item: LibraryEntry
     var isStarting: Bool
+    var onOpen: () -> Void
     var onPlay: () -> Void
 
     @EnvironmentObject private var theme: ThemeStore
     private typealias Layout = Metrics.Library
 
     var body: some View {
-        Button(action: onPlay) {
+        Button(action: onOpen) {
             VStack(alignment: .leading, spacing: Layout.cardTextGap) {
                 CardArtwork(url: item.artworkURL, side: Layout.cardSize)
                 VStack(alignment: .leading, spacing: 0) {
@@ -223,7 +234,7 @@ struct LibraryCard: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: "\(item.name), \(item.subtitle)"))
-        .accessibilityHint(item.playsInPlace ? Text("Reproduce en el dispositivo activo")
+        .accessibilityHint(item.playsInPlace ? Text("Muestra los temas")
                                              : Text("Abre en Spotify"))
         // The context menu's two actions, reachable from the VoiceOver rotor too.
         .accessibilityAction(named: Text("Abrir en Spotify")) { SpotifyLink.open(item.pageURL) }

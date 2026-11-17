@@ -47,6 +47,53 @@ enum LibraryJSON {
         ]
     }
 
+    /// A track with the shape of `SimplifiedTrackObject` / `TrackObject`.
+    static func track(_ name: String, id: String, artists: [String] = ["Artista"],
+                      durationMs: Int = 200_000, explicit: Bool = false,
+                      isPlayable: Bool? = nil, restriction: String? = nil,
+                      isLocal: Bool = false) -> [String: Any] {
+        var object: [String: Any] = [
+            "type": "track",
+            "id": id,
+            "name": name,
+            "uri": "spotify:track:\(id)",
+            "duration_ms": durationMs,
+            "explicit": explicit,
+            "is_local": isLocal,
+            "track_number": 1,
+            "disc_number": 1,
+            "artists": artists.map { ["id": "a", "name": $0, "uri": "spotify:artist:a"] },
+            "external_urls": ["spotify": "https://open.spotify.com/track/\(id)"],
+        ]
+        if let isPlayable { object["is_playable"] = isPlayable }
+        if let restriction { object["restrictions"] = ["reason": restriction] }
+        return object
+    }
+
+    /// An episode with the shape of `EpisodeObject`.
+    static func episode(_ name: String, id: String, show: String) -> [String: Any] {
+        [
+            "type": "episode",
+            "id": id,
+            "name": name,
+            "uri": "spotify:episode:\(id)",
+            "duration_ms": 1_800_000,
+            "explicit": false,
+            "show": ["id": "s1", "name": show, "uri": "spotify:show:s1"],
+        ]
+    }
+
+    /// An item of `GET /playlists/{id}/items`. `legacyKey` puts the content under the
+    /// deprecated `track` key instead of `item`.
+    static func playlistItem(_ content: [String: Any]?, legacyKey: Bool = false,
+                             isLocal: Bool = false) -> [String: Any] {
+        [
+            "added_at": "2026-01-01T00:00:00Z",
+            "is_local": isLocal,
+            (legacyKey ? "track" : "item"): content ?? NSNull(),
+        ]
+    }
+
     static func savedShow(_ name: String, id: String, episodes: Int = 12) -> [String: Any] {
         [
             "added_at": "2026-01-01T00:00:00Z",
@@ -87,5 +134,17 @@ extension URLRequest {
         guard let url, let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?
             .queryItems else { return [:] }
         return Dictionary(items.map { ($0.name, $0.value ?? "") }, uniquingKeysWith: { $1 })
+    }
+}
+
+/// Collects values from `@Sendable` closures.
+final class OffsetRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var stored: [Int] = []
+
+    var values: [Int] { lock.withLock { stored } }
+
+    func record(_ value: Int) {
+        lock.withLock { stored.append(value) }
     }
 }
