@@ -26,7 +26,8 @@ struct QueueSheetPresenter: ViewModifier {
 }
 
 /// Owns the sheet's model while the sheet is on screen (every opening reads the queue
-/// again) and follows the player: when another track starts, the queue is read again.
+/// again) and follows the player: when an item starts (even the same track again), the queue
+/// is read again.
 private struct QueueSheetHost: View {
     @ObservedObject var player: PlayerModel
     @StateObject private var model: QueueModel
@@ -44,7 +45,9 @@ private struct QueueSheetHost: View {
         QueueSheetView(model: model, nowPlaying: player.nowPlaying, artwork: player.artwork,
                        dismiss: dismiss)
             .task { await model.reload() }
-            .onChange(of: player.nowPlaying?.transitionKey) { _ in
+            // `itemStarts`, not `transitionKey`: the same track queued twice in a row also
+            // consumes an entry, without changing the key.
+            .onChange(of: player.itemStarts) { _ in
                 Task { await model.trackDidChange() }
             }
             // The header and the reading on a track change need the player's polling. The

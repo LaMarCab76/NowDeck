@@ -46,6 +46,11 @@ final class PlayerModel: ObservableObject {
     /// `nil` for episodes, ads, artists without photos, or with the option off.
     @Published private(set) var artistImage: UIImage?
     @Published private(set) var freshness: Freshness = .live
+    /// Grows each time an item starts playing: another track or episode, or the same one
+    /// again from an earlier point (queued twice in a row, repeat one, or Previous going
+    /// back to its start). Cola reads the queue again on each change; `transitionKey` alone
+    /// would miss a track that is queued twice in a row.
+    @Published private(set) var itemStarts = 0
 
     /// The first item of Spotify's queue, shown when swiping left (next).
     /// `nil` while unknown (not read yet, empty queue, or the read failed).
@@ -299,6 +304,7 @@ final class PlayerModel: ObservableObject {
             fetchedAt = date
             return
         }
+        if isNewStart(of: item, progressMs: state.progressMs, at: date) { itemStarts += 1 }
         playback = state
         fetchedAt = date
         if nowPlaying != item {
@@ -315,6 +321,24 @@ final class PlayerModel: ObservableObject {
         if origin != newOrigin { origin = newOrigin }
         updateArtwork(item)
         updateArtistImage(item)
+    }
+
+    /// How far behind the expected position an answer for the same item must be to count
+    /// as a new start. Small differences are just Spotify's clock against the local one.
+    private static let restartJumpMs = 5_000
+
+    /// Whether `item` started since the last answer: a different item, or the same one
+    /// clearly behind the position interpolated from the last answer.
+    private func isNewStart(of item: NowPlaying, progressMs: Int?, at date: Date) -> Bool {
+        guard let previous = nowPlaying else { return true }
+        if previous.transitionKey != item.transitionKey { return true }
+        guard let progressMs, let playback, let previousProgress = playback.progressMs else {
+            return false
+        }
+        let expected = PlaybackProgress.interpolatedMs(
+            progressMs: previousProgress, durationMs: previous.durationMs,
+            isPlaying: playback.isPlaying, fetchedAt: fetchedAt, now: date)
+        return progressMs + Self.restartJumpMs < expected
     }
 
     /// The origin with its name filled from the cache, starting a lookup if needed.

@@ -65,6 +65,35 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(model.origin?.name, "Para laburar")
     }
 
+    func testItemStartsCountTheSameTrackStartingAgain() async throws {
+        let fixture = try Fixture.data("playback-state-playing") // 84 s of 227 s, playing
+        let progress = LockedValue(84_000)
+        let clock = TestClock()
+        let (model, _) = makeModel(clock: clock) { request in
+            if request.url?.host == "i.scdn.co" { return (.stub(404), Data()) }
+            if request.url?.path.hasPrefix("/v1/playlists") == true { return (.stub(404), Data()) }
+            var state = try XCTUnwrap(JSONSerialization.jsonObject(with: fixture) as? [String: Any])
+            state["progress_ms"] = progress.value
+            return (.stub(200), try JSONSerialization.data(withJSONObject: state))
+        }
+
+        await model.poll()
+        XCTAssertEqual(model.itemStarts, 1, "The first item counts as a start")
+
+        // 3 s later, at 86 s: about where it should be (87 s), not a new start.
+        clock.advance(3)
+        progress.value = 86_000
+        await model.poll()
+        XCTAssertEqual(model.itemStarts, 1)
+
+        // 3 s later the same track is back at 1 s: its second copy in the queue started.
+        clock.advance(3)
+        progress.value = 1_000
+        await model.poll()
+        XCTAssertEqual(model.itemStarts, 2)
+        XCTAssertEqual(model.nowPlaying?.title, "Vereda Mojada")
+    }
+
     func testUnreadablePlaylistShowsOnlyTheType() async throws {
         let playback = try Fixture.data("playback-state-playing")
         let (model, recorder) = makeModel { request in
@@ -152,5 +181,20 @@ final class PlayerModelTests: XCTestCase {
             guard Date() < deadline else { return XCTFail("Timed out") }
             try await Task.sleep(nanoseconds: 20_000_000)
         }
+    }
+}
+
+/// A value the stub reads on the loading thread while the test changes it.
+private final class LockedValue<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var stored: Value
+
+    init(_ value: Value) {
+        stored = value
+    }
+
+    var value: Value {
+        get { lock.withLock { stored } }
+        set { lock.withLock { stored = newValue } }
     }
 }

@@ -284,7 +284,8 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
   tema, Spotify decide qué sigue. Podés elegir algo desde la Biblioteca." (15, ancho máximo
   440).
 - **Error**: la línea de aviso de Dispositivos y "Reintentar" (cápsula de acento de 48).
-- Se lee al abrir, cuando el reproductor cambia de tema con la hoja abierta y al deslizar
+- Se lee al abrir, cuando empieza otro tema con la hoja abierta (también si el mismo tema
+  vuelve a empezar, por ejemplo porque estaba dos veces seguidas en la cola) y al deslizar
   hacia abajo la lista (también con la cola vacía). No hace polling propio: usa el del
   reproductor, que sigue andando mientras la hoja está abierta.
 - Diferencia con el mockup: el ícono del botón es el símbolo `list.bullet` de SF Symbols (tres
