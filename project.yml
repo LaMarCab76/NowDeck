@@ -34,6 +34,14 @@ targets:
       - path: Nowdeck
         excludes:
           - "**/.gitkeep"
+      # Preset themes, loaded by ThemePresets. atardecer.nowdeck.json is only an import
+      # example (low contrast), so it is not bundled.
+      - path: themes/negro-y-verde.nowdeck.json
+        buildPhase: resources
+      - path: themes/ambar.nowdeck.json
+        buildPhase: resources
+      - path: themes/azul-noche.nowdeck.json
+        buildPhase: resources
     dependencies:
       - package: Yams
     settings:
@@ -75,6 +83,15 @@ targets:
             LSHandlerRank: Owner
             LSItemContentTypes:
               - $(PRODUCT_BUNDLE_IDENTIFIER).theme
+          # iOS only reads the last part of an extension, so "tema.nowdeck.json" arrives as
+          # public.json and never matches the type above. Listing plain JSON as an
+          # Alternate (never default) handler is what makes Files and AirDrop offer
+          # "Open in Nowdeck"; anything that is not a theme is rejected by ThemeValidator.
+          - CFBundleTypeName: JSON
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - public.json
         LSSupportsOpeningDocumentsInPlace: false
         ITSAppUsesNonExemptEncryption: false
 
