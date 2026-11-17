@@ -115,11 +115,14 @@ final class PlayerModel: ObservableObject {
     private enum ArtistPhotoLookup {
         /// The widest photo, or `nil` when the artist has none.
         case found(URL?)
+        /// Keep the resolved URL when only the image download failed.
+        case imageRetry(URL, after: Date)
         /// `403`/`404`: don't ask again for this artist.
         case unavailable
         /// Temporary failure; try again after this date.
         case retry(after: Date)
     }
+    private static let artistPhotoRetryDelay: TimeInterval = 60
     /// One `GET /artists/{id}` per artist while the app runs.
     private var artistPhotos: [String: ArtistPhotoLookup] = [:]
     /// The artist whose photo is on screen or on its way.
@@ -409,6 +412,8 @@ final class PlayerModel: ObservableObject {
             if history.count > Self.historyLimit { history.removeFirst() }
         }
         previousTrack = history.last
+        upNext = nil
+        upNextFetchedAt = nil
         refreshUpNext()
     }
 
@@ -494,6 +499,10 @@ final class PlayerModel: ObservableObject {
             switch self.artistPhotos[artistID] {
             case .found(let url):
                 photoURL = url
+            case .imageRetry(let url, let after):
+                retriesLater = self.now() < after
+                photoURL = retriesLater ? nil : url
+                if !retriesLater { self.artistPhotos[artistID] = .found(url) }
             case .unavailable:
                 photoURL = nil
             case .retry(let after) where self.now() < after:
@@ -510,7 +519,8 @@ final class PlayerModel: ObservableObject {
                     self.artistPhotos[artistID] = .unavailable
                     photoURL = nil
                 } catch {
-                    self.artistPhotos[artistID] = .retry(after: self.now().addingTimeInterval(60))
+                    self.artistPhotos[artistID] = .retry(
+                        after: self.now().addingTimeInterval(Self.artistPhotoRetryDelay))
                     photoURL = nil
                     retriesLater = true
                 }
@@ -526,8 +536,22 @@ final class PlayerModel: ObservableObject {
                 guard !Task.isCancelled, self.artistImageKey == artistID else { return }
                 self.artistImage = image
             } catch {
-                guard self.artistImageKey == artistID else { return }
+                guard !Task.isCancelled, self.artistImageKey == artistID else { return }
                 self.artistImage = nil
+                let shouldRetry: Bool
+                switch error {
+                case ArtworkLoader.LoadError.network:
+                    shouldRetry = true
+                case ArtworkLoader.LoadError.http(let status):
+                    shouldRetry = status == 408 || status == 429 || (500..<600).contains(status)
+                default:
+                    shouldRetry = false
+                }
+                if shouldRetry {
+                    self.artistPhotos[artistID] = .imageRetry(
+                        photoURL, after: self.now().addingTimeInterval(Self.artistPhotoRetryDelay))
+                    self.artistImageKey = nil
+                }
             }
         }
     }

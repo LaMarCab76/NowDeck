@@ -103,9 +103,17 @@ final class TrackSwipeTests: XCTestCase {
         return try JSONSerialization.data(withJSONObject: object)
     }
 
-    nonisolated private static func queue() throws -> Data {
-        try JSONSerialization.data(withJSONObject: ["currently_playing": NSNull(),
-                                                    "queue": [try otherTrack()]])
+    nonisolated private static func queue(playingOther: Bool) throws -> Data {
+        let next: [String: Any]
+        if playingOther {
+            let playback = try XCTUnwrap(
+                try JSONSerialization.jsonObject(with: PlaybackJSON().data()) as? [String: Any])
+            next = try XCTUnwrap(playback["item"] as? [String: Any])
+        } else {
+            next = try otherTrack()
+        }
+        return try JSONSerialization.data(withJSONObject: ["currently_playing": NSNull(),
+                                                           "queue": [next]])
     }
 
     /// Which item `GET /me/player` reports, switched by the test.
@@ -118,13 +126,20 @@ final class TrackSwipeTests: XCTestCase {
         }
     }
 
-    private func makeModel(queueStatus: Int = 200) -> (PlayerModel, StubRecorder, Playing) {
+    private func makeModel(queueStatus: Int = 200, replacementQueueGate: DispatchSemaphore? = nil)
+        -> (PlayerModel, StubRecorder, Playing) {
         let playing = Playing()
         let (session, recorder) = StubURLProtocol.session { request in
             let path = request.url?.path ?? ""
             if request.url?.host == "i.scdn.co" { return (.stub(200), Self.png) }
             if path == "/v1/me/player/queue" {
-                return queueStatus == 200 ? (.stub(200), try Self.queue()) : (.stub(queueStatus), Data())
+                guard queueStatus == 200 else { return (.stub(queueStatus), Data()) }
+                let playingOther = playing.playsOther
+                if playingOther, let replacementQueueGate,
+                   replacementQueueGate.wait(timeout: .now() + 3) == .timedOut {
+                    throw URLError(.timedOut)
+                }
+                return (.stub(200), try Self.queue(playingOther: playingOther))
             }
             if path.hasPrefix("/v1/playlists") { return (.stub(404), Data()) }
             return (.stub(200), try Self.playback(playingOther: playing.playsOther))
@@ -165,7 +180,8 @@ final class TrackSwipeTests: XCTestCase {
     }
 
     func testTheSwipedInItemShowsItsCoverAtOnceAndBecomesThePreviousOne() async throws {
-        let (model, _, playing) = makeModel()
+        let replacementQueueGate = DispatchSemaphore(value: 0)
+        let (model, recorder, playing) = makeModel(replacementQueueGate: replacementQueueGate)
         await model.poll()
         let firstTitle = try XCTUnwrap(model.nowPlaying?.title)
         try await waitUntil { model.artwork != nil && model.upNext?.artwork != nil }
@@ -176,6 +192,10 @@ final class TrackSwipeTests: XCTestCase {
         XCTAssertNotNil(model.artwork, "The preview's cover, without loading it again")
         XCTAssertEqual(model.previousTrack?.item.title, firstTitle)
         XCTAssertNotNil(model.previousTrack?.artwork)
+        try await waitUntil { self.queueRequests(recorder) == 2 }
+        XCTAssertNil(model.upNext, "The previous preview was consumed while the new queue is pending")
+        replacementQueueGate.signal()
+        try await waitUntil { model.upNext?.item.title == firstTitle }
 
         // Back to the first one: it leaves the history.
         playing.playsOther = false

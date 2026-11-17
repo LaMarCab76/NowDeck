@@ -1,3 +1,4 @@
+import Combine
 import UIKit
 import XCTest
 @testable import Nowdeck
@@ -8,11 +9,13 @@ final class ArtistPhotoTests: XCTestCase {
     private let artistPath = "/v1/artists/08td7MxkoHQkXnWAYD8d6Q"
     private let photoURL = "https://i.scdn.co/image/artist-photo-640"
 
-    private func makeModel(handler: @escaping StubURLProtocol.Handler) -> (PlayerModel, StubRecorder) {
+    private func makeModel(clock: TestClock = TestClock(), handler: @escaping StubURLProtocol.Handler)
+        -> (PlayerModel, StubRecorder) {
         let (session, recorder) = StubURLProtocol.session(handler: handler)
         let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session,
                              sleep: { _ in }, jitter: { 0 })
-        return (PlayerModel(api: api, artworkLoader: ArtworkLoader(session: session)), recorder)
+        return (PlayerModel(api: api, artworkLoader: ArtworkLoader(session: session),
+                            now: { clock.now }), recorder)
     }
 
     nonisolated private static let png: Data = {
@@ -67,6 +70,40 @@ final class ArtistPhotoTests: XCTestCase {
         await model.poll()
         XCTAssertEqual(requests(recorder, path: artistPath), 1, "Cached for the same artist")
         XCTAssertNotNil(model.artistImage)
+    }
+
+    func testRetriesATemporaryDownloadFailureWithoutLookingUpTheArtistAgain() async throws {
+        let playback = try PlaybackJSON().data()
+        let clock = TestClock()
+        let photoAvailable = StubBox(false)
+        let (model, recorder) = makeModel(clock: clock) { [artistPath, photoURL] request in
+            if request.url?.path == artistPath {
+                return (.stub(200), Self.artistJSON(images: [(photoURL, 640)]))
+            }
+            if request.url?.absoluteString == photoURL {
+                if !photoAvailable.value { return (.stub(503), Data()) }
+                return (.stub(200), Self.png)
+            }
+            if request.url?.path != "/v1/me/player" { return (.stub(404), Data()) }
+            return (.stub(200), playback)
+        }
+        var failed = false
+        let subscription = model.$artistImage.dropFirst().sink { image in failed = image == nil }
+        defer { subscription.cancel() }
+        let photoPath = try XCTUnwrap(URL(string: photoURL)).path
+
+        await model.poll()
+        try await waitUntil { failed }
+        photoAvailable.value = true
+        clock.advance(59)
+        await model.poll()
+        XCTAssertEqual(requests(recorder, path: photoPath), 1)
+
+        clock.advance(1)
+        await model.poll()
+        try await waitUntil { model.artistImage != nil }
+        XCTAssertEqual(requests(recorder, path: photoPath), 2)
+        XCTAssertEqual(requests(recorder, path: artistPath), 1)
     }
 
     func testTurningTheOptionOffMakesNoRequestAndClearsThePhoto() async throws {
