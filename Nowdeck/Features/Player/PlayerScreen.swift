@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// What the player's buttons do. Milestone 2 only reads: every action is a no-op until
-/// milestones 3 (controls), 4 (devices) and 5 (library) wire them. Links back to Spotify are
-/// already active (`SpotifyLink`).
+/// What the player's buttons do. Lyrics and Settings are wired by `PlayerScreen`; the rest
+/// are no-ops until milestones 3 (controls), 4 (devices) and 5 (library) wire them. Links
+/// back to Spotify are already active (`SpotifyLink`).
 struct PlayerActions {
     var playPause: () -> Void = {}
     var previous: () -> Void = {}
@@ -21,22 +21,39 @@ struct PlayerActions {
 /// sonando" and the error states.
 struct PlayerScreen: View {
     @StateObject private var model: PlayerModel
+    @StateObject private var lyrics = LyricsModeController()
     @EnvironmentObject private var theme: ThemeStore
     @Environment(\.scenePhase) private var scenePhase
+    @State private var showsSettings = false
 
     var actions = PlayerActions()
-    /// "Mostrar letras" (Ajustes → Reproductor, milestone 7). Off by default (docs/06).
-    var showsLyricsButton = false
 
-    init(model: @autoclosure @escaping () -> PlayerModel, actions: PlayerActions = PlayerActions(),
-         showsLyricsButton: Bool = false) {
+    init(model: @autoclosure @escaping () -> PlayerModel, actions: PlayerActions = PlayerActions()) {
         _model = StateObject(wrappedValue: model())
         self.actions = actions
-        self.showsLyricsButton = showsLyricsButton
+    }
+
+    /// The caller's actions plus the ones the player owns: lyrics mode and Settings.
+    private var wiredActions: PlayerActions {
+        var wired = actions
+        wired.lyrics = { [lyrics, model] in lyrics.toggle(for: model.playback?.lyricsTrack) }
+        wired.settings = { showsSettings = true }
+        return wired
     }
 
     var body: some View {
-        PlayerContent(model: model, actions: actions, showsLyricsButton: showsLyricsButton)
+        PlayerContent(model: model, lyrics: lyrics, actions: wiredActions,
+                      showsLyricsButton: theme.showsLyricsButton)
+            .onChange(of: model.playback?.lyricsTrack) { track in
+                lyrics.trackDidChange(to: track)
+            }
+            // "Mostrar letras" turned off in Settings: leave lyrics mode.
+            .onChange(of: theme.showsLyricsButton) { isOn in
+                if !isOn { lyrics.turnOff() }
+            }
+            .fullScreenCover(isPresented: $showsSettings) {
+                SettingsView()
+            }
             .onAppear { if scenePhase == .active { model.start() } }
             .onDisappear { model.stop() }
             // iOS 16 API (the two-value variant is iOS 17+).
@@ -50,6 +67,7 @@ struct PlayerScreen: View {
 /// screenshot checks can render it without polling.
 struct PlayerContent: View {
     @ObservedObject var model: PlayerModel
+    @ObservedObject var lyrics: LyricsModeController
     @EnvironmentObject private var theme: ThemeStore
     var actions: PlayerActions
     var showsLyricsButton: Bool
@@ -65,8 +83,15 @@ struct PlayerContent: View {
                 Color.clear
             case .active:
                 ScreenMargins(top: Spacing.Player.top, bottom: Spacing.Player.bottom) { width in
-                    PlayerView(model: model, actions: actions, showsLyricsButton: showsLyricsButton,
-                               screenWidth: width)
+                    PlayerView(model: model, lyrics: lyrics, actions: actions,
+                               showsLyricsButton: showsLyricsButton, screenWidth: width)
+                }
+                .overlay(alignment: .top) {
+                    if let notice = lyrics.notice {
+                        LyricsNoticeView(notice: notice)
+                            .padding(.top, Metrics.Notice.top)
+                            .transition(.opacity)
+                    }
                 }
             case .nothingPlaying:
                 emptyState(.nothingPlaying)
@@ -88,7 +113,8 @@ struct PlayerContent: View {
     /// The artwork color, softened for the theme's text; the theme background otherwise
     /// (empty states, no artwork, all-black covers).
     private var backgroundColor: Color {
-        guard model.status == .active, let dominant = model.artworkColor else {
+        guard model.status == .active, theme.playerBackground == .artwork,
+              let dominant = model.artworkColor else {
             return theme.palette.background.color
         }
         return ArtworkColor.playerBackground(from: dominant,
