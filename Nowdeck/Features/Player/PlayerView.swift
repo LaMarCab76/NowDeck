@@ -245,8 +245,9 @@ private struct TrackPage<Title: View, DeviceSpace: View>: View {
 
 // MARK: - Top row
 
-/// Spotify icon and "Desde la playlist …" at the left, Biblioteca at the right. Ajustes is
-/// reached from the library (owner's request, 2026-11-17), so it is not always on screen.
+/// Spotify icon and "Desde la playlist …" at the left, Cola and Biblioteca at the right.
+/// Ajustes is reached from the library (owner's request, 2026-11-17), so it is not always on
+/// screen.
 struct PlayerTopRow: View {
     var origin: PlaybackOrigin?
     var logoURL: URL?
@@ -279,27 +280,49 @@ struct PlayerTopRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
+            // Cola sits here, not in the controls row: since the 2026-11-17 redesign that row
+            // is centered with 36 between buttons, and one more button no longer fits the
+            // iPhone 8 Plus (owner's choice). It is not a theme control either: themes saved
+            // before it existed list their controls explicitly and would never show it.
+            TopRowPill(systemName: "list.bullet", label: "Cola", action: actions.queue)
+                .accessibilityHint(Text("Muestra lo que sigue"))
+
             if showsLibrary {
-                Button(action: actions.library) {
-                    HStack(spacing: Layout.libraryPillIconGap) {
-                        Image(systemName: "books.vertical")
-                            .font(.system(size: Layout.libraryIconSize - 3, weight: .medium))
-                            .frame(width: Layout.libraryIconSize, height: Layout.libraryIconSize)
-                            .accessibilityHidden(true)
-                        Text("Biblioteca")
-                            .textStyle(.libraryPill)
-                    }
-                    .foregroundStyle(theme.palette.text.color)
-                    .padding(.leading, Layout.libraryPillLeadingPadding)
-                    .padding(.trailing, Layout.libraryPillTrailingPadding)
-                    .frame(height: Metrics.minTouchTarget)
-                    .background(Capsule().fill(Palette.subtleSurface))
-                    .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
+                TopRowPill(systemName: "books.vertical", label: "Biblioteca",
+                           action: actions.library)
             }
         }
         .frame(height: Layout.topRowHeight)
+    }
+}
+
+/// A 44 pt pill of the top row: icon and label on white at 8 % (Biblioteca, Cola).
+private struct TopRowPill: View {
+    var systemName: String
+    var label: LocalizedStringKey
+    var action: () -> Void
+
+    @EnvironmentObject private var theme: ThemeStore
+    private typealias Layout = Metrics.Player
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Layout.libraryPillIconGap) {
+                Image(systemName: systemName)
+                    .font(.system(size: Layout.libraryIconSize - 3, weight: .medium))
+                    .frame(width: Layout.libraryIconSize, height: Layout.libraryIconSize)
+                    .accessibilityHidden(true)
+                Text(label)
+                    .textStyle(.libraryPill)
+            }
+            .foregroundStyle(theme.palette.text.color)
+            .padding(.leading, Layout.libraryPillLeadingPadding)
+            .padding(.trailing, Layout.libraryPillTrailingPadding)
+            .frame(height: Metrics.minTouchTarget)
+            .background(Capsule().fill(Palette.subtleSurface))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 }
 

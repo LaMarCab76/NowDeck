@@ -65,6 +65,95 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(model.origin?.name, "Para laburar")
     }
 
+    func testItemStartsCountTheSameTrackStartingAgain() async throws {
+        let fixture = try Fixture.data("playback-state-playing") // 84 s of 227 s, playing
+        let progress = StubBox<Int?>(84_000)
+        let timestamp = StubBox<Int64>(1_763_380_000_000)
+        let playing = StubBox(true)
+        let clock = TestClock()
+        let (model, _) = makeModel(clock: clock) { request in
+            if request.url?.host == "i.scdn.co" { return (.stub(404), Data()) }
+            if request.url?.path.hasPrefix("/v1/playlists") == true { return (.stub(404), Data()) }
+            var state = try XCTUnwrap(JSONSerialization.jsonObject(with: fixture) as? [String: Any])
+            state["progress_ms"] = progress.value ?? NSNull()
+            state["timestamp"] = timestamp.value
+            state["is_playing"] = playing.value
+            return (.stub(200), try JSONSerialization.data(withJSONObject: state))
+        }
+
+        await model.poll()
+        XCTAssertEqual(model.itemStarts, 1, "The first item counts as a start")
+
+        // 3 s later, at 86 s: about where it should be (87 s), not a new start.
+        clock.advance(3)
+        progress.value = 86_000
+        await model.poll()
+        XCTAssertEqual(model.itemStarts, 1)
+
+        // 3 s later the same track is back at 1 s: its second copy in the queue started.
+        clock.advance(3)
+        progress.value = 1_000
+        await model.poll()
+        XCTAssertEqual(model.itemStarts, 2)
+        XCTAssertEqual(model.nowPlaying?.title, "Vereda Mojada")
+
+        // Next early in the track, onto a third copy: 3 s later it is at 1 s again, only
+        // 3 s behind. Spotify's timestamp says the state changed, so it is a start.
+        clock.advance(3)
+        progress.value = 1_000
+        timestamp.value += 3_000
+        await model.poll()
+        XCTAssertEqual(model.itemStarts, 3)
+
+        // The same small jump back without a state change is just clock drift.
+        clock.advance(3)
+        progress.value = 2_500
+        await model.poll()
+        XCTAssertEqual(model.itemStarts, 3)
+
+        // A skip right after an answer at 0.5 s: 3 s later it is at 3 s, only 0.5 s
+        // behind the expected 3.5 s. The changed timestamp is enough.
+        clock.advance(3)
+        progress.value = 500
+        timestamp.value += 6_000
+        await model.poll()
+        XCTAssertEqual(model.itemStarts, 4)
+        clock.advance(3)
+        progress.value = 3_000
+        timestamp.value += 3_000
+        await model.poll()
+        XCTAssertEqual(model.itemStarts, 5)
+
+        // Paused at 0.5 s, then skipped and resumed from another Spotify app: 3 s later it
+        // plays at 2 s, ahead of the paused position. The changed timestamp is enough.
+        playing.value = false
+        progress.value = 500
+        timestamp.value += 3_000
+        clock.advance(3)
+        await model.poll()
+        let beforeResume = model.itemStarts
+        playing.value = true
+        progress.value = 2_000
+        timestamp.value += 3_000
+        clock.advance(3)
+        await model.poll()
+        XCTAssertEqual(model.itemStarts, beforeResume + 1)
+
+        // Spotify may leave `progress_ms` null; a changed timestamp still counts.
+        progress.value = nil
+        timestamp.value += 3_000
+        clock.advance(3)
+        await model.poll()
+        XCTAssertEqual(model.itemStarts, beforeResume + 2)
+
+        // And when the previous answer had none: the next change still counts.
+        progress.value = 1_000
+        timestamp.value += 3_000
+        clock.advance(3)
+        await model.poll()
+        XCTAssertEqual(model.itemStarts, beforeResume + 3)
+    }
+
     func testUnreadablePlaylistShowsOnlyTheType() async throws {
         let playback = try Fixture.data("playback-state-playing")
         let (model, recorder) = makeModel { request in

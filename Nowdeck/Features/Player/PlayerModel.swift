@@ -46,6 +46,11 @@ final class PlayerModel: ObservableObject {
     /// `nil` for episodes, ads, artists without photos, or with the option off.
     @Published private(set) var artistImage: UIImage?
     @Published private(set) var freshness: Freshness = .live
+    /// Grows each time an item starts playing: another track or episode, or the same one
+    /// again from an earlier point (queued twice in a row, repeat one, or Previous going
+    /// back to its start). Cola reads the queue again on each change; `transitionKey` alone
+    /// would miss a track that is queued twice in a row.
+    @Published private(set) var itemStarts = 0
 
     /// The first item of Spotify's queue, shown when swiping left (next).
     /// `nil` while unknown (not read yet, empty queue, or the read failed).
@@ -68,6 +73,10 @@ final class PlayerModel: ObservableObject {
     private var pollTask: Task<Void, Never>?
     /// Between `start()` and `stop()`: the screen is visible and the app in the foreground.
     private var wantsPolling = false
+    /// Between `holdPolling()` and `resumePolling(after:)`: a command is waiting for its
+    /// answer. `start()` and `refresh(after:)` must not poll then (an opening cover or the
+    /// app coming back can call them): the answer could undo the optimistic state.
+    private var isHeldForCommand = false
     private var consecutiveFailures = 0
     private var quotaLimitedUntil: Date?
 
@@ -139,10 +148,11 @@ final class PlayerModel: ObservableObject {
 
     // MARK: Polling
 
-    /// Starts polling right away. Does nothing if it is already running.
+    /// Starts polling right away. Does nothing if it is already running, or while a command
+    /// holds it: `resumePolling(after:)` restarts it when the command ends.
     func start() {
         wantsPolling = true
-        guard pollTask == nil else { return }
+        guard pollTask == nil, !isHeldForCommand else { return }
         schedule(initialDelay: 0)
     }
 
@@ -156,21 +166,30 @@ final class PlayerModel: ObservableObject {
     /// command cannot overwrite the optimistic state. Cancelling also drops a poll that is
     /// already waiting for its answer.
     func holdPolling() {
+        isHeldForCommand = true
         pollTask?.cancel()
         pollTask = nil
     }
 
-    /// Polls again after `delay` and continues the cycle, unless the screen stopped polling
-    /// meanwhile (background).
+    /// Ends the hold. Polls again after `delay` and continues the cycle, unless the screen
+    /// stopped polling meanwhile (background).
     func resumePolling(after delay: TimeInterval) {
+        isHeldForCommand = false
         guard wantsPolling else { return }
-        holdPolling()
+        pollTask?.cancel()
+        pollTask = nil
         schedule(initialDelay: delay)
     }
 
-    /// Polls again after `delay` seconds and continues the regular cycle from there.
+    /// Polls again after `delay` seconds and continues the regular cycle from there. While a
+    /// command holds the polling it does nothing: the command's own confirmation read comes
+    /// when it ends.
     func refresh(after delay: TimeInterval = 0) {
-        stop()
+        guard !isHeldForCommand else { return }
+        // Replaces the poll task without touching `wantsPolling`. `stop()` would clear it,
+        // and a command sent afterwards could then never resume the polling.
+        pollTask?.cancel()
+        pollTask = nil
         schedule(initialDelay: delay)
     }
 
@@ -299,6 +318,7 @@ final class PlayerModel: ObservableObject {
             fetchedAt = date
             return
         }
+        if isNewStart(of: item, state: state, at: date) { itemStarts += 1 }
         playback = state
         fetchedAt = date
         if nowPlaying != item {
@@ -315,6 +335,32 @@ final class PlayerModel: ObservableObject {
         if origin != newOrigin { origin = newOrigin }
         updateArtwork(item)
         updateArtistImage(item)
+    }
+
+    /// How far behind the expected position an answer for the same item must be to count
+    /// as a new start. Small differences are just Spotify's clock against the local one.
+    private static let restartJumpMs = 5_000
+
+    /// Whether `item` started since the last answer: a different item, or the same one after
+    /// Spotify reported a state change or clearly behind the interpolated position.
+    private func isNewStart(of item: NowPlaying, state: PlaybackState, at date: Date) -> Bool {
+        guard let previous = nowPlaying else { return true }
+        if previous.transitionKey != item.transitionKey { return true }
+        guard let playback else { return false }
+        // Spotify's `timestamp` changes when the state changes (play, pause, skip, seek…).
+        // The position alone cannot tell a skip apart: right after the last answer it is only
+        // a few hundred ms behind, and from a pause it can even be ahead (paused at 0.5 s,
+        // skipped and resumed elsewhere, now at 2 s). So any state change counts, checked
+        // before the position because `progress_ms` can be null; a pause or a seek only
+        // costs Cola one more read of the queue.
+        if state.timestamp != nil && state.timestamp != playback.timestamp { return true }
+        guard let progressMs = state.progressMs, let previousProgress = playback.progressMs else {
+            return false
+        }
+        let expected = PlaybackProgress.interpolatedMs(
+            progressMs: previousProgress, durationMs: previous.durationMs,
+            isPlaying: playback.isPlaying, fetchedAt: fetchedAt, now: date)
+        return progressMs + Self.restartJumpMs < expected
     }
 
     /// The origin with its name filled from the cache, starting a lookup if needed.

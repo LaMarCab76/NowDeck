@@ -30,7 +30,8 @@ final class PlayerControlsModelTests: XCTestCase {
 
     /// A model with one poll answered, not polling on its own (unless the test starts it).
     private func make(_ initial: PlaybackJSON = PlaybackJSON(),
-                      commandDelay: TimeInterval = 0) async throws -> Harness {
+                      commandDelay: TimeInterval = 0,
+                      commandGate: DispatchSemaphore? = nil) async throws -> Harness {
         let playback = StubBox(initial)
         let commandStatus = StubBox(204)
         let clock = TestClock()
@@ -40,6 +41,8 @@ final class PlayerControlsModelTests: XCTestCase {
             if path.hasPrefix("/v1/playlists") { return (.stub(404), Data()) }
             if request.httpMethod == "GET" { return (.stub(200), try playback.value.data()) }
             if commandDelay > 0 { Thread.sleep(forTimeInterval: commandDelay) }
+            // Commands wait here until the test signals the gate.
+            commandGate?.wait()
             let status = commandStatus.value
             let body = status == 204 ? Data() : spotifyErrorJSON(status: status, message: "test")
             return (.stub(status), body)
@@ -78,6 +81,44 @@ final class PlayerControlsModelTests: XCTestCase {
             h.playbackReads > readsBefore
         }
         XCTAssertEqual(h.model.playback?.isPlaying, false)
+    }
+
+    func testStartingThePlayerDuringACommandWaitsForTheCommand() async throws {
+        // The pause stays on its way until the gate opens, whatever the executor's timing.
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal() } // never leave the stub blocked
+        let h = try await make(PlaybackJSON(isPlaying: true), commandGate: gate)
+        let readsBefore = h.playbackReads
+
+        h.controls.playPause()
+        // Cola opening, or the app coming back, while the pause is on its way.
+        h.model.start()
+        h.model.refresh()
+        try await settle()
+        XCTAssertEqual(h.playbackReads, readsBefore,
+                       "A read during the command could undo the optimistic pause")
+        XCTAssertEqual(h.model.playback?.isPlaying, false)
+
+        // The command ends: its confirmation read restarts the polling.
+        h.playback.value.isPlaying = false
+        gate.signal()
+        try await eventually { h.playbackReads > readsBefore }
+        XCTAssertEqual(h.model.playback?.isPlaying, false)
+    }
+
+    func testACommandAfterARefreshStillResumesThePolling() async throws {
+        let h = try await make(PlaybackJSON(isPlaying: true))
+        h.model.start()
+        // After a device transfer, Dispositivos asks for a fresh read.
+        h.model.refresh()
+        try await eventually { h.playbackReads >= 2 }
+
+        h.controls.playPause()
+        let readsAfterCommand = h.playbackReads
+        h.playback.value.isPlaying = false
+        try await eventually("The command's confirmation read and the polling come back") {
+            h.playbackReads > readsAfterCommand
+        }
     }
 
     func testPausingFreezesTheProgressWhereItIs() async throws {

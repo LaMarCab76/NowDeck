@@ -99,8 +99,8 @@ inicio, sí.
 Cambia lo anterior en estos puntos (no está en los mockups):
 
 - **Fila superior a todo el ancho** (44), arriba de la carátula: el ícono de Spotify y "Desde
-  la playlist **Nombre**" en la esquina superior izquierda; la píldora **Biblioteca** a la
-  derecha. El origen va en una píldora del mismo alto que Biblioteca (44, 16 a los costados,
+  la playlist **Nombre**" en la esquina superior izquierda; las píldoras **Cola** y
+  **Biblioteca** a la derecha (Cola primero, separadas 12; ver "Cola"). El origen va en una píldora del mismo alto que Biblioteca (44, 16 a los costados,
   blanco al 8 %), con el ícono afuera para respetar su espacio libre. Margen de arriba 16 (era
   24), y 4 entre la fila y la carátula. Con todo el ancho, el origen tiene lugar visible para
   más de 25 caracteres.
@@ -260,6 +260,41 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
   3. Si es un parlante o una tele, despertalo primero.
 
   Más "Actualizar lista" (principal) y "Volver a la lista".
+
+## Cola (`Cola.html`)
+
+- La misma hoja que Dispositivos: 640×398 sobre fondo negro, superficie `#161616`, radio 20
+  arriba, manija de 40×5 (arrastrarla hacia abajo la cierra).
+- **Cabecera** (alto 56): carátula de 56, "SONANDO" en acento (12 mono, +0,08em), el título en
+  20 bold y los artistas en 14 `textoCuerpo` (con la marca de explícito delante, como en el
+  reproductor); a la derecha, el logo de Spotify (enlace al tema)
+  y Cerrar (44). Título y artistas largos se desplazan (marquesina).
+- "A CONTINUACIÓN" (12 mono, `etiqueta`) y filas de 56 con separadores blancos al 10 %:
+  número (12 mono), carátula de 40 (sin recortar, radio 4), título 16 semibold con la marca
+  de explícito, artistas 13 `textoCuerpo` y duración (12 mono). Hasta **20** temas.
+- Las filas **no son botones**: mantenerlas apretadas muestra el nombre completo y "Abrir en
+  Spotify", como en el detalle. Abajo, un degradado de 40 hacia la superficie.
+- Al final de la lista: "Para quitar o reordenar temas, usá Spotify." (14, `textoCuerpo`) y
+  "ABRIR SPOTIFY ↗".
+- **Cola vacía**: ícono de lista, "No hay nada en la cola" (20 bold) y "Cuando termine este
+  tema, Spotify decide qué sigue. Podés elegir algo desde la Biblioteca." (15, ancho máximo
+  440).
+- **Error**: la línea de aviso de Dispositivos y "Reintentar" (cápsula de acento de 48).
+- Se lee al abrir, cuando empieza otro tema con la hoja abierta (también si el mismo tema
+  vuelve a empezar, por ejemplo porque estaba dos veces seguidas en la cola) y al deslizar
+  hacia abajo la lista (también con la cola vacía). No hace polling propio: usa el del
+  reproductor, que sigue andando mientras la hoja está abierta.
+- **Botón**: una píldora "Cola" en la fila superior, a la izquierda de Biblioteca y con su
+  mismo estilo (44 de alto, ícono y texto 15 semibold sobre blanco al 8 %). Siempre está; no
+  aparece en modo letras, que no tiene esa fila.
+- Diferencias con el mockup (decisión del dueño, 2026-11-17):
+  - El mockup pone el botón en el grupo derecho de controles. Desde el rediseño los
+    controles van en una sola fila centrada con 36 entre botones, y uno más no entra en el
+    iPhone 8 Plus (ese lado necesitaría 216 y tiene 160), así que pasó a la fila superior.
+  - No es un control del tema (`reproductor.controles`): los temas guardados antes de que
+    existiera listan sus controles y nunca lo mostrarían.
+  - El ícono es el símbolo `list.bullet` de SF Symbols (tres renglones con viñetas); el
+    mockup dibuja renglones con un triángulo de reproducción.
 
 ## Ajustes (`Ajustes.dc.html`)
 

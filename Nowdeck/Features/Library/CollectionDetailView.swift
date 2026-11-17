@@ -308,8 +308,8 @@ struct TrackRow: View {
 }
 
 /// Long press on a track to read the full title and artists. Tracks with a Spotify page
-/// also offer a link to open it.
-private struct TrackMenu: ViewModifier {
+/// also offer a link to open it. The Cola sheet uses it for its rows too.
+struct TrackMenu: ViewModifier {
     var track: CollectionTrack
 
     @EnvironmentObject private var theme: ThemeStore
