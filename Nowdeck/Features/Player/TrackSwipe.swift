@@ -5,10 +5,10 @@ import SwiftUI
 /// cover, title and device row follow the finger and the other item slides in from the side
 /// it comes from (`TrackSwipePhase`, `PlayerView`).
 ///
-/// It starts anywhere in the band of the cover and title, from screen edge to screen edge,
-/// or next to a side edge at any height. Only drags that start more horizontal than vertical
-/// count. The progress bar and the controls are outside the band, so their own drags are
-/// untouched.
+/// It starts anywhere in the band of the cover and title, from screen edge to screen edge:
+/// the normal view's cover, title and device, or the bottom row of lyrics mode (never on the
+/// lyrics). Only drags that start more horizontal than vertical count. The progress bar and
+/// the controls are outside the band, so their own drags are untouched.
 ///
 /// Pure logic, so it can be tested without touches.
 struct TrackSwipe: Equatable {
@@ -20,8 +20,6 @@ struct TrackSwipe: Equatable {
         case right
     }
 
-    /// Next to a side edge, a swipe can start at any height.
-    static let edgeZone: CGFloat = 40
     /// How far the finger has to move.
     static let commitDistance: CGFloat = 96
     /// A quick flick commits earlier: when its predicted end goes this much further.
@@ -41,15 +39,14 @@ struct TrackSwipe: Equatable {
     }
 
     /// Whether a touch that starts at `point` (window coordinates) and has moved
-    /// `translation` so far can be a track swipe. `band` is the vertical span of the cover
-    /// and title, `nil` when they are not on screen.
-    static func canStart(at point: CGPoint, translation: CGSize, screenWidth: CGFloat,
+    /// `translation` so far is a track swipe. `band` is the vertical span of the cover and
+    /// title, `nil` when they are not on screen.
+    static func canStart(at point: CGPoint, translation: CGSize,
                          band: ClosedRange<CGFloat>?) -> Bool {
-        guard abs(translation.width) > abs(translation.height) else { return false }
-        let atSideEdge = screenWidth > 2 * edgeZone
-            && (point.x <= edgeZone || point.x >= screenWidth - edgeZone)
-        let inBand = band?.contains(point.y) ?? false
-        return atSideEdge || inBand
+        guard abs(translation.width) > abs(translation.height),
+              let band
+        else { return false }
+        return band.contains(point.y)
     }
 
     var isCommitted: Bool { distance >= Self.commitDistance }
@@ -101,6 +98,11 @@ enum TrackSwipePhase: Equatable {
         }
     }
 
+    /// Where the page of the other item sits.
+    func previewOffset(pageWidth: CGFloat) -> CGFloat {
+        offset(pageWidth: pageWidth) + (edge == .right ? pageWidth : -pageWidth)
+    }
+
     /// A forbidden skip moves a third as far, and never more than `maxResisted`.
     static func resisted(_ distance: CGFloat) -> CGFloat {
         min(distance / 3, maxResisted)
@@ -109,8 +111,8 @@ enum TrackSwipePhase: Equatable {
     static let maxResisted: CGFloat = 40
 }
 
-/// The cover and title band in window coordinates, reported by `PlayerView` so the full
-/// screen gesture knows where a swipe may start.
+/// The cover and title band in window coordinates, reported by `PlayerView` or
+/// `LyricsModeView` so the full screen gesture knows where a swipe may start.
 struct TrackSwipeBandKey: PreferenceKey {
     static let defaultValue: ClosedRange<CGFloat>? = nil
     static func reduce(value: inout ClosedRange<CGFloat>?, nextValue: () -> ClosedRange<CGFloat>?) {
@@ -135,21 +137,11 @@ private struct TrackSwipeModifier: ViewModifier {
     var onChange: (TrackSwipe) -> Void
     var onEnd: (TrackSwipe, Bool) -> Void
 
-    @State private var screenWidth: CGFloat = 0
     /// Decided once per touch, after `decisionDistance`: `true` for a track swipe.
     @State private var isSwiping: Bool?
 
     func body(content: Content) -> some View {
         content
-            .background {
-                // Full screen, safe area included: the drag reports window coordinates.
-                GeometryReader { proxy in
-                    Color.clear
-                        .onAppear { screenWidth = proxy.size.width }
-                        .onChange(of: proxy.size.width) { screenWidth = $0 }
-                }
-                .ignoresSafeArea()
-            }
             .simultaneousGesture(drag, including: isActive ? .all : .subviews)
     }
 
@@ -158,8 +150,7 @@ private struct TrackSwipeModifier: ViewModifier {
             .onChanged { value in
                 if isSwiping == nil {
                     isSwiping = TrackSwipe.canStart(at: value.startLocation,
-                                                    translation: value.translation,
-                                                    screenWidth: screenWidth, band: band)
+                                                    translation: value.translation, band: band)
                 }
                 guard isSwiping == true else { return }
                 onChange(TrackSwipe(translation: value.translation.width))
@@ -171,5 +162,17 @@ private struct TrackSwipeModifier: ViewModifier {
                 let predicted = value.predictedEndLocation.x - value.startLocation.x
                 onEnd(swipe, swipe.commitsOnRelease(predictedTranslation: predicted))
             }
+    }
+}
+
+extension View {
+    /// Reports this view's vertical span as the band where a track swipe can start.
+    func trackSwipeBand() -> some View {
+        background {
+            GeometryReader { proxy in
+                let frame = proxy.frame(in: .global)
+                Color.clear.preference(key: TrackSwipeBandKey.self, value: frame.minY...frame.maxY)
+            }
+        }
     }
 }

@@ -114,9 +114,9 @@ Cambia lo anterior en estos puntos (no está en los mockups):
   siete botones la fila mide 584 (entra en los 640 del 8 Plus).
 - **Deslizar para pasar de tema**, como un carrusel:
   - El arrastre puede empezar en cualquier punto de la franja de la carátula y el título, de
-    borde a borde de la pantalla, o a 40 o menos de un borde lateral a cualquier altura. Solo
-    cuenta si arranca más horizontal que vertical (se decide a los 8). La barra de progreso y
-    los controles quedan fuera, con sus propios gestos.
+    borde a borde de la pantalla. Solo cuenta si arranca más horizontal que vertical (se
+    decide a los 8). La barra de progreso, los controles y la fila del origen quedan fuera,
+    con sus propios gestos.
   - Arrastrar a la izquierda trae el siguiente y a la derecha el anterior. La carátula, el
     título y el dispositivo siguen al dedo, y volver más allá del inicio muestra el otro.
   - Del costado correspondiente entra la "página" del otro ítem, una pantalla más allá: desde la derecha el
@@ -132,8 +132,9 @@ Cambia lo anterior en estos puntos (no está en los mockups):
     informa otro ítem (por ejemplo, "anterior" que solo reinició el tema), vuelve atrás.
   - Si Spotify no permite ese salto, el contenido se resiste (un tercio del recorrido, hasta
     40) y al soltar vuelve.
-  - También en episodios pasa de ítem (los botones de episodios siguen siendo ±15 s). En modo
-    letras no se desliza.
+  - También en episodios pasa de ítem (los botones de episodios siguen siendo ±15 s).
+  - En **modo letras** la franja es la fila de abajo (carátula chica, título, artista y
+    dispositivo), nunca las letras. Esa fila se mueve igual y entra la del otro ítem.
 - **Fondo "Foto del artista"** (estilo app de TV de Spotify): cuarta opción de FONDO DEL
   REPRODUCTOR (`fondoReproductor: "artista"`). Usa la foto más grande de `GET /artists/{id}`
   del primer artista, a pantalla completa (`fill`), al 45 % sobre el color de la carátula.

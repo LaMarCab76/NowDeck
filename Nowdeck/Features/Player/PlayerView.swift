@@ -63,7 +63,11 @@ struct PlayerView: View {
                 onOpenSpotify: { [url = model.origin?.url ?? item.itemURL] in
                     if let url { SpotifyLink.open(url) }
                 },
-                onShowDevices: actions.devices
+                onShowDevices: actions.devices,
+                swipe: swipe,
+                pageWidth: screenWidth,
+                upNext: model.upNext,
+                previousTrack: model.previousTrack
             )
             .frame(height: Layout.upperAreaHeight)
             .transition(.opacity)
@@ -90,19 +94,11 @@ struct PlayerView: View {
                     .offset(x: swipe.offset(pageWidth: screenWidth))
                 if let edge = swipe.edge {
                     previewPage(edge: edge)
-                        .offset(x: swipe.offset(pageWidth: screenWidth)
-                                   + (edge == .right ? screenWidth : -screenWidth))
+                        .offset(x: swipe.previewOffset(pageWidth: screenWidth))
                 }
             }
             .frame(height: Layout.topBlockHeight, alignment: .top)
-            .background {
-                // The band where a track swipe can start (`TrackSwipe`).
-                GeometryReader { proxy in
-                    let frame = proxy.frame(in: .global)
-                    Color.clear.preference(key: TrackSwipeBandKey.self,
-                                           value: frame.minY...frame.maxY)
-                }
-            }
+            .trackSwipeBand()
         }
         .frame(height: Layout.upperAreaHeight, alignment: .top)
     }

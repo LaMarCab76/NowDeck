@@ -18,25 +18,25 @@ final class TrackSwipeTests: XCTestCase {
         XCTAssertTrue(TrackSwipe(translation: TrackSwipe.commitDistance).isCommitted)
     }
 
-    func testStartsInTheBandOrAtASideEdgeAndOnlyHorizontally() {
+    func testStartsAnywhereInTheBandAndOnlyHorizontally() {
         let band: ClosedRange<CGFloat> = 64...280
         let sideways = CGSize(width: -12, height: 3)
-        XCTAssertTrue(TrackSwipe.canStart(at: CGPoint(x: 450, y: 150), translation: sideways,
-                                          screenWidth: 896, band: band),
-                      "Anywhere across the cover and title, not only at the edge")
+        for x: CGFloat in [10, 450, 886] {
+            XCTAssertTrue(TrackSwipe.canStart(at: CGPoint(x: x, y: 150), translation: sideways,
+                                              band: band),
+                          "Anywhere across the cover and title, edge to edge (x \(x))")
+        }
         XCTAssertFalse(TrackSwipe.canStart(at: CGPoint(x: 450, y: 360), translation: sideways,
-                                           screenWidth: 896, band: band),
+                                           band: band),
                        "Not on the progress bar or the controls")
-        XCTAssertTrue(TrackSwipe.canStart(at: CGPoint(x: 880, y: 360), translation: sideways,
-                                          screenWidth: 896, band: band),
-                      "Next to a side edge, at any height")
+        XCTAssertFalse(TrackSwipe.canStart(at: CGPoint(x: 880, y: 360), translation: sideways,
+                                           band: band),
+                       "Not even next to a side edge, outside the band")
         XCTAssertFalse(TrackSwipe.canStart(at: CGPoint(x: 450, y: 150),
-                                           translation: CGSize(width: 4, height: 10),
-                                           screenWidth: 896, band: band),
+                                           translation: CGSize(width: 4, height: 10), band: band),
                        "A vertical drag is not a swipe")
         XCTAssertFalse(TrackSwipe.canStart(at: CGPoint(x: 450, y: 150), translation: sideways,
-                                           screenWidth: 896, band: nil),
-                       "Without the band (lyrics mode) only the edges count")
+                                           band: nil))
     }
 
     func testAFlickCommitsEarlyOnlyInItsDirection() {

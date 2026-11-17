@@ -29,7 +29,7 @@ struct LyricsModeContent: Equatable {
 /// - Top row (44): Spotify icon and source on the left, as in the normal view (the owner moved
 ///   the logo there on 2026-11-17; the mockup had it on the right). It opens Spotify.
 /// - Center: current stanza (30 pt) and next stanza (22 pt), `width` of the usable width.
-/// - Bottom row (56): artwork, title, artist and device.
+/// - Bottom row (56): artwork, title, artist and device. It is the band of the track swipe.
 struct LyricsModeView: View {
     let content: LyricsModeContent
     /// `nil` while the lyrics of a new track load: the center stays empty.
@@ -47,6 +47,12 @@ struct LyricsModeView: View {
     var onOpenSpotify: () -> Void = {}
     /// Opens the devices sheet (milestone 4).
     var onShowDevices: () -> Void = {}
+    /// The track swipe works on the bottom row only, never on the lyrics: the row follows
+    /// the finger and the next or previous item's row comes in from the side.
+    var swipe: TrackSwipePhase = .idle
+    var pageWidth: CGFloat = 0
+    var upNext: TrackPreview?
+    var previousTrack: TrackPreview?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -81,18 +87,35 @@ struct LyricsModeView: View {
     // MARK: - Bottom row
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @EnvironmentObject private var theme: ThemeStore
 
     /// Changes with the track, for the footer's animations.
     private var trackKey: String { content.title + "|" + content.artist }
 
     private var footer: some View {
+        ZStack(alignment: .leading) {
+            currentFooter
+                .offset(x: swipe.offset(pageWidth: pageWidth))
+            if let edge = swipe.edge {
+                previewFooter(edge: edge)
+                    .offset(x: swipe.previewOffset(pageWidth: pageWidth))
+            }
+        }
+        .trackSwipeBand()
+    }
+
+    /// While a swiped-in item settles, the row swaps to it without animation (see
+    /// `PlayerView.animatesTrackChange`).
+    private var animatesTrackChange: Bool { !swipe.isLanding }
+
+    private var currentFooter: some View {
         HStack(spacing: Metrics.Lyrics.footerSpacing) {
             ZStack {
                 LyricsArtwork(image: artwork)
                     .id(trackKey)
                     .transition(.opacity)
             }
-            .animation(Motion.artworkCrossfade, value: trackKey)
+            .animation(animatesTrackChange ? Motion.artworkCrossfade : nil, value: trackKey)
             ZStack(alignment: .leading) {
                 LyricsTrackLabels(title: content.title, artist: content.artist,
                                   isExplicit: content.isExplicit)
@@ -100,11 +123,40 @@ struct LyricsModeView: View {
                     .transition(Motion.rise(Motion.trackRise, reduceMotion: reduceMotion))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .animation(Motion.trackChange, value: trackKey)
-            if let deviceName = content.deviceName {
-                LyricsDeviceButton(name: deviceName, type: content.deviceType ?? "",
-                                   action: onShowDevices)
+            .animation(animatesTrackChange ? Motion.trackChange : nil, value: trackKey)
+            deviceButton(action: onShowDevices)
+        }
+    }
+
+    private func previewFooter(edge: TrackSwipe.Edge) -> some View {
+        let preview: TrackPreview?
+        switch swipe {
+        case .landing(_, let frozen, _): preview = frozen
+        default: preview = edge == .right ? upNext : previousTrack
+        }
+        return HStack(spacing: Metrics.Lyrics.footerSpacing) {
+            LyricsArtwork(image: preview?.artwork.map(Image.init(uiImage:)))
+            Group {
+                if let item = preview?.item {
+                    LyricsTrackLabels(title: item.title, artist: item.subtitle,
+                                      isExplicit: item.isExplicit)
+                } else {
+                    Text(edge == .right ? "Siguiente" : "Anterior")
+                        .textStyle(.lyricsTrackTitle)
+                        .foregroundColor(theme.palette.secondaryText.color)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            deviceButton(action: {})
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private func deviceButton(action: @escaping () -> Void) -> some View {
+        if let deviceName = content.deviceName {
+            LyricsDeviceButton(name: deviceName, type: content.deviceType ?? "", action: action)
         }
     }
 }

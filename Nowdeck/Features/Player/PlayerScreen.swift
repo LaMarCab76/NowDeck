@@ -167,9 +167,10 @@ struct PlayerContent: View {
                 emptyState(.unavailable)
             }
         }
-        // Next / previous by dragging left or right across the cover and title: they follow
-        // the finger and the other item comes in from the side.
-        .trackSwipe(isActive: model.status == .active && !lyrics.showsLyricsMode,
+        // Next / previous by dragging left or right across the cover and title (in lyrics
+        // mode, its bottom row): they follow the finger and the other item comes in from the
+        // side.
+        .trackSwipe(isActive: model.status == .active,
                     band: swipeBand, onChange: swipeChanged, onEnd: swipeEnded)
         .onPreferenceChange(TrackSwipeBandKey.self) { swipeBand = $0 }
         .onChange(of: model.nowPlaying?.transitionKey) { key in
