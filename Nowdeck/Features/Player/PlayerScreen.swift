@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// What the player's buttons do. Lyrics, Settings and the playback controls are wired by
-/// `PlayerScreen`; the rest are no-ops until milestones 4 (devices) and 5 (library) wire
-/// them. Links back to Spotify are already active (`SpotifyLink`).
+/// What the player's buttons do. `PlayerScreen` wires them all. Ajustes is not here: it
+/// opens from the library (owner's request, 2026-11-17). Links back to Spotify go through
+/// `SpotifyLink`.
 struct PlayerActions {
     var playPause: () -> Void = {}
     var previous: () -> Void = {}
@@ -15,7 +15,6 @@ struct PlayerActions {
     var volume: () -> Void = {}
     var lyrics: () -> Void = {}
     var library: () -> Void = {}
-    var settings: () -> Void = {}
     /// "Reproduciendo en …" and "Elegir dispositivo".
     var devices: () -> Void = {}
 }
@@ -28,7 +27,7 @@ struct PlayerScreen: View {
     @EnvironmentObject private var theme: ThemeStore
     @EnvironmentObject private var preferences: AppPreferences
     @Environment(\.scenePhase) private var scenePhase
-    /// Settings, library and the two devices sheets (the player's and the library's).
+    /// The library and the two devices sheets (the player's and the library's).
     @StateObject private var presentation = PlayerPresentation()
 
     var actions = PlayerActions()
@@ -38,12 +37,11 @@ struct PlayerScreen: View {
         self.actions = actions
     }
 
-    /// The caller's actions plus the ones the player owns: lyrics mode, Settings and the
+    /// The caller's actions plus the ones the player owns: lyrics mode, the library and the
     /// playback controls.
     private var wiredActions: PlayerActions {
         var wired = actions
         wired.lyrics = { [lyrics, model] in lyrics.toggle(for: model.playback?.lyricsTrack) }
-        wired.settings = { [presentation] in presentation.showsSettings = true }
         // Milestone 3: playback controls and volume.
         let controls = model.controls
         wired.playPause = { controls.playPause() }
@@ -76,11 +74,6 @@ struct PlayerScreen: View {
             .onChange(of: theme.showsLyricsButton) { isOn in
                 if !isOn { lyrics.turnOff() }
             }
-            .fullScreenCover(isPresented: $presentation.showsSettings) {
-                SettingsView()
-                    // Passed explicitly: a cover is a new view hierarchy.
-                    .environmentObject(preferences)
-            }
             .devicesSheet(isPresented: $presentation.showsDevices, player: model)
             .fullScreenCover(isPresented: $presentation.showsLibrary) {
                 // While the library covers the player, the devices sheet ("Suena en …" in the
@@ -95,6 +88,9 @@ struct PlayerScreen: View {
                               onPlayPause: wiredActions.playPause,
                               onShowDevices: { [presentation] in presentation.showDevices() })
                     .devicesSheet(isPresented: $presentation.showsLibraryDevices, player: model)
+                    // Passed explicitly: a cover is a new view hierarchy, and Ajustes (opened
+                    // from the library) needs it.
+                    .environmentObject(preferences)
             }
             .onAppear {
                 model.loadsArtistImages = preferences.showsArtistPhoto

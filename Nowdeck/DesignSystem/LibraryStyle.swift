@@ -23,6 +23,11 @@ extension Metrics {
         static let searchTabLeadingPadding: CGFloat = 14
         static let tabIconSize: CGFloat = 18
         static let tabIconGap: CGFloat = 8
+        /// Ajustes, at the left of the logo (moved from the player on 2026-11-17).
+        static let settingsIconSize: CGFloat = 19
+        /// Ajustes → logo. With `rowGap` (16) it leaves 20 pt, more than the 15 pt of clear
+        /// space the 30 pt logo needs.
+        static let settingsLogoGap: CGFloat = 4
 
         // Row 2: filters and "ABRIR SPOTIFY".
         static let filterHeight: CGFloat = 36

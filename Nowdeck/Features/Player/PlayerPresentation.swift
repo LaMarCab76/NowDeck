@@ -14,7 +14,6 @@ final class PlayerPresentation: ObservableObject {
         case library
     }
 
-    @Published var showsSettings = false
     @Published var showsLibrary = false
     /// Dispositivos presented from the player.
     @Published var showsDevices = false

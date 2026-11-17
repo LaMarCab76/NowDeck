@@ -19,9 +19,12 @@ struct LibraryScreen: View {
     var onShowDevices: () -> Void
 
     @State private var tab: LibraryContent.Tab = .library
+    /// Ajustes lives here since 2026-11-17, so it is not always visible on the player.
+    @State private var showsSettings = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var theme: ThemeStore
+    @EnvironmentObject private var preferences: AppPreferences
 
     init(model: @autoclosure @escaping () -> LibraryModel, player: PlayerModel,
          onPlayPause: @escaping () -> Void, onShowDevices: @escaping () -> Void) {
@@ -34,10 +37,17 @@ struct LibraryScreen: View {
     var body: some View {
         LibraryContent(model: model, player: player, controls: player.controls, tab: $tab,
                        onPlay: play, onOpenPlayer: { dismiss() },
-                       onPlayPause: onPlayPause, onShowDevices: onShowDevices)
+                       onPlayPause: onPlayPause, onShowDevices: onShowDevices,
+                       onOpenSettings: { showsSettings = true })
             .statusBarHidden(true)
             .persistentSystemOverlays(.hidden)
             .task { await model.open() }
+            .fullScreenCover(isPresented: $showsSettings) {
+                SettingsView()
+                    // Passed explicitly: a cover is a new view hierarchy.
+                    .environmentObject(theme)
+                    .environmentObject(preferences)
+            }
             // The mini player needs fresh data. `start()` does nothing if the player is
             // already polling, so this is safe whatever the presenting screen does.
             .onAppear { if scenePhase == .active { player.start() } }
@@ -83,6 +93,7 @@ struct LibraryContent: View {
     var onOpenPlayer: () -> Void
     var onPlayPause: () -> Void
     var onShowDevices: () -> Void
+    var onOpenSettings: () -> Void = {}
 
     @EnvironmentObject private var theme: ThemeStore
     private typealias Layout = Metrics.Library
@@ -182,6 +193,17 @@ struct LibraryContent: View {
         HStack(spacing: Layout.rowGap) {
             LibraryTabs(tab: $tab)
             Spacer(minLength: 0)
+            Button(action: onOpenSettings) {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: Layout.settingsIconSize, weight: .medium))
+                    .foregroundStyle(theme.palette.tertiaryText.color)
+                    .frame(width: Metrics.minTouchTarget, height: Metrics.minTouchTarget)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Ajustes"))
+            // Clear space before the logo: half its height, as Spotify asks (docs/06).
+            .padding(.trailing, Layout.settingsLogoGap)
             SpotifyLogoLink(url: SpotifyLink.home, variant: .full)
         }
         .frame(height: Layout.rowHeight)

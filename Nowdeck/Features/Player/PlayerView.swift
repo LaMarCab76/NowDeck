@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// The player (`Main.dc.html`): artwork and text on top, progress and controls below.
+/// The player (`Main.dc.html`, rearranged on 2026-11-17): the origin row across the top,
+/// artwork and text below it, then progress and controls.
 struct PlayerView: View {
     @ObservedObject var model: PlayerModel
     @ObservedObject var lyrics: LyricsModeController
@@ -12,9 +13,12 @@ struct PlayerView: View {
     private typealias Layout = Metrics.Player
 
     var body: some View {
-        VStack(spacing: Spacing.Player.blockGap) {
+        // The gap is the spacer's minimum: a VStack spacing would also be added on both
+        // sides of the spacer (40 pt instead of 20), and the screen has none to spare
+        // (16 + 264 + 20 + 94 + 20 = 414).
+        VStack(spacing: 0) {
             topBlock
-            Spacer(minLength: 0)
+            Spacer(minLength: Spacing.Player.blockGap)
             bottomBlock
         }
     }
@@ -58,7 +62,7 @@ struct PlayerView: View {
                 },
                 onShowDevices: actions.devices
             )
-            .frame(height: Layout.topBlockHeight)
+            .frame(height: Layout.upperAreaHeight)
             .transition(.opacity)
         } else {
             normalTopBlock
@@ -66,29 +70,34 @@ struct PlayerView: View {
         }
     }
 
+    /// The origin row across the whole width, so "Desde la playlist …" always sits in the
+    /// top-left corner, and below it the artwork with the title, artist and device.
     private var normalTopBlock: some View {
-        HStack(alignment: .top, spacing: Layout.artworkGap) {
-            ArtworkView(image: model.artwork, side: artworkSide)
-            VStack(alignment: .leading, spacing: 0) {
-                PlayerTopRow(origin: model.origin, logoURL: model.nowPlaying?.itemURL,
-                             actions: actions)
-                Spacer(minLength: 0)
-                ZStack(alignment: .leading) {
-                    if let item = model.nowPlaying {
-                        // A new track: the old title rises away and the new one comes in.
-                        TitleBlock(item: item)
-                            .id(item.transitionKey)
-                            .transition(Motion.rise(Motion.trackRise, reduceMotion: reduceMotion))
+        VStack(spacing: Layout.topRowBottomGap) {
+            PlayerTopRow(origin: model.origin, logoURL: model.nowPlaying?.itemURL,
+                         actions: actions)
+            HStack(alignment: .top, spacing: Layout.artworkGap) {
+                ArtworkView(image: model.artwork, side: artworkSide)
+                VStack(alignment: .leading, spacing: 0) {
+                    Spacer(minLength: 0)
+                    ZStack(alignment: .leading) {
+                        if let item = model.nowPlaying {
+                            // A new track: the old title rises away and the new one comes in.
+                            TitleBlock(item: item)
+                                .id(item.transitionKey)
+                                .transition(Motion.rise(Motion.trackRise, reduceMotion: reduceMotion))
+                        }
                     }
+                    .animation(Motion.trackChange, value: model.nowPlaying?.transitionKey)
+                    Spacer(minLength: 0)
+                    DeviceRow(device: model.playback?.device, freshness: model.freshness,
+                              action: actions.devices)
                 }
-                .animation(Motion.trackChange, value: model.nowPlaying?.transitionKey)
-                Spacer(minLength: 0)
-                DeviceRow(device: model.playback?.device, freshness: model.freshness,
-                          action: actions.devices)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: Layout.topBlockHeight, alignment: .top)
         }
-        .frame(height: Layout.topBlockHeight, alignment: .top)
+        .frame(height: Layout.upperAreaHeight, alignment: .top)
     }
 
     // MARK: Bottom block
@@ -107,9 +116,7 @@ struct PlayerView: View {
             }
             PlayerControls(playback: model.playback, actions: actions,
                            controls: optionalControls,
-                           lyricsActive: lyrics.isButtonActive,
-                           sideGroupWidth: screenWidth < Layout.narrowScreenWidth
-                               ? Layout.narrowSideGroupWidth : Layout.sideGroupWidth)
+                           lyricsActive: lyrics.isButtonActive)
         }
     }
 }
@@ -149,12 +156,13 @@ struct ArtworkView: View {
 
 // MARK: - Top row
 
-/// Spotify logo, "Desde la playlist …", Biblioteca and Ajustes.
+/// Spotify icon and "Desde la playlist …" at the left, Biblioteca at the right. Ajustes is
+/// reached from the library (owner's request, 2026-11-17), so it is not always on screen.
 struct PlayerTopRow: View {
     var origin: PlaybackOrigin?
     var logoURL: URL?
     var actions: PlayerActions
-    var showsLibraryAndSettings = true
+    var showsLibrary = true
 
     @EnvironmentObject private var theme: ThemeStore
     private typealias Layout = Metrics.Player
@@ -177,36 +185,24 @@ struct PlayerTopRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            if showsLibraryAndSettings {
-                HStack(spacing: Layout.topButtonsGap) {
-                    Button(action: actions.library) {
-                        HStack(spacing: Layout.libraryPillIconGap) {
-                            Image(systemName: "books.vertical")
-                                .font(.system(size: Layout.libraryIconSize - 3, weight: .medium))
-                                .frame(width: Layout.libraryIconSize, height: Layout.libraryIconSize)
-                                .accessibilityHidden(true)
-                            Text("Biblioteca")
-                                .textStyle(.libraryPill)
-                        }
-                        .foregroundStyle(theme.palette.text.color)
-                        .padding(.leading, Layout.libraryPillLeadingPadding)
-                        .padding(.trailing, Layout.libraryPillTrailingPadding)
-                        .frame(height: Metrics.minTouchTarget)
-                        .background(Capsule().fill(Palette.subtleSurface))
-                        .contentShape(Capsule())
+            if showsLibrary {
+                Button(action: actions.library) {
+                    HStack(spacing: Layout.libraryPillIconGap) {
+                        Image(systemName: "books.vertical")
+                            .font(.system(size: Layout.libraryIconSize - 3, weight: .medium))
+                            .frame(width: Layout.libraryIconSize, height: Layout.libraryIconSize)
+                            .accessibilityHidden(true)
+                        Text("Biblioteca")
+                            .textStyle(.libraryPill)
                     }
-                    .buttonStyle(.plain)
-
-                    Button(action: actions.settings) {
-                        Image(systemName: "slider.horizontal.3")
-                            .font(.system(size: Layout.settingsIconSize - 3, weight: .medium))
-                            .foregroundStyle(theme.palette.tertiaryText.color)
-                            .frame(width: Metrics.minTouchTarget, height: Metrics.minTouchTarget)
-                            .contentShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(Text("Ajustes"))
+                    .foregroundStyle(theme.palette.text.color)
+                    .padding(.leading, Layout.libraryPillLeadingPadding)
+                    .padding(.trailing, Layout.libraryPillTrailingPadding)
+                    .frame(height: Metrics.minTouchTarget)
+                    .background(Capsule().fill(Palette.subtleSurface))
+                    .contentShape(Capsule())
                 }
+                .buttonStyle(.plain)
             }
         }
         .frame(height: Layout.topRowHeight)
@@ -474,8 +470,10 @@ struct ProgressRow: View {
 
 // MARK: - Controls
 
-/// The three control groups (`Main.dc.html`): the theme's optional controls split between the
-/// side groups (`PlayerControlLayout`), and previous · play/pause · next in the center.
+/// One centered row (owner's request, 2026-11-17): the theme's optional controls split in
+/// two (`PlayerControlLayout`) around previous · play/pause · next, with the same gap between
+/// every button. The two sides take the same flexible width, so play/pause stays in the exact
+/// center whatever the number of optional controls.
 ///
 /// - Controls that `actions.disallows` forbids, or all of them on a restricted device, are
 ///   shown disabled (`ControlAvailability`).
@@ -488,52 +486,45 @@ struct PlayerControls: View {
     /// Optional controls in the theme's order (`reproductor.controles`).
     var controls: [Theme.PlayerControl]
     var lyricsActive = false
-    var sideGroupWidth: CGFloat
 
     private typealias Layout = Metrics.Player
 
     var body: some View {
         let layout = PlayerControlLayout(controls: controls)
         let availability = ControlAvailability(playback: playback)
-        HStack(spacing: 0) {
-            HStack(spacing: Layout.sideButtonGap) {
+        HStack(spacing: Layout.controlsGap) {
+            HStack(spacing: Layout.controlsGap) {
                 ForEach(layout.leading, id: \.self) { control in
                     optionalButton(control, availability: availability)
                 }
             }
-            .frame(width: sideGroupWidth, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .trailing)
 
-            Spacer(minLength: 0)
-
-            HStack(spacing: Layout.centerGap) {
-                if isEpisode {
-                    SkipButton(systemName: "gobackward.15", label: "Retroceder 15 segundos",
-                               iconSize: Metrics.SeekButton.iconSize,
-                               isEnabled: availability.seek, action: actions.skipBackward)
-                } else {
-                    SkipButton(systemName: "backward.end.fill", label: "Anterior",
-                               isEnabled: availability.previous, action: actions.previous)
-                }
-                PlayPauseButton(isPlaying: playback?.isPlaying == true,
-                                isEnabled: availability.playPause, action: actions.playPause)
-                if isEpisode {
-                    SkipButton(systemName: "goforward.15", label: "Adelantar 15 segundos",
-                               iconSize: Metrics.SeekButton.iconSize,
-                               isEnabled: availability.seek, action: actions.skipForward)
-                } else {
-                    SkipButton(systemName: "forward.end.fill", label: "Siguiente",
-                               isEnabled: availability.next, action: actions.next)
-                }
+            if isEpisode {
+                SkipButton(systemName: "gobackward.15", label: "Retroceder 15 segundos",
+                           iconSize: Metrics.SeekButton.iconSize,
+                           isEnabled: availability.seek, action: actions.skipBackward)
+            } else {
+                SkipButton(systemName: "backward.end.fill", label: "Anterior",
+                           isEnabled: availability.previous, action: actions.previous)
+            }
+            PlayPauseButton(isPlaying: playback?.isPlaying == true,
+                            isEnabled: availability.playPause, action: actions.playPause)
+            if isEpisode {
+                SkipButton(systemName: "goforward.15", label: "Adelantar 15 segundos",
+                           iconSize: Metrics.SeekButton.iconSize,
+                           isEnabled: availability.seek, action: actions.skipForward)
+            } else {
+                SkipButton(systemName: "forward.end.fill", label: "Siguiente",
+                           isEnabled: availability.next, action: actions.next)
             }
 
-            Spacer(minLength: 0)
-
-            HStack(spacing: Layout.sideButtonGap) {
+            HStack(spacing: Layout.controlsGap) {
                 ForEach(layout.trailing, id: \.self) { control in
                     optionalButton(control, availability: availability)
                 }
             }
-            .frame(width: sideGroupWidth, alignment: .trailing)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(height: Layout.controlsHeight)
     }
