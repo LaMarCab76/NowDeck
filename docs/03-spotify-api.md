@@ -15,6 +15,12 @@
 - Los usuarios que no están en la lista permitida pueden loguearse, pero reciben `403` en las
   llamadas. Mostrá un mensaje que lo explique, porque es el error más probable si alguien
   configuró mal su app.
+- **Verificado (2026-11-17, "Quota modes" y guía de migración de feb-2026)**: "API requests
+  with an access token associated to that user and app will receive a 403 status code
+  error". Si el Premium del dueño vence, "the app will stop working". Los cambios de feb-2026
+  rigen para todas las apps en Development Mode (las nuevas desde el 11-feb-2026, las
+  existentes desde el 9-mar-2026). La cuota agrupa endpoints en *buckets* sin números
+  publicados.
 
 ## Autenticación: Authorization Code con PKCE
 
@@ -89,7 +95,7 @@ Base: `https://api.spotify.com/v1`. Cabecera: `Authorization: Bearer <token>`.
 
 | Función | Endpoint | Notas |
 |---|---|---|
-| Estado del reproductor | `GET /me/player?additional_types=episode` | `204` = nada suena → "Nada sonando". Trae `device`, `progress_ms`, `is_playing`, `item`, `shuffle_state`, `repeat_state`, `context` y `actions.disallows` |
+| Estado del reproductor | `GET /me/player?additional_types=episode` | `204` = nada suena → "Nada sonando". Trae `device`, `progress_ms`, `is_playing`, `item`, `shuffle_state`, `repeat_state`, `context`, `currently_playing_type` y `actions`. **Verificado (2026-11-17)**: sigue disponible, scope `user-read-playback-state`, respuestas 200/204/401/403/429. `additional_types` "might be deprecated in the future". Ver la nota sobre `actions` más abajo |
 | Dispositivos | `GET /me/player/devices` | Solo los activos o despiertos. `supports_volume` por dispositivo |
 | Transferir | `PUT /me/player` con body `{"device_ids":["<id>"],"play":true}` | |
 | Play / reanudar | `PUT /me/player/play` con body opcional `context_uri` o `uris` y `device_id` opcional | Para reproducir una tarjeta de la Biblioteca |
@@ -98,23 +104,57 @@ Base: `https://api.spotify.com/v1`. Cabecera: `Authorization: Bearer <token>`.
 | Volumen | `PUT /me/player/volume?volume_percent=0..100` | Agrupar los toques: mandar uno solo ~250 ms después del último |
 | Aleatorio | `PUT /me/player/shuffle?state=true\|false` | |
 | Repetir | `PUT /me/player/repeat?state=off\|context\|track` | |
-| Origen ("Desde la playlist…") | `context.type` y `context.uri` del estado; nombre con `GET /playlists/{id}?fields=name` o `GET /albums/{id}` | **[VERIFICAR]** que `GET /playlists/{id}` siga disponible en Development Mode para playlists ajenas. Si no, mostrar solo el tipo |
+| Origen ("Desde la playlist…") | `context.type` y `context.uri` del estado. Playlist: `GET /playlists/{id}?fields=name`. Álbum, artista y podcast: el nombre sale del propio `item` cuando su URI coincide con la del contexto, sin pedido extra | **Verificado (2026-11-17)**: `GET /playlists/{id}` figura en "Endpoints still available" del changelog de feb-2026. Para playlists ajenas devuelve solo metadatos (sin `items`), y `name` está entre ellos. Soporta `fields`. La referencia no lista scope. Si responde `403`/`404` (por ejemplo, playlists editoriales o algorítmicas de Spotify, que desde nov-2024 no están disponibles para apps nuevas; esto último no se volvió a verificar), se muestra solo el tipo ("Desde una playlist") y no se vuelve a pedir. `GET /albums/{id}` sigue disponible, pero no hace falta |
 | Playlists | `GET /me/playlists?limit=…` | Disponible |
-| Álbumes guardados | `GET /me/albums` | **[VERIFICAR]** tras los cambios de la biblioteca de feb-2026 |
-| Podcasts guardados | `GET /me/shows` | **[VERIFICAR]** |
-| Audiolibros guardados | `GET /me/audiobooks` | **[VERIFICAR]** disponibilidad y mercados (no en todos los países). Si no aplica, ocultar el filtro |
+| Álbumes guardados | `GET /me/albums` | Lectura listada en "Endpoints still available" (feb-2026, consultado 2026-11-17). Lo que se quitó son las escrituras (`PUT`/`DELETE`, reemplazadas por `/me/library`) y los `contains`. **[VERIFICAR en el hito 5]** campos y paginación |
+| Podcasts guardados | `GET /me/shows` | Lectura disponible, igual que la anterior. `show.publisher` y `available_markets` se quitaron. **[VERIFICAR en el hito 5]** |
+| Audiolibros guardados | `GET /me/audiobooks` | Lectura disponible, igual que la anterior. **[VERIFICAR en el hito 5]** mercados (no en todos los países). Si no aplica, ocultar el filtro |
 | Buscar | `GET /search?q=…&type=track,album,playlist,show,audiobook&limit=10` | Desde feb-2026, en Development Mode el **límite máximo es 10** (por defecto 5). Paginar con `offset` |
 
-Los comandos de reproducción requieren **Premium**. Si devuelven `403` con el motivo
-`PREMIUM_REQUIRED`, mostrar un mensaje claro.
+Los comandos de reproducción requieren **Premium**. **Verificado (2026-11-17)**: Spotify ya no
+documenta el motivo `PREMIUM_REQUIRED`. El cuerpo de error documentado es
+`{"error": {"status", "message", "reason"?}}` y el único `reason` listado es `QUOTA_EXCEEDED`.
+Por eso un `403` se trata siempre igual (fuera de la lista permitida, Premium vencido del dueño
+o del usuario) y se muestra con un mensaje con instrucciones.
+
+### `actions` **[VERIFICAR en el hito 3 con una respuesta real]**
+
+La referencia actual de *Get Playback State* (consultada el 2026-11-17) lista los diez booleanos
+(`interrupting_playback`, `pausing`, `resuming`, `seeking`, `skipping_next`, `skipping_prev`,
+`toggling_repeat_context`, `toggling_shuffle`, `toggling_repeat_track`,
+`transferring_playback`) **directamente** dentro de `actions`, sin `disallows`, y no dice si
+`true` significa permitido o prohibido. Las respuestas reales que se conocían traen
+`"actions": {"disallows": {"resuming": true}}`, donde `true` significa prohibido.
+
+El modelo (`PlaybackActions`) interpreta solo la forma con `disallows`. Si llegan los booleanos
+sueltos, los guarda sin usarlos, para no deshabilitar controles con un significado que no está
+documentado. El hito 3 tiene que mirar una respuesta real y decidir.
+
+### Campos quitados en Development Mode (changelog de feb-2026)
+
+- Track: `available_markets`, `linked_from`, `popularity`. `external_ids` se quitó y volvió en
+  marzo de 2026.
+- Album: `album_group`, `available_markets`, `label`, `popularity`.
+- Artist: `followers`, `popularity`.
+- Show: `available_markets`, `publisher`.
+- `GET /me`: `country`, `email`, `explicit_content`, `followers`, `product`.
+
+Los modelos no decodifican ninguno de estos campos.
 
 ## Polling y estado local
 
 La Web API no tiene notificaciones push del estado, así que hay que consultarlo.
 
 - **Reproduciendo, app en primer plano**: `GET /me/player` cada **3 s**. Entre consultas, el
-  progreso se **interpola** localmente con `Date()` y `progress_ms`.
+  progreso se **interpola** localmente con `Date()` y `progress_ms`. Se toma la hora local
+  en que llegó la respuesta, no el campo `timestamp`: según la referencia, ese campo marca
+  cuándo *cambió* el estado y viene con el reloj de Spotify.
 - **Pausado o nada sonando**: cada **10 s**.
+- **Después de `QUOTA_EXCEEDED`**: durante 15 minutos, cada 10 s reproduciendo y cada 30 s
+  pausado (`PollingPolicy`).
+- **Después de un error de red o `5xx`**: espera exponencial de 3, 6, 12… hasta 60 s.
+- **Después de un `403`**: cada 30 s, para que la app se recupere sola si el dueño corrige la
+  lista de usuarios.
 - **App en segundo plano**: detener el polling.
 - **Después de un comando**: actualizar la UI en forma **optimista** y volver a consultar a los
   ~600 ms para confirmar.
@@ -132,6 +172,20 @@ La Web API no tiene notificaciones push del estado, así que hay que consultarlo
 | `404` "No active device" | Abrir Dispositivos o mostrar "Nada sonando" |
 | `429` | Respetar `Retry-After` (más un poco de *jitter*). Si el motivo es `QUOTA_EXCEEDED`, bajar la frecuencia del polling y avisar en forma discreta |
 | `5xx` o sin red | Reintento con espera exponencial; mantener el último estado visible y marcarlo como desactualizado |
+
+**Verificado (2026-11-17, "Rate limits" y "API calls")**:
+
+- El límite se calcula en una ventana móvil de 30 s.
+- `Retry-After` viene en **segundos**.
+- La cuota de Development Mode "has a different enforcement mechanism than rate limits" y
+  responde `429` con `"reason": "QUOTA_EXCEEDED"`.
+
+Cómo lo maneja `SpotifyAPI`:
+
+- Ante un `429`, recuerda hasta cuándo esperar y, mientras tanto, falla sin salir a la red.
+- Ante un `5xx`, reintenta solo los `GET`, dos veces, a los 0,5 s y a los 1,5 s más
+  *jitter*.
+- Los comandos no se reintentan solos: repetir "siguiente" podría saltar dos temas.
 
 ## Modelos
 
