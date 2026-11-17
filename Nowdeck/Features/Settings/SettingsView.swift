@@ -22,7 +22,7 @@ struct SettingsView: View {
     }
 
     /// Mockup: padding 28 (top and bottom) and 48 (sides).
-    private let margins = ScreenMargins(top: 28, horizontal: 48, bottom: 28)
+    private let margins = SettingsMargins(top: 28, horizontal: 48, bottom: 28)
 
     var body: some View {
         // The outer reader measures the safe area; the content then ignores it and applies

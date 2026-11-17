@@ -2,7 +2,7 @@ import XCTest
 @testable import Nowdeck
 
 /// A clock tests can move.
-private final class TestClock: @unchecked Sendable {
+private final class LyricsTestClock: @unchecked Sendable {
     private let lock = NSLock()
     private var current = Date(timeIntervalSince1970: 1_000_000)
 
@@ -11,7 +11,7 @@ private final class TestClock: @unchecked Sendable {
 }
 
 /// Records the waits the service asks for, without waiting.
-private final class SleepRecorder: @unchecked Sendable {
+private final class LyricsSleepRecorder: @unchecked Sendable {
     private let lock = NSLock()
     private var recorded: [TimeInterval] = []
 
@@ -32,7 +32,7 @@ private func response(_ status: Int, retryAfter: String? = nil) -> HTTPURLRespon
 
 final class LyricsServiceTests: XCTestCase {
     private var directory: URL!
-    private let clock = TestClock()
+    private let clock = LyricsTestClock()
 
     private let track = LyricsTrack(spotifyID: "4uLU6hMCjMI75M1A2tKUQC", title: "Song", artist: "Artist",
                                     album: "Album", durationMs: 200_000)
@@ -55,7 +55,7 @@ final class LyricsServiceTests: XCTestCase {
 
     private func makeService(
         cache: LyricsCache? = nil,
-        sleeps: SleepRecorder = SleepRecorder(),
+        sleeps: LyricsSleepRecorder = LyricsSleepRecorder(),
         handler: @escaping StubURLProtocol.Handler
     ) -> (LyricsService, StubRecorder) {
         let (session, recorder) = StubURLProtocol.session(handler: handler)
@@ -157,8 +157,8 @@ final class LyricsServiceTests: XCTestCase {
     // MARK: Rate limit
 
     func testShortRetryAfterIsHonoredWithJitterAndRetriedOnce() async {
-        let sleeps = SleepRecorder()
-        let attempts = SleepRecorder()
+        let sleeps = LyricsSleepRecorder()
+        let attempts = LyricsSleepRecorder()
         let (service, recorder) = makeService(sleeps: sleeps) { _ in
             attempts.record(0)
             if attempts.waits.count == 1 { return (response(429, retryAfter: "2"), Data()) }
@@ -173,7 +173,7 @@ final class LyricsServiceTests: XCTestCase {
     }
 
     func testLongRetryAfterFailsAndBlocksRequestsUntilItPasses() async {
-        let sleeps = SleepRecorder()
+        let sleeps = LyricsSleepRecorder()
         let (service, recorder) = makeService(sleeps: sleeps) { _ in
             (response(429, retryAfter: "60"), Data())
         }
