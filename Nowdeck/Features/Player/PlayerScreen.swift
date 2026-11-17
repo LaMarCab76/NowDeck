@@ -102,7 +102,9 @@ struct PlayerScreen: View {
                     .devicesSheet(isPresented: $presentation.showsLibraryDevices, player: model)
             }
             .onAppear { if scenePhase == .active { model.start() } }
-            .onDisappear { model.stop() }
+            // Covered by the library or Cola, the player is "gone" but its data is still
+            // on screen (`keepsPlayerPolling`).
+            .onDisappear { if !presentation.keepsPlayerPolling { model.stop() } }
             // iOS 16 API (the two-value variant is iOS 17+).
             .onChange(of: scenePhase) { phase in
                 if phase == .active { model.start() } else { model.stop() }

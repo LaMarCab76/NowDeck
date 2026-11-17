@@ -26,6 +26,26 @@ final class PlayerPresentationTests: XCTestCase {
         XCTAssertFalse(presentation.showsDevices)
     }
 
+    func testThePlayerKeepsPollingOnlyUnderCoversThatShowThePlayback() {
+        let presentation = PlayerPresentation()
+        XCTAssertFalse(presentation.keepsPlayerPolling)
+
+        presentation.showsQueue = true
+        XCTAssertTrue(presentation.keepsPlayerPolling, "Cola's header follows the playback")
+        presentation.showsQueue = false
+
+        presentation.showsLibrary = true
+        XCTAssertTrue(presentation.keepsPlayerPolling, "The mini player follows the playback")
+        presentation.showsLibrary = false
+
+        presentation.showsSettings = true
+        XCTAssertFalse(presentation.keepsPlayerPolling)
+        presentation.showsSettings = false
+
+        presentation.showsDevices = true
+        XCTAssertFalse(presentation.keepsPlayerPolling)
+    }
+
     func testClosingTheLibraryBringsTheNoticesBackToThePlayer() {
         let presentation = PlayerPresentation()
         presentation.showsLibrary = true
