@@ -32,6 +32,8 @@ private struct QueueSheetHost: View {
     @StateObject private var model: QueueModel
     let dismiss: () -> Void
 
+    @Environment(\.scenePhase) private var scenePhase
+
     init(player: PlayerModel, dismiss: @escaping () -> Void) {
         self.player = player
         _model = StateObject(wrappedValue: QueueModel(api: player.api))
@@ -44,6 +46,14 @@ private struct QueueSheetHost: View {
             .task { await model.reload() }
             .onChange(of: player.nowPlaying?.transitionKey) { _ in
                 Task { await model.trackDidChange() }
+            }
+            // The header and the reading on a track change need the player's polling. The
+            // player keeps it while Cola covers it (`keepsPlayerPolling`); this also covers
+            // coming back from the background with the sheet open, like the library does.
+            // `start()` does nothing if the player is already polling.
+            .onAppear { if scenePhase == .active { player.start() } }
+            .onChange(of: scenePhase) { phase in
+                if phase == .active { player.start() } else { player.stop() }
             }
     }
 }
