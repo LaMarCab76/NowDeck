@@ -140,8 +140,7 @@ final class LibraryModel: ObservableObject {
     typealias PageFetch = @Sendable (_ offset: Int) async throws
         -> (items: [LibraryEntry], nextOffset: Int?)
 
-    /// Fetches pages until the row has `rowLimit` items, there are no more pages, or
-    /// `maxPages` pages were read. Duplicate URIs are dropped.
+    /// Collects unique cards until the item or page limit is reached, or pagination ends.
     static func collectRow(limit: Int = rowLimit, maxPages: Int = maxPages,
                            fetch: PageFetch) async throws -> [LibraryEntry] {
         var items: [LibraryEntry] = []
@@ -154,16 +153,18 @@ final class LibraryModel: ObservableObject {
             for item in page.items where seen.insert(item.uri).inserted {
                 items.append(item)
             }
-            offset = page.nextOffset
+            offset = page.nextOffset.flatMap { $0 > current ? $0 : nil }
         }
         return Array(items.prefix(limit))
     }
 
     // MARK: Folders (experimental)
 
-    /// Most playlists the tree can show cards for: every page of `GET /me/playlists`, 50 at
-    /// a time, up to this many.
+    /// Maximum number of saved playlist cards to load for the folder tree.
     static let maxFolderPlaylists = 1_000
+    private static let folderPlaylistPageSize = 50
+    /// Allow extra pages for null, invalid or duplicate entries while bounding requests.
+    static let maxFolderPlaylistPages = 2 * maxFolderPlaylists / folderPlaylistPageSize
 
     /// Reads the tree and the playlists' cards. Returns `false` (after showing a notice) when
     /// the folder service fails, so the caller loads the flat list instead.
@@ -202,14 +203,12 @@ final class LibraryModel: ObservableObject {
     }
 
     private func allPlaylistCards() async throws -> [LibraryEntry] {
-        var entries: [LibraryEntry] = []
-        var offset: Int? = 0
-        while let current = offset, entries.count < Self.maxFolderPlaylists {
-            let page = try await api.savedPlaylists(limit: 50, offset: current)
-            entries += page.items.compactMap(LibraryEntry.init(playlist:))
-            offset = page.nextOffset
+        let api = self.api
+        return try await Self.collectRow(limit: Self.maxFolderPlaylists,
+                                         maxPages: Self.maxFolderPlaylistPages) { offset in
+            let page = try await api.savedPlaylists(limit: Self.folderPlaylistPageSize, offset: offset)
+            return (page.items.compactMap(LibraryEntry.init(playlist:)), page.nextOffset)
         }
-        return entries
     }
 
     /// The cards of the open folder: folders and playlists in Spotify's order, at most

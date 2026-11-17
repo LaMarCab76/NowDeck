@@ -98,6 +98,11 @@ final class LibraryModelsTests: XCTestCase {
         XCTAssertNil(page.nextOffset)
     }
 
+    func testUnrepresentableNextOffsetEndsPagination() {
+        let page = Paging<SimplifiedPlaylist>(items: [], limit: 50, offset: Int.max, next: "next")
+        XCTAssertNil(page.nextOffset)
+    }
+
     // MARK: Cards
 
     func testPlaylistCountPrefersItemsOverDeprecatedTracks() throws {
