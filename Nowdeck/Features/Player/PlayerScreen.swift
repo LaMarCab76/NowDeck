@@ -26,6 +26,7 @@ struct PlayerScreen: View {
     @StateObject private var model: PlayerModel
     @StateObject private var lyrics = LyricsModeController()
     @EnvironmentObject private var theme: ThemeStore
+    @EnvironmentObject private var preferences: AppPreferences
     @Environment(\.scenePhase) private var scenePhase
     /// Settings, library and the two devices sheets (the player's and the library's).
     @StateObject private var presentation = PlayerPresentation()
@@ -77,6 +78,8 @@ struct PlayerScreen: View {
             }
             .fullScreenCover(isPresented: $presentation.showsSettings) {
                 SettingsView()
+                    // Passed explicitly: a cover is a new view hierarchy.
+                    .environmentObject(preferences)
             }
             .devicesSheet(isPresented: $presentation.showsDevices, player: model)
             .fullScreenCover(isPresented: $presentation.showsLibrary) {

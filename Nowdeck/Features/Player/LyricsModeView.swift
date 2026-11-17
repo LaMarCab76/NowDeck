@@ -37,6 +37,8 @@ struct LyricsModeView: View {
     let playback: LyricsPlayback
     /// "Ancho de las letras" (Ajustes → Reproductor, stored in the theme).
     var width: Theme.LyricsWidth = .twoThirds
+    /// "Sincronía de las letras" (Ajustes → Reproductor). Positive shows them earlier.
+    var offsetMs: Int = 0
     /// The track's artwork, already loaded by the player. Shown as is, never cropped.
     var artwork: Image?
     /// Opens the playlist or album in Spotify (milestone 2).
@@ -50,7 +52,7 @@ struct LyricsModeView: View {
         VStack(spacing: 0) {
             header
                 .frame(height: Metrics.Lyrics.headerHeight)
-            LyricsStanzasView(lyrics: lyrics, playback: playback, width: width)
+            LyricsStanzasView(lyrics: lyrics, playback: playback, width: width, offsetMs: offsetMs)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             footer
                 .frame(height: Metrics.Lyrics.footerHeight)
@@ -100,6 +102,7 @@ private struct LyricsStanzasView: View {
     let lyrics: SyncedLyrics?
     let playback: LyricsPlayback
     let width: Theme.LyricsWidth
+    let offsetMs: Int
 
     /// The snapshot used for interpolation. Polls closer than 1.5 s to it are ignored so the
     /// lyrics do not jitter (see `LyricsPlayback.reconciled(with:)`).
@@ -110,7 +113,8 @@ private struct LyricsStanzasView: View {
         GeometryReader { proxy in
             if let lyrics {
                 TimelineView(.periodic(from: .now, by: refreshInterval(for: lyrics))) { context in
-                    let position = (anchor ?? playback).positionMs(at: context.date)
+                    let position = (anchor ?? playback).lyricsPositionMs(at: context.date,
+                                                                     offsetMs: offsetMs)
                     if let frame = LyricsTimeline.frame(for: lyrics, atMs: position) {
                         stanzas(lyrics, frame: frame, width: proxy.size.width * width.fraction)
                             .frame(width: proxy.size.width, height: proxy.size.height)
