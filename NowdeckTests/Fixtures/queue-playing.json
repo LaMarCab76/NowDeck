@@ -1,0 +1,93 @@
+{
+  "currently_playing": {
+    "album": {
+      "album_type": "album",
+      "external_urls": { "spotify": "https://open.spotify.com/album/6akEvsycLGftJxYudPjmqK" },
+      "id": "6akEvsycLGftJxYudPjmqK",
+      "images": [
+        { "url": "https://i.scdn.co/image/ab67616d0000b273aaaaaaaaaaaaaaaaaaaaaaaa", "height": 640, "width": 640 },
+        { "url": "https://i.scdn.co/image/ab67616d00001e02aaaaaaaaaaaaaaaaaaaaaaaa", "height": 300, "width": 300 },
+        { "url": "https://i.scdn.co/image/ab67616d00004851aaaaaaaaaaaaaaaaaaaaaaaa", "height": 64, "width": 64 }
+      ],
+      "name": "Vereda Mojada",
+      "type": "album",
+      "uri": "spotify:album:6akEvsycLGftJxYudPjmqK"
+    },
+    "artists": [
+      { "id": "1vCWHaC5f2uS3yhpwWbIA6", "name": "Los Tilos del Sur", "type": "artist", "uri": "spotify:artist:1vCWHaC5f2uS3yhpwWbIA6" }
+    ],
+    "duration_ms": 227000,
+    "explicit": false,
+    "external_urls": { "spotify": "https://open.spotify.com/track/11dFghVXANMlKmJXsNCbNl" },
+    "id": "11dFghVXANMlKmJXsNCbNl",
+    "is_local": false,
+    "name": "Vereda Mojada",
+    "type": "track",
+    "uri": "spotify:track:11dFghVXANMlKmJXsNCbNl"
+  },
+  "queue": [
+    {
+      "album": {
+        "album_type": "single",
+        "id": "2noRn2Aes5aoNVsU6iWThc",
+        "images": [
+          { "url": "https://i.scdn.co/image/ab67616d0000b273bbbbbbbbbbbbbbbbbbbbbbbb", "height": 640, "width": 640 },
+          { "url": "https://i.scdn.co/image/ab67616d00001e02bbbbbbbbbbbbbbbbbbbbbbbb", "height": 300, "width": 300 },
+          { "url": "https://i.scdn.co/image/ab67616d00004851bbbbbbbbbbbbbbbbbbbbbbbb", "height": 64, "width": 64 }
+        ],
+        "name": "Fiebre de Sábado",
+        "type": "album",
+        "uri": "spotify:album:2noRn2Aes5aoNVsU6iWThc"
+      },
+      "artists": [
+        { "id": "0OdUWJ0sBjDrqHygGUXeCF", "name": "Club Atlántico", "type": "artist", "uri": "spotify:artist:0OdUWJ0sBjDrqHygGUXeCF" },
+        { "id": "3WrFJ7ztbogyGnTHbHJFl2", "name": "Nina Ferro", "type": "artist", "uri": "spotify:artist:3WrFJ7ztbogyGnTHbHJFl2" }
+      ],
+      "duration_ms": 178000,
+      "explicit": true,
+      "external_urls": { "spotify": "https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh" },
+      "id": "4iV5W9uYEdYUVa79Axb7Rh",
+      "is_local": false,
+      "name": "Fiebre de Sábado",
+      "type": "track",
+      "uri": "spotify:track:4iV5W9uYEdYUVa79Axb7Rh"
+    },
+    {
+      "description": "Un episodio de prueba.",
+      "duration_ms": 1686230,
+      "explicit": false,
+      "external_urls": { "spotify": "https://open.spotify.com/episode/512ojhOuo1ktJprKbVcKyQ" },
+      "id": "512ojhOuo1ktJprKbVcKyQ",
+      "images": [
+        { "url": "https://i.scdn.co/image/ab6765630000ba8acccccccccccccccccccccccc", "height": 640, "width": 640 },
+        { "url": "https://i.scdn.co/image/ab67656300005f1fcccccccccccccccccccccccc", "height": 300, "width": 300 },
+        { "url": "https://i.scdn.co/image/ab6765630000f68dcccccccccccccccccccccccc", "height": 64, "width": 64 }
+      ],
+      "name": "Charlas de domingo",
+      "show": {
+        "id": "38bS44xjbVVZ3No3ByF1dJ",
+        "name": "Sobremesa",
+        "type": "show",
+        "uri": "spotify:show:38bS44xjbVVZ3No3ByF1dJ"
+      },
+      "type": "episode",
+      "uri": "spotify:episode:512ojhOuo1ktJprKbVcKyQ"
+    },
+    {
+      "id": null,
+      "name": "Demo grabada en casa",
+      "artists": [ { "id": null, "name": "Tomás Bravo", "type": "artist", "uri": null } ],
+      "album": { "id": null, "images": [], "name": "", "type": "album", "uri": null },
+      "duration_ms": 154000,
+      "explicit": false,
+      "external_urls": {},
+      "is_local": true,
+      "type": "track",
+      "uri": "spotify:local:Tom%C3%A1s+Bravo::Demo+grabada+en+casa:154"
+    },
+    {
+      "type": "audiobook_chapter",
+      "name": "Capítulo 1"
+    }
+  ]
+}
