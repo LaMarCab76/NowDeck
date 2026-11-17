@@ -122,12 +122,13 @@ struct TrackSwipeBandKey: PreferenceKey {
 
 extension View {
     /// Reports track swipes (see `TrackSwipe`). `onEnd` gets the swipe and whether its
-    /// release commits it.
+    /// release commits it. `onCancel` settles an interrupted swipe without committing.
     func trackSwipe(isActive: Bool, band: ClosedRange<CGFloat>?,
                     onChange: @escaping (TrackSwipe) -> Void,
-                    onEnd: @escaping (TrackSwipe, _ commits: Bool) -> Void) -> some View {
+                    onEnd: @escaping (TrackSwipe, _ commits: Bool) -> Void,
+                    onCancel: @escaping () -> Void) -> some View {
         modifier(TrackSwipeModifier(isActive: isActive, band: band,
-                                    onChange: onChange, onEnd: onEnd))
+                                    onChange: onChange, onEnd: onEnd, onCancel: onCancel))
     }
 }
 
@@ -136,17 +137,27 @@ private struct TrackSwipeModifier: ViewModifier {
     var band: ClosedRange<CGFloat>?
     var onChange: (TrackSwipe) -> Void
     var onEnd: (TrackSwipe, Bool) -> Void
+    var onCancel: () -> Void
 
     /// Decided once per touch, after `decisionDistance`: `true` for a track swipe.
     @State private var isSwiping: Bool?
+    @GestureState private var dragInProgress = false
 
     func body(content: Content) -> some View {
         content
             .simultaneousGesture(drag, including: isActive ? .all : .subviews)
+            .onChange(of: dragInProgress) { dragging in
+                guard !dragging else { return }
+                // A successful release already clears this decision in onEnded.
+                let wasSwiping = isSwiping == true
+                isSwiping = nil
+                if wasSwiping { onCancel() }
+            }
     }
 
     private var drag: some Gesture {
         DragGesture(minimumDistance: TrackSwipe.decisionDistance, coordinateSpace: .global)
+            .updating($dragInProgress) { _, dragging, _ in dragging = true }
             .onChanged { value in
                 if isSwiping == nil {
                     isSwiping = TrackSwipe.canStart(at: value.startLocation,

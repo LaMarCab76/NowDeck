@@ -133,6 +133,10 @@ en 2026 y por las reglas de Spotify:
   tercero junto a la reproducción no tiene un precedente claro. Por eso las letras se pueden
   apagar en **Ajustes → Reproductor → Mostrar letras**, y la pantalla de Ajustes explica de
   dónde salen. Nowdeck nunca usa el acceso interno de Spotify a sus letras.
+- **Foto del artista de fondo.** Está desactivada por defecto. Podés activarla en
+  **Ajustes → Apariencia → Fondo del reproductor**. La carátula se muestra íntegra. Para llenar
+  el fondo, Nowdeck recorta y atenúa la foto del artista, un tratamiento que puede entrar en
+  conflicto con las [reglas de Spotify sobre contenido visual](https://developer.spotify.com/documentation/web-api/reference/get-an-artist).
 - **No es un reproductor.** No hace sonar nada en el iPhone; para eso está la app de Spotify.
 
 ## Privacidad

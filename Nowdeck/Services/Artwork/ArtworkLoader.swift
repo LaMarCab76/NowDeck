@@ -30,17 +30,7 @@ actor ArtworkLoader {
 
     /// - Parameter cacheKey: the album ID, or `nil` to key by URL.
     func load(_ url: URL, cacheKey: String?) async throws -> Artwork {
-        let data: Data
-        let response: URLResponse
-        do {
-            (data, response) = try await session.data(from: url)
-        } catch let error as URLError {
-            if error.code == .cancelled { throw CancellationError() }
-            throw LoadError.network(error.code)
-        }
-        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-            throw LoadError.http(http.statusCode)
-        }
+        let data = try await fetchData(url)
         guard let image = UIImage(data: data), let cgImage = image.cgImage else {
             throw LoadError.notAnImage
         }
@@ -56,6 +46,12 @@ actor ArtworkLoader {
 
     /// Only the image, without the color: the artist's photo behind the player.
     func loadImage(_ url: URL) async throws -> UIImage {
+        let data = try await fetchData(url)
+        guard let image = UIImage(data: data) else { throw LoadError.notAnImage }
+        return image
+    }
+
+    private func fetchData(_ url: URL) async throws -> Data {
         let data: Data
         let response: URLResponse
         do {
@@ -67,8 +63,7 @@ actor ArtworkLoader {
         if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
             throw LoadError.http(http.statusCode)
         }
-        guard let image = UIImage(data: data) else { throw LoadError.notAnImage }
-        return image
+        return data
     }
 
     private func remember(_ color: RGBColor?, for key: String) {

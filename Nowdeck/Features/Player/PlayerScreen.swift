@@ -171,7 +171,8 @@ struct PlayerContent: View {
         // mode, its bottom row): they follow the finger and the other item comes in from the
         // side.
         .trackSwipe(isActive: model.status == .active,
-                    band: swipeBand, onChange: swipeChanged, onEnd: swipeEnded)
+                    band: swipeBand, onChange: swipeChanged, onEnd: swipeEnded,
+                    onCancel: settleDraggingSwipe)
         .onPreferenceChange(TrackSwipeBandKey.self) { swipeBand = $0 }
         .onChange(of: model.nowPlaying?.transitionKey) { key in
             // The item the swipe showed is now the current one: put the pages back without
@@ -201,7 +202,7 @@ struct PlayerContent: View {
     private func swipeEnded(_ trackSwipe: TrackSwipe, commits: Bool) {
         if swipe.isLanding { return }
         guard commits, isAllowed(trackSwipe.edge) else {
-            withAnimation(Motion.swipeSettle) { swipe = .idle }
+            settleDraggingSwipe()
             return
         }
         // The track changes under the finger: the phone confirms it (owner's request).
@@ -215,6 +216,11 @@ struct PlayerContent: View {
         case .left: actions.previous()
         case .right: actions.next()
         }
+    }
+
+    private func settleDraggingSwipe() {
+        guard case .dragging = swipe else { return }
+        withAnimation(Motion.swipeSettle) { swipe = .idle }
     }
 
     private func isAllowed(_ edge: TrackSwipe.Edge) -> Bool {

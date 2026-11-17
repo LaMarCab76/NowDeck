@@ -87,16 +87,19 @@ final class ArtistPhotoTests: XCTestCase {
             if request.url?.path != "/v1/me/player" { return (.stub(404), Data()) }
             return (.stub(200), playback)
         }
-        var failed = false
-        let subscription = model.$artistImage.dropFirst().sink { image in failed = image == nil }
+        var photoUpdates = 0
+        let subscription = model.$artistImage.dropFirst().sink { _ in photoUpdates += 1 }
         defer { subscription.cancel() }
         let photoPath = try XCTUnwrap(URL(string: photoURL)).path
 
         await model.poll()
-        try await waitUntil { failed }
+        try await waitUntil { photoUpdates >= 1 }
+        XCTAssertNil(model.artistImage)
         photoAvailable.value = true
         clock.advance(59)
         await model.poll()
+        try await waitUntil { photoUpdates >= 2 }
+        XCTAssertNil(model.artistImage, "The poll finished processing the photo before the retry was due")
         XCTAssertEqual(requests(recorder, path: photoPath), 1)
 
         clock.advance(1)
