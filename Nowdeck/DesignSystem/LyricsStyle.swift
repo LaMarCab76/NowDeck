@@ -37,14 +37,8 @@ extension Palette {
 
 extension Metrics {
     enum Lyrics {
-        /// Top row: source on the left, Spotify logo on the right.
+        /// Top row: Spotify icon and the source on the left (like the normal view).
         static let headerHeight: CGFloat = 44
-        static let headerSpacing: CGFloat = 16
-        /// Gap between the source icon and its two lines.
-        static let headerIconSpacing: CGFloat = 8
-        static let headerIconSize: CGFloat = 18
-        /// Spotify logo box (same as in the player's normal view).
-        static let logoSize = CGSize(width: 108, height: 30)
 
         /// Gap between the current and the next stanza.
         static let stanzaSpacing: CGFloat = 12
