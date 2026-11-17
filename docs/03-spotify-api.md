@@ -104,6 +104,7 @@ Base: `https://api.spotify.com/v1`. Cabecera: `Authorization: Bearer <token>`.
 | Volumen | `PUT /me/player/volume?volume_percent=0..100` | Agrupar los toques: mandar uno solo ~250 ms después del último |
 | Aleatorio | `PUT /me/player/shuffle?state=true\|false` | |
 | Repetir | `PUT /me/player/repeat?state=off\|context\|track` | |
+| Cola | `GET /me/player/queue` | **Verificado (2026-11-17)**: figura en "Endpoints still available" → Player del changelog de feb-2026 ("Retrieves the current playback queue"); los de may-2026 y jul-2026 no lo tocan; sin nota de deprecación. Scopes `user-read-currently-playing` y `user-read-playback-state` (ya pedidos). Respuestas 200/401/403/429. Trae `currently_playing` ("Can be `null`") y `queue` ("The tracks or episodes in the queue. Can be empty"), con temas o episodios; mezcla lo agregado a mano y lo que sigue del contexto sin distinguirlos. La referencia no indica un máximo de ítems; la app muestra hasta 20 (docs/06). No hay endpoints para quitar, reordenar ni saltar a un ítem: la hoja es de solo lectura. `POST /me/player/queue?uri=…` (agregar, `user-modify-playback-state`, solo Premium, 204/401/403/429) también sigue disponible, pero la app todavía no lo usa |
 | Saltar ±15 s (episodios) | `PUT /me/player/seek?position_ms=…` | "Must be a positive number". Pasarse de la duración "will cause the player to start playing the next song": la app lo limita a la duración |
 | Origen ("Desde la playlist…") | `context.type` y `context.uri` del estado. Playlist: `GET /playlists/{id}?fields=name`. Álbum, artista y podcast: el nombre sale del propio `item` cuando su URI coincide con la del contexto, sin pedido extra | **Verificado (2026-11-17)**: `GET /playlists/{id}` figura en "Endpoints still available" del changelog de feb-2026. Para playlists ajenas devuelve solo metadatos (sin `items`), y `name` está entre ellos. Soporta `fields`. La referencia no lista scope. Si responde `403`/`404` (por ejemplo, playlists editoriales o algorítmicas de Spotify, que desde nov-2024 no están disponibles para apps nuevas; esto último no se volvió a verificar), se muestra solo el tipo ("Desde una playlist") y no se vuelve a pedir. `GET /albums/{id}` sigue disponible, pero no hace falta |
 | Playlists | `GET /me/playlists?limit=…&offset=…` | **Verificado (2026-11-17)**: scope `playlist-read-private`; `limit` 1–50 (por defecto 20), `offset` hasta 100.000. La cantidad de temas pasó de `tracks.total` a `items.total` (`tracks` figura como *deprecated*); el modelo lee `items` y, si falta, `tracks` |
@@ -218,6 +219,8 @@ La Web API no tiene notificaciones push del estado, así que hay que consultarlo
 - **Después de un `403`**: cada 30 s, para que la app se recupere sola si el dueño corrige la
   lista de usuarios.
 - **App en segundo plano**: detener el polling.
+- **Otra pantalla tapa el reproductor**: con la Biblioteca (mini reproductor) o la Cola
+  (cabecera) abiertas, el polling sigue; con Ajustes o Dispositivos, se detiene hasta volver.
 - **Después de un comando**: actualizar la UI en forma **optimista** y volver a consultar a los
   ~600 ms para confirmar. Mientras el comando viaja, el polling se frena (una respuesta leída
   antes del comando pisaría el cambio optimista). Si falla, se deshace el cambio y se vuelve a

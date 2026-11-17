@@ -20,10 +20,21 @@ final class PlayerPresentation: ObservableObject {
     @Published var showsDevices = false
     /// Dispositivos presented from inside the library, which covers the player.
     @Published var showsLibraryDevices = false
+    /// Cola, presented from the player (only the player has its button).
+    @Published var showsQueue = false
 
     /// The screen the user is looking at.
     var visibleSurface: Surface {
         showsLibrary ? .library : .player
+    }
+
+    /// Whether the player keeps polling while it is covered. Presenting a full-screen cover
+    /// makes the player's `onDisappear` run, which would stop the polling. The library (its
+    /// mini player) and Cola (its header, and reading the queue again on a track change)
+    /// show the playback live, so the polling goes on under them. Settings and Dispositivos
+    /// do not show it: polling stops there, as before, to save requests.
+    var keepsPlayerPolling: Bool {
+        showsLibrary || showsQueue
     }
 
     /// Opens Dispositivos on the visible screen: "Reproduciendo en …", "Suena en …", or a

@@ -69,7 +69,13 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
 8. **Dispositivos**
    - Hoja inferior con el dispositivo actual destacado y la lista del resto.
    - Botón "¿No ves tu dispositivo?", que abre una ayuda de 3 pasos y "Actualizar lista".
-9. **Ajustes**
+9. **Cola** (agregada el 2026-11-17, a pedido del dueño)
+   - Botón Cola en el grupo derecho de controles del reproductor (también en modo letras).
+   - Hoja inferior con lo que suena ahora y hasta 20 temas de "A continuación".
+   - **Solo lectura**: la Web API no deja quitar, reordenar ni saltar a un tema de la cola. Los
+     temas no se tocan; mantenerlos apretados muestra el nombre completo y "Abrir en Spotify".
+     La lista termina con "Para quitar o reordenar temas, usá Spotify." y "ABRIR SPOTIFY".
+10. **Ajustes**
    - **Apariencia**:
      - tema (Negro y verde, Ámbar, Azul noche, Personalizado);
      - color de resaltado (6 opciones);
@@ -78,9 +84,9 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
      - Exportar e Importar tema.
    - **Reproductor**: interruptor "Mostrar letras" y "Ancho de las letras" (Mitad, 2/3 o
      Completo; por defecto 2/3).
-10. **Importar tema**: hoja con el JSON, el resultado de la validación, advertencias, vista
+11. **Importar tema**: hoja con el JSON, el resultado de la validación, advertencias, vista
     previa y los botones Aplicar y Cancelar.
-11. **Nada sonando**: estado vacío con "Elegir dispositivo" y "ABRIR SPOTIFY".
+12. **Nada sonando**: estado vacío con "Elegir dispositivo" y "ABRIR SPOTIFY".
 
 ## Flujos clave
 
@@ -107,7 +113,9 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
 
 - Reproducir audio en el iPhone (receptor de Spotify Connect, librespot).
 - Control por voz: la política de Spotify lo prohíbe.
-- Cola de reproducción y accesos rápidos (presets).
+- Editar la cola (quitar, reordenar o saltar a un tema): la Web API no lo permite. Agregar a
+  la cola (`POST /me/player/queue`) sí existe, pero todavía no tiene diseño.
+- Accesos rápidos (presets).
 - Pantalla de resultados de búsqueda, pendiente de diseño.
 - Protección contra *burn-in* de OLED (atenuar brillo, desplazar píxeles): se habló como opción
   futura, sin decidir.
