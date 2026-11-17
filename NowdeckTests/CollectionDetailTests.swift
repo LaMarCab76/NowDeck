@@ -149,6 +149,85 @@ final class CollectionDetailTests: XCTestCase {
         XCTAssertEqual(recorder.requests.count, 2, "Nothing left to load")
     }
 
+    func testInitialLoadSkipsPagesWithoutVisibleTracks() async {
+        let (model, recorder) = makeModel(playlist) { request in
+            switch request.queryValues["offset"] {
+            case "0":
+                return (.stub(200), LibraryJSON.page(
+                    Array(repeating: LibraryJSON.playlistItem(nil), count: 50),
+                    limit: 50, total: 51, hasNext: true))
+            case "50":
+                return (.stub(200), LibraryJSON.page(
+                    [LibraryJSON.playlistItem(LibraryJSON.track("Visible", id: "t1"))],
+                    offset: 50, limit: 50, total: 51))
+            default:
+                return (.stub(404), Data())
+            }
+        }
+
+        await model.load()
+
+        XCTAssertEqual(model.state, .loaded)
+        XCTAssertEqual(model.tracks.map(\.title), ["Visible"])
+        XCTAssertEqual(model.tracks.map(\.number), [1])
+        XCTAssertEqual(model.trackCount, 51)
+        XCTAssertFalse(model.hasMore)
+        XCTAssertEqual(recorder.requests.map { $0.queryValues["offset"] }, ["0", "50"])
+    }
+
+    func testLoadMoreSkipsAnUnusablePageAndRetriesAtTheFailedOffset() async {
+        let attempts = OffsetRecorder()
+        let (model, recorder) = makeModel(playlist) { request in
+            switch request.queryValues["offset"] {
+            case "0":
+                return (.stub(200), LibraryJSON.page(
+                    [LibraryJSON.playlistItem(LibraryJSON.track("Uno", id: "t1"))],
+                    limit: 50, total: 101, hasNext: true))
+            case "50":
+                return (.stub(200), LibraryJSON.page(
+                    [LibraryJSON.playlistItem(LibraryJSON.track("", id: "t2"))],
+                    offset: 50, limit: 50, total: 101, hasNext: true))
+            case "100":
+                attempts.record(100)
+                if attempts.values.count == 1 { return (.stub(404), Data()) }
+                return (.stub(200), LibraryJSON.page(
+                    [LibraryJSON.playlistItem(LibraryJSON.track("Dos", id: "t3"))],
+                    offset: 100, limit: 50, total: 101))
+            default:
+                return (.stub(404), Data())
+            }
+        }
+
+        await model.load()
+        await model.loadMore()
+        XCTAssertTrue(model.loadMoreFailed)
+        XCTAssertEqual(model.tracks.map(\.title), ["Uno"])
+
+        await model.loadMore()
+        XCTAssertFalse(model.hasMore)
+        XCTAssertFalse(model.loadMoreFailed)
+        XCTAssertEqual(model.tracks.map(\.title), ["Uno", "Dos"])
+        XCTAssertEqual(model.tracks.map(\.number), [1, 2])
+        XCTAssertEqual(recorder.requests.map { $0.queryValues["offset"] },
+                       ["0", "50", "100", "100"])
+    }
+
+    func testAllUnusablePagesEndInAnEmptyList() async {
+        let (model, recorder) = makeModel(playlist) { request in
+            let offset = request.queryValues["offset"] == "0" ? 0 : 50
+            return (.stub(200), LibraryJSON.page(
+                [LibraryJSON.playlistItem(nil)],
+                offset: offset, limit: 50, total: 51, hasNext: offset == 0))
+        }
+
+        await model.load()
+
+        XCTAssertEqual(model.state, .loaded)
+        XCTAssertTrue(model.tracks.isEmpty)
+        XCTAssertFalse(model.hasMore)
+        XCTAssertEqual(recorder.requests.map { $0.queryValues["offset"] }, ["0", "50"])
+    }
+
     func testFailedPageCanBeRetried() async {
         let calls = OffsetRecorder()
         let (model, _) = makeModel(album) { request in
