@@ -29,6 +29,9 @@ struct PlayerScreen: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var showsSettings = false
     @State private var showsDevices = false
+    @State private var showsLibrary = false
+    /// The devices sheet opened from the library, which covers the player.
+    @State private var showsLibraryDevices = false
 
     var actions = PlayerActions()
 
@@ -55,6 +58,8 @@ struct PlayerScreen: View {
         wired.volume = { controls.volume.toggleButton() }
         // Milestone 4: devices sheet.
         wired.devices = { showsDevices = true }
+        // Milestone 5: library.
+        wired.library = { showsLibrary = true }
         return wired
     }
 
@@ -74,6 +79,15 @@ struct PlayerScreen: View {
                 SettingsView()
             }
             .devicesSheet(isPresented: $showsDevices, player: model)
+            .fullScreenCover(isPresented: $showsLibrary) {
+                // While the library covers the player, the devices sheet ("Suena en …" in the
+                // mini player, or a card that finds no active device) is presented from
+                // inside the library.
+                LibraryScreen(model: LibraryModel(api: model.api), player: model,
+                              onPlayPause: wiredActions.playPause,
+                              onShowDevices: { showsLibraryDevices = true })
+                    .devicesSheet(isPresented: $showsLibraryDevices, player: model)
+            }
             .onAppear { if scenePhase == .active { model.start() } }
             .onDisappear { model.stop() }
             // iOS 16 API (the two-value variant is iOS 17+).
