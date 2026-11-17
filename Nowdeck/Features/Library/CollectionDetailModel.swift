@@ -137,7 +137,7 @@ final class CollectionDetailModel: ObservableObject {
 
     /// Loads the first page. Called when the screen appears and by "Reintentar".
     func load() async {
-        guard !isLoadingFirstPage else { return }
+        guard !isLoadingFirstPage, !isLoadingMore else { return }
         isLoadingFirstPage = true
         defer { isLoadingFirstPage = false }
 
@@ -147,10 +147,7 @@ final class CollectionDetailModel: ObservableObject {
         nextOffset = nil
         loadMoreFailed = false
         do {
-            let page = try await fetch(0, 0)
-            tracks = page.tracks
-            total = page.total
-            nextOffset = page.nextOffset
+            try await loadNextVisiblePage(from: 0)
             state = .loaded
         } catch is CancellationError {
             // The screen went away; it loads again if it comes back.
@@ -168,15 +165,28 @@ final class CollectionDetailModel: ObservableObject {
         loadMoreFailed = false
         defer { isLoadingMore = false }
         do {
-            let page = try await fetch(offset, tracks.count)
-            tracks += page.tracks
-            if let pageTotal = page.total { total = pageTotal }
-            // A next offset that does not move forward would loop forever.
-            nextOffset = page.nextOffset.flatMap { $0 > offset ? $0 : nil }
+            try await loadNextVisiblePage(from: offset)
         } catch is CancellationError {
             // Nothing: the next appearance of the end of the list tries again.
         } catch {
             loadMoreFailed = true
+        }
+    }
+
+    /// A page may contain only items that cannot be shown. Follow the next offset until
+    /// there are rows or the collection ends. If a request fails, retry from that offset.
+    private func loadNextVisiblePage(from firstOffset: Int) async throws {
+        var offset = firstOffset
+        while true {
+            try Task.checkCancellation()
+            let page = try await fetch(offset, tracks.count)
+            try Task.checkCancellation()
+            if let pageTotal = page.total { total = pageTotal }
+            // A next offset that does not move forward would loop forever.
+            nextOffset = page.nextOffset.flatMap { $0 > offset ? $0 : nil }
+            tracks += page.tracks
+            guard page.tracks.isEmpty, let nextOffset else { return }
+            offset = nextOffset
         }
     }
 

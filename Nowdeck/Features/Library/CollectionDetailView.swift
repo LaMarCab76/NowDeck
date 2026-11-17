@@ -307,12 +307,13 @@ struct TrackRow: View {
     }
 }
 
-/// Long press on a track: the full title and artists (docs/06: cut names must be readable)
-/// and "Abrir en Spotify". Local files have no Spotify page and get no menu.
+/// Long press on a track to read the full title and artists. Tracks with a Spotify page
+/// also offer a link to open it.
 private struct TrackMenu: ViewModifier {
     var track: CollectionTrack
 
     @EnvironmentObject private var theme: ThemeStore
+    @State private var isShowingPreview = false
 
     func body(content: Content) -> some View {
         if let url = track.pageURL {
@@ -325,25 +326,31 @@ private struct TrackMenu: ViewModifier {
                         Label("Abrir en Spotify", systemImage: "arrow.up.right")
                     }
                 } preview: {
-                    VStack(alignment: .leading, spacing: Spacing.xxs) {
-                        Text(verbatim: track.title)
-                            .textStyle(.trackRowTitle)
-                            .foregroundStyle(theme.palette.text.color)
-                        if !track.subtitle.isEmpty {
-                            Text(verbatim: track.subtitle)
-                                .textStyle(.cardSubtitle)
-                                .foregroundStyle(theme.palette.bodyText.color)
-                        }
-                    }
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(width: 300, alignment: .leading)
-                    .padding(Spacing.m)
-                    .background(theme.palette.surface.color)
-                    .environmentObject(theme)
+                    preview
                 }
         } else {
             content
+                .onLongPressGesture { isShowingPreview = true }
+                .popover(isPresented: $isShowingPreview) { preview }
         }
+    }
+
+    private var preview: some View {
+        VStack(alignment: .leading, spacing: Spacing.xxs) {
+            Text(verbatim: track.title)
+                .textStyle(.trackRowTitle)
+                .foregroundStyle(theme.palette.text.color)
+            if !track.subtitle.isEmpty {
+                Text(verbatim: track.subtitle)
+                    .textStyle(.cardSubtitle)
+                    .foregroundStyle(theme.palette.bodyText.color)
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(width: 300, alignment: .leading)
+        .padding(Spacing.m)
+        .background(theme.palette.surface.color)
+        .environmentObject(theme)
     }
 }
 
