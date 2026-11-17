@@ -10,7 +10,7 @@ Romper estas reglas puede hacer que Spotify revoque el acceso a la API.
 ## Checklist por pantalla
 
 - [ ] **Atribución**: toda pantalla con contenido de Spotify (Reproducción, modo letras,
-  Biblioteca, mini reproductor) muestra el **logo oficial de Spotify**.
+  Biblioteca, mini reproductor, Cola) muestra el **logo oficial de Spotify**.
   - Logo completo: 70 px de mínimo digital. Ícono solo: 21 px de mínimo.
   - Zona de exclusión igual a la mitad del alto del ícono.
   - Sobre fondos oscuros, logo blanco. El verde, solo sobre negro o blanco.
@@ -120,11 +120,14 @@ Repaso punto por punto sobre la rama `hito/08-terminaciones` (hitos 1 a 7 integr
   `https://open.spotify.com`.
 - ✅ Texto visible "ABRIR SPOTIFY ↗" en Biblioteca y en Nada sonando, además de la tarjeta "Ver
   más en Spotify" al final de cada fila.
+- ✅ Cola (2026-11-17): logo completo en la cabecera (enlace al tema que suena), hasta 20
+  temas, marca de explícito, nombres completos al mantener apretado y "ABRIR SPOTIFY ↗" al
+  final de la lista.
 
 ### Carátulas
 
 - ✅ Se muestran tal cual (`.fit`, sin recortar), con radio de 4 pt, sin texto, controles ni
-  logos encima, en Reproducción, modo letras, mini reproductor y tarjetas.
+  logos encima, en Reproducción, modo letras, mini reproductor, tarjetas y Cola.
 - ✅ Corregido en este hito: mientras arranca una tarjeta se atenuaba la tarjeta entera,
   carátula incluida. Ahora se atenúan solo los textos.
 - ⚠️ **Superposiciones pasajeras**: el panel de volumen (520×64, centrado arriba, como en
