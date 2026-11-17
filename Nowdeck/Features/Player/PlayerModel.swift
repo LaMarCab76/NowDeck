@@ -48,7 +48,8 @@ final class PlayerModel: ObservableObject {
     /// it keeps only a weak reference back.
     private(set) lazy var controls = PlayerControlsModel(player: self)
 
-    /// Shared with `controls`, which sends the playback commands.
+    /// Shared with `controls` (playback commands) and the sheets that call the API on their
+    /// own (Dispositivos).
     let api: SpotifyAPI
     private let artworkLoader: ArtworkLoader
     private let policy: PollingPolicy

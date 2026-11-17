@@ -96,8 +96,8 @@ Base: `https://api.spotify.com/v1`. Cabecera: `Authorization: Bearer <token>`.
 | Función | Endpoint | Notas |
 |---|---|---|
 | Estado del reproductor | `GET /me/player?additional_types=episode` | `204` = nada suena → "Nada sonando". Trae `device`, `progress_ms`, `is_playing`, `item`, `shuffle_state`, `repeat_state`, `context`, `currently_playing_type` y `actions`. **Verificado (2026-11-17)**: sigue disponible, scope `user-read-playback-state`, respuestas 200/204/401/403/429. `additional_types` "might be deprecated in the future". Ver la nota sobre `actions` más abajo |
-| Dispositivos | `GET /me/player/devices` | Solo los activos o despiertos. `supports_volume` por dispositivo |
-| Transferir | `PUT /me/player` con body `{"device_ids":["<id>"],"play":true}` | |
+| Dispositivos | `GET /me/player/devices` | **Verificado (2026-11-17)**: sigue disponible (figura en "Endpoints still available" de feb-2026; los changelogs de may-2026 y jul-2026 no lo tocan), scope `user-read-playback-state`, respuestas 200/401/403/429. Ver "Dispositivos" más abajo |
+| Transferir | `PUT /me/player` con body `{"device_ids":["<id>"],"play":true}` | **Verificado (2026-11-17)**: sigue disponible (mismas fuentes), scope `user-modify-playback-state`, solo Premium, respuestas 204/401/403/429. Ver "Dispositivos" más abajo |
 | Play / reanudar | `PUT /me/player/play` con body opcional `context_uri` o `uris` y `device_id` opcional | Sin body reanuda lo que estaba sonando. Con body, para reproducir una tarjeta de la Biblioteca |
 | Pausa | `PUT /me/player/pause` | |
 | Siguiente / anterior | `POST /me/player/next` · `POST /me/player/previous` | |
@@ -125,6 +125,38 @@ documenta el motivo `PREMIUM_REQUIRED`. El cuerpo de error documentado es
 `{"error": {"status", "message", "reason"?}}` y el único `reason` listado es `QUOTA_EXCEEDED`.
 Por eso un `403` se trata siempre igual (fuera de la lista permitida, Premium vencido del dueño
 o del usuario) y se muestra con un mensaje con instrucciones.
+
+### Dispositivos (hito 4)
+
+Verificado en developer.spotify.com el 2026-11-17 (referencias de *Get Available Devices* y
+*Transfer Playback*, y changelogs de feb-2026, may-2026 y jul-2026):
+
+- `GET /me/player/devices` devuelve `{"devices": [...]}`. Cada dispositivo trae `id` (puede ser
+  `null`; "any cached `device_id` should periodically be cleared out and refetched"),
+  `is_active`, `is_private_session`, `is_restricted`, `name`, `type`, `volume_percent` (puede
+  ser `null`) y `supports_volume`. La referencia no lista más campos.
+- `type` solo se documenta con ejemplos ("computer", "smartphone", "speaker"), sin lista
+  cerrada, y las mayúsculas varían. La app compara sin distinguir mayúsculas y usa un nombre
+  genérico ("Dispositivo") para los tipos que no conoce.
+- `is_restricted: true`: "no Web API commands will be accepted by this device". La hoja lo
+  muestra atenuado, con "No admite control remoto", y no se puede tocar. Un dispositivo sin
+  `id` se trata igual, porque no se lo puede nombrar en la transferencia.
+- La referencia solo dice que "some device models are not supported and will not be listed".
+  No documenta que la lista se limite a los dispositivos activos o despiertos: eso es lo que
+  se ve en la práctica y lo que explica la ayuda de la hoja.
+- `PUT /me/player`: `device_ids` es obligatorio y acepta **un solo** ID ("Supplying more than
+  one will return `400 Bad Request`"). `play: true` "ensure playback happens on new device";
+  `false` o ausente "keep the current playback state". La app manda `play: true`, como decía
+  este documento, para que "Elegir dispositivo" desde "Nada sonando" también arranque la
+  música. "The order of execution is not guaranteed when you use this API with other Player
+  API endpoints": por eso, después de transferir, la app vuelve a consultar
+  `GET /me/player` a los ~600 ms en lugar de suponer el resultado.
+- La referencia no documenta un `404` para la transferencia. Si llega (por ejemplo, el
+  dispositivo se durmió después de cargar la lista), la hoja avisa y vuelve a pedir la lista.
+- Errores de la hoja: `403` con un mensaje genérico (Premium o *Users Management*, como el resto
+  de la app); `429` respetado por el cliente (no sale a la red hasta que pase `Retry-After`);
+  sin red o `5xx`, aviso y la lista anterior queda en pantalla. La transferencia, como todo
+  comando, no se reintenta sola.
 
 ### `actions` (revisado en el hito 3, 2026-11-17)
 

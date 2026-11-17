@@ -28,6 +28,7 @@ struct PlayerScreen: View {
     @EnvironmentObject private var theme: ThemeStore
     @Environment(\.scenePhase) private var scenePhase
     @State private var showsSettings = false
+    @State private var showsDevices = false
 
     var actions = PlayerActions()
 
@@ -52,6 +53,8 @@ struct PlayerScreen: View {
         wired.shuffle = { controls.toggleShuffle() }
         wired.repeatMode = { controls.cycleRepeat() }
         wired.volume = { controls.volume.toggleButton() }
+        // Milestone 4: devices sheet.
+        wired.devices = { showsDevices = true }
         return wired
     }
 
@@ -70,6 +73,7 @@ struct PlayerScreen: View {
             .fullScreenCover(isPresented: $showsSettings) {
                 SettingsView()
             }
+            .devicesSheet(isPresented: $showsDevices, player: model)
             .onAppear { if scenePhase == .active { model.start() } }
             .onDisappear { model.stop() }
             // iOS 16 API (the two-value variant is iOS 17+).
