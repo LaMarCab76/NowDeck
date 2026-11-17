@@ -105,7 +105,9 @@ struct PlayerScreen: View {
             .onChange(of: theme.playerBackground) {
                 model.loadsArtistImages = $0 == .artistPhoto
             }
-            .onDisappear { model.stop() }
+            // Covered by the library or Cola, the player is "gone" but its data is still
+            // on screen (`keepsPlayerPolling`).
+            .onDisappear { if !presentation.keepsPlayerPolling { model.stop() } }
             // iOS 16 API (the two-value variant is iOS 17+).
             .onChange(of: scenePhase) { phase in
                 if phase == .active { model.start() } else { model.stop() }

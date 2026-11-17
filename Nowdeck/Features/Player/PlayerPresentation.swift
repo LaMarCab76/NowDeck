@@ -27,6 +27,16 @@ final class PlayerPresentation: ObservableObject {
         showsLibrary ? .library : .player
     }
 
+    /// Whether the player keeps polling while it is covered. Presenting a full-screen cover
+    /// makes the player's `onDisappear` run, which would stop the polling. The library (its
+    /// mini player) and Cola (its header, and reading the queue again on a track change)
+    /// show the playback live, so the polling goes on under them (Ajustes opens inside the
+    /// library). Dispositivos does not show it: polling stops there, as before, to save
+    /// requests.
+    var keepsPlayerPolling: Bool {
+        showsLibrary || showsQueue
+    }
+
     /// Opens Dispositivos on the visible screen: "Reproduciendo en …", "Suena en …", or a
     /// command answered "no active device" (`PlayerControlsModel.noActiveDevice`), which can
     /// come from the mini player's play button while the library is open.

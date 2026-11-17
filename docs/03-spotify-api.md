@@ -221,6 +221,9 @@ La Web API no tiene notificaciones push del estado, así que hay que consultarlo
 - **Después de un `403`**: cada 30 s, para que la app se recupere sola si el dueño corrige la
   lista de usuarios.
 - **App en segundo plano**: detener el polling.
+- **Otra pantalla tapa el reproductor**: con la Biblioteca (mini reproductor; Ajustes se abre
+  desde ahí) o la Cola (cabecera) abiertas, el polling sigue; con Dispositivos, se detiene
+  hasta volver.
 - **Después de un comando**: actualizar la UI en forma **optimista** y volver a consultar a los
   ~600 ms para confirmar. Mientras el comando viaja, el polling se frena (una respuesta leída
   antes del comando pisaría el cambio optimista). Si falla, se deshace el cambio y se vuelve a
