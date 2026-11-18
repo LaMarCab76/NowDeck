@@ -426,6 +426,32 @@ final class PlayerControlsModelTests: XCTestCase {
                        "84 s plus the 4 s it played before the pause, not the 10 s after it")
     }
 
+    func testAnAcceptedSeekKeepsPlayingUntilThePauseIsConfirmed() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal(); gate.signal(); gate.signal() }
+        let h = try await make(PlaybackJSON(isPlaying: true, progressMs: 84_000),
+                               commandGate: gate)
+        h.controls.seek(toMs: 30_000)
+        h.controls.playPause()
+        h.controls.seek(toMs: 120_000)
+        XCTAssertEqual(h.model.playback?.isPlaying, false, "The pause shows at once")
+
+        // The first seek goes through while the pause is still on its way (so the track
+        // keeps playing), the pause lands 4 s later and the last seek fails 10 s after that.
+        gate.signal()
+        try await eventually { h.commandRequests.count == 2 }
+        h.clock.advance(4)
+        gate.signal()
+        try await eventually { h.commandRequests.count == 3 }
+        h.clock.advance(10)
+        h.playback.value = PlaybackJSON(isPlaying: false, progressMs: 34_000)
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        XCTAssertEqual(h.model.playback?.progressMs, 34_000,
+                       "30 s plus the 4 s it played until the pause landed")
+    }
+
     // MARK: Volume from polls
 
     func testPolledVolumeChangeShowsThePanel() async throws {

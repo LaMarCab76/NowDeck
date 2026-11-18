@@ -88,7 +88,8 @@ final class PlayerControlsModel: ObservableObject {
             optimistic: { $0.isPlaying = resume },
             rollback: { if $0.isPlaying == resume { $0.isPlaying = !resume } },
             completion: { [weak self] succeeded in
-                if succeeded { self?.playStateChanged(isPlaying: resume) }
+                // A failed play or pause leaves the playback as it was.
+                self?.playStateChanged(isPlaying: succeeded ? resume : !resume)
             })
     }
 
@@ -164,8 +165,10 @@ final class PlayerControlsModel: ObservableObject {
             })
     }
 
-    /// Play or pause accepted while seeks are on their way: from now on the baseline they
-    /// would go back to runs, or stops, with the playback.
+    /// Play or pause answered while seeks are on their way: from now on the baseline they
+    /// would go back to runs, or stops, as Spotify left the playback. Commands finish in
+    /// order, so the baseline always holds the play state Spotify confirmed so far, never
+    /// the optimistic one on screen.
     private func playStateChanged(isPlaying: Bool) {
         guard pendingSeeks > 0, let player, let baseline = seekBaseline else { return }
         let date = player.now()
@@ -182,9 +185,12 @@ final class PlayerControlsModel: ObservableObject {
         pendingSeeks -= 1
         let date = player.now()
         if succeeded {
-            // Spotify is now where this seek went: earlier failures no longer count.
+            // Spotify is now where this seek went: earlier failures no longer count. The
+            // play state is the confirmed one: the screen may already show a pause that is
+            // still on its way.
             seekBaseline = SeekBaseline(positionMs: target,
-                                        isPlaying: player.playback?.isPlaying == true,
+                                        isPlaying: seekBaseline?.isPlaying
+                                            ?? (player.playback?.isPlaying == true),
                                         date: date)
             return
         }
