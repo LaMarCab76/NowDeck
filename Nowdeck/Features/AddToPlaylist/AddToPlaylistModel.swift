@@ -47,17 +47,26 @@ struct PlaylistEditingAccess {
         case denied
         /// The account that logged in is not in the app's Users Management.
         case notAllowlisted
+        /// The user logged in with another Spotify account than the one in use.
+        case differentAccount
         case offline
         case failed
     }
 
-    /// Whether the stored session already includes the scopes.
-    var isGranted: @MainActor () -> Bool
+    enum Grant: Equatable {
+        case granted
+        case missing
+        /// Spotify sent no `scope` with the stored tokens.
+        case unknown
+    }
+
+    /// Whether the stored session includes the scopes.
+    var grant: @MainActor () -> Grant
     /// Opens Spotify's login again, asking for every scope. `nil` when it worked.
     var request: @MainActor () async -> Failure?
 
     /// For previews and tests.
-    static let granted = PlaylistEditingAccess(isGranted: { true }, request: { nil })
+    static let granted = PlaylistEditingAccess(grant: { .granted }, request: { nil })
 }
 
 /// Why something in the sheet failed.
@@ -107,6 +116,8 @@ enum AddToPlaylistProblem: Equatable {
             return "Para agregar temas, aceptá el permiso en Spotify."
         case .permission(.notAllowlisted):
             return "Spotify no deja usar tu app con esa cuenta. Entrá con la misma cuenta de siempre."
+        case .permission(.differentAccount):
+            return "Entraste con otra cuenta de Spotify. Probá de nuevo con la que usás en Nowdeck."
         case .permission(.offline):
             return "No hay conexión a internet. Revisala y probá de nuevo."
         case .permission(.failed):
@@ -149,7 +160,9 @@ final class AddToPlaylistModel: ObservableObject {
     @Published private(set) var isRequestingPermission = false
     /// The item the sheet adds (the one playing when it opened).
     @Published private(set) var targetURI: String?
-    /// Adds in flight or failed for `targetURI`, by playlist ID. Done adds live in `added`.
+    /// Adds in flight or failed, by `"<uri>|<playlist id>"`. Done adds live in `added`.
+    /// In-flight ones survive closing the sheet: the request keeps going, and the row must
+    /// not look tappable when the sheet opens again for the same item.
     @Published private var pending: [String: RowState] = [:]
     /// `"<uri>|<playlist id>"` of every add that worked while the app was open.
     @Published private var added: Set<String> = []
@@ -170,15 +183,17 @@ final class AddToPlaylistModel: ObservableObject {
     func open(for uri: String, access: PlaylistEditingAccess) {
         targetURI = uri
         self.access = access
-        pending = [:]
+        // Failures are news of the last opening; adds still in flight are kept.
+        pending = pending.filter { $0.value == .adding }
         problem = nil
-        needsPermission = !access.isGranted()
+        needsPermission = access.grant() == .missing
     }
 
     func state(of playlist: EditablePlaylist) -> RowState {
         guard let targetURI else { return .idle }
-        if added.contains(Self.key(uri: targetURI, playlistID: playlist.id)) { return .added }
-        return pending[playlist.id] ?? .idle
+        let key = Self.key(uri: targetURI, playlistID: playlist.id)
+        if added.contains(key) { return .added }
+        return pending[key] ?? .idle
     }
 
     /// Reads the list unless a recent one is on hand. `force` (pull to refresh, Reintentar)
@@ -227,21 +242,22 @@ final class AddToPlaylistModel: ObservableObject {
         let state = state(of: playlist)
         guard state == .idle || state == .failed else { return }
 
-        pending[playlist.id] = .adding
+        let key = Self.key(uri: uri, playlistID: playlist.id)
+        pending[key] = .adding
         do {
             try await api.addToPlaylist(playlistID: playlist.id, uri: uri)
-            added.insert(Self.key(uri: uri, playlistID: playlist.id))
-            if targetURI == uri { pending[playlist.id] = nil }
+            added.insert(key)
+            pending[key] = nil
             bumpCount(of: playlist.id)
             if Self.isAddProblem(problem) { problem = nil }
             UIAccessibility.post(notification: .announcement,
                                  argument: String(localized: "Agregado a \(playlist.name)"))
         } catch is CancellationError {
-            if targetURI == uri { pending[playlist.id] = nil }
+            pending[key] = nil
         } catch {
-            if targetURI == uri { pending[playlist.id] = .failed }
-            if case SpotifyAPIError.forbidden = error, !access.isGranted() {
-                // The session lost (or never had) the scopes: ask for them.
+            pending[key] = .failed
+            if case SpotifyAPIError.forbidden = error, access.grant() != .granted {
+                // The session lacks the scopes, or may lack them (unknown): ask for them.
                 needsPermission = true
             }
             problem = AddToPlaylistProblem(error, whileAdding: true)

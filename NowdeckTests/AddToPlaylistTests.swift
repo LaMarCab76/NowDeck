@@ -250,11 +250,11 @@ final class AddToPlaylistTests: XCTestCase {
     func testMissingPermissionBlocksAddingUntilGranted() async throws {
         let (api, recorder) = makeAPI(handler: Self.routes(playlists: [Self.playlist("mine", owner: "me")]))
         let model = AddToPlaylistModel(api: api)
-        var granted = false
+        var grant = PlaylistEditingAccess.Grant.missing
         var requests = 0
-        let access = PlaylistEditingAccess(isGranted: { granted }, request: {
+        let access = PlaylistEditingAccess(grant: { grant }, request: {
             requests += 1
-            granted = true
+            grant = .granted
             return nil
         })
         model.open(for: trackURI, access: access)
@@ -276,7 +276,7 @@ final class AddToPlaylistTests: XCTestCase {
     func testAFailedPermissionRequestIsShown() async {
         let (api, _) = makeAPI(handler: Self.routes(playlists: []))
         let model = AddToPlaylistModel(api: api)
-        model.open(for: trackURI, access: PlaylistEditingAccess(isGranted: { false },
+        model.open(for: trackURI, access: PlaylistEditingAccess(grant: { .missing },
                                                                 request: { .denied }))
 
         await model.requestPermission()
@@ -289,17 +289,60 @@ final class AddToPlaylistTests: XCTestCase {
         let (api, _) = makeAPI(handler: Self.routes(playlists: [Self.playlist("mine", owner: "me")],
                                                     addStatus: 403))
         let model = AddToPlaylistModel(api: api)
-        var granted = true
-        model.open(for: trackURI, access: PlaylistEditingAccess(isGranted: { granted },
+        var grant = PlaylistEditingAccess.Grant.granted
+        model.open(for: trackURI, access: PlaylistEditingAccess(grant: { grant },
                                                                 request: { nil }))
         await model.load()
         let playlist = try XCTUnwrap(model.playlists?.first)
-        granted = false
+        grant = .missing
 
         await model.add(to: playlist)
 
         XCTAssertTrue(model.needsPermission)
         XCTAssertEqual(model.problem, .addForbidden)
+    }
+
+    func testUnknownScopesLetTheUserAddAndAskOnlyAfterAForbiddenAnswer() async throws {
+        let (api, _) = makeAPI(handler: Self.routes(playlists: [Self.playlist("mine", owner: "me")],
+                                                    addStatus: 403))
+        let model = AddToPlaylistModel(api: api)
+        model.open(for: trackURI, access: PlaylistEditingAccess(grant: { .unknown },
+                                                                request: { nil }))
+        XCTAssertFalse(model.needsPermission)
+        await model.load()
+        let playlist = try XCTUnwrap(model.playlists?.first)
+
+        await model.add(to: playlist)
+
+        XCTAssertTrue(model.needsPermission, "The only way to fix it is to grant the scopes")
+    }
+
+    func testAnAddInFlightSurvivesReopeningTheSheet() async throws {
+        let gate = AsyncGate()
+        let (api, recorder) = makeAPI { request in
+            if request.httpMethod == "POST" {
+                gate.waitBlocking()
+                return (.stub(201), Self.json(["snapshot_id": "s"]))
+            }
+            return try Self.routes(playlists: [Self.playlist("mine", owner: "me")])(request)
+        }
+        let model = AddToPlaylistModel(api: api)
+        model.open(for: trackURI, access: .granted)
+        await model.load()
+        let playlist = try XCTUnwrap(model.playlists?.first)
+
+        let first = Task { await model.add(to: playlist) }
+        while model.state(of: playlist) != .adding { await Task.yield() }
+
+        // The sheet closes and opens again for the same item while the request travels.
+        model.open(for: trackURI, access: .granted)
+        XCTAssertEqual(model.state(of: playlist), .adding)
+        await model.add(to: playlist)
+
+        gate.open()
+        await first.value
+        XCTAssertEqual(model.state(of: playlist), .added)
+        XCTAssertEqual(recorder.requests.filter { $0.httpMethod == "POST" }.count, 1)
     }
 
     // MARK: Presentation
@@ -343,5 +386,18 @@ final class AddToPlaylistTests: XCTestCase {
     func testFewerControlsKeepTheFullGap() {
         let layout = PlayerControlLayout(controls: [.volume])
         XCTAssertEqual(layout.gap(forWidth: 640), Metrics.Player.controlsGap)
+    }
+}
+
+/// Holds a stub request until the test opens it. The stub runs on URLSession's own thread.
+private final class AsyncGate: @unchecked Sendable {
+    private let semaphore = DispatchSemaphore(value: 0)
+
+    func waitBlocking() {
+        _ = semaphore.wait(timeout: .now() + 5)
+    }
+
+    func open() {
+        semaphore.signal()
     }
 }

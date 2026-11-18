@@ -86,7 +86,7 @@ renovación, se borra y se vuelve a la configuración:
 | `playlist-read-collaborative` | Playlists colaborativas en el listado |
 | `user-library-read` | Álbumes, podcasts y audiolibros guardados. **Verificado (2026-11-17)**: es el único scope que listan `GET /me/albums`, `GET /me/shows` y `GET /me/audiobooks` |
 | `user-read-playback-position` | Posición en episodios de podcast |
-| `playlist-modify-public` · `playlist-modify-private` | Agregar el tema que suena a una playlist propia o colaborativa (desde 2026-11-18). "Write access to a user's public/private playlists". Las sesiones anteriores no los tienen: la hoja lo detecta por el `scope` guardado con los tokens y ofrece "Dar permiso", que repite el login con el Client ID guardado sin salir del reproductor |
+| `playlist-modify-public` · `playlist-modify-private` | Agregar el tema que suena a una playlist propia o colaborativa (desde 2026-11-18). "Write access to a user's public/private playlists". Las sesiones anteriores no los tienen: la hoja lo detecta por el `scope` guardado con los tokens (si no hay `scope` guardado, después de un `403` al agregar) y ofrece "Dar permiso", que repite el login con el Client ID guardado sin salir del reproductor. Los tokens nuevos se guardan solo si `GET /me` da el mismo usuario que la sesión actual: otra cuenta se rechaza |
 | `user-read-recently-played` | Último tema escuchado, para la foto de ejemplo de la vista previa del fondo en Ajustes (desde 2026-11-18). Las sesiones anteriores no lo tienen hasta volver a conectar: mientras tanto `GET /me/player/recently-played` responde `403` y se usa lo que la app vio sonar |
 
 Pedir solo estos. En el primer inicio se explican en palabras simples.
