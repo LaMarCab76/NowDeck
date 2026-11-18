@@ -233,8 +233,12 @@ private struct LyricsStanzasView: View {
             browseIndex = nil
         }
         .onChange(of: isDragging) { dragging in
-            // Also after a cancelled drag, when `onEnded` is not called.
-            if !dragging { dragStartIndex = nil }
+            // Every drag that ends, also one the system cancels (when `onEnded` is not
+            // called), forgets where it started and restarts the idle timeout. Otherwise a
+            // cancelled first drag would leave the lyrics on the browsed stanza for good.
+            guard !dragging else { return }
+            dragStartIndex = nil
+            browseTouches += 1
         }
         .onChange(of: onSeek == nil) { forbidden in
             if forbidden { browseIndex = nil }
@@ -269,10 +273,6 @@ private struct LyricsStanzasView: View {
                     }
                     browseIndex = index
                 }
-            }
-            .onEnded { _ in
-                dragStartIndex = nil
-                browseTouches += 1
             }
     }
 
