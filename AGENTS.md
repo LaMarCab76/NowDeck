@@ -70,8 +70,10 @@ documento, actualizá también su traducción en el mismo commit.
 8. **Idioma**: la UI está en español rioplatense (voseo, idioma fuente) y en inglés, en un
    *String Catalog* (`Localizable.xcstrings`; los nombres de tipo de archivo del Info.plist,
    en `InfoPlist.xcstrings`). Todo texto nuevo de la UI entra al catálogo **con su traducción
-   al inglés** (estado `translated`). La app sigue el idioma del iPhone; cualquier otro idioma
-   cae en inglés. Identificadores de código y comentarios en inglés.
+   al inglés y con un valor `es` explícito igual a la clave** (los dos con estado
+   `translated`): Xcode no compila tabla para el idioma fuente, y sin `es.lproj` un iPhone en
+   español caería en inglés. La app sigue el idioma del iPhone; cualquier otro idioma cae en
+   inglés (`CFBundleDevelopmentRegion: en`). Identificadores de código y comentarios en inglés.
 9. El dueño del proyecto revisa el código generado: preferí código claro y explícito por sobre
    abstracciones ingeniosas. Explicá brevemente el porqué de las decisiones no obvias.
 

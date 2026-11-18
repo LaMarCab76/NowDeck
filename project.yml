@@ -53,9 +53,12 @@ targets:
       path: Nowdeck/Resources/Info.plist
       properties:
         CFBundleDisplayName: Nowdeck
-        CFBundleDevelopmentRegion: es
-        # Spanish is the source language (it has no .lproj of its own); English comes from
-        # the String Catalogs. Any other device language falls back to English.
+        # iOS falls back to the development region when none of the device's languages is
+        # supported, so it is English: a French iPhone gets English, not Spanish. Spanish is
+        # still the catalogs' source language; every key also carries an explicit `es` value
+        # because Xcode never compiles a source-language table, and without es.lproj a
+        # Spanish iPhone would fall back to English too (LocalizationTests checks both).
+        CFBundleDevelopmentRegion: en
         CFBundleLocalizations:
           - es
           - en

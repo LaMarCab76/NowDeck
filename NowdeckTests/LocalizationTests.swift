@@ -4,6 +4,11 @@ import XCTest
 /// The UI is in Spanish (source language) and English. These tests read the String Catalogs
 /// from the repository, so a UI string added without its English translation fails here
 /// instead of showing up in Spanish on an English iPhone.
+///
+/// The development region is English, so an iPhone in any other language (French, German…)
+/// gets English. That only works because every key also has an explicit `es` value: Xcode
+/// never compiles a table for the catalog's source language, and without es.lproj a Spanish
+/// iPhone would fall back to English as well.
 final class LocalizationTests: XCTestCase {
     private struct Catalog: Decodable {
         struct Entry: Decodable {
@@ -56,6 +61,16 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    func testEveryStringHasAnExplicitSpanishValue() throws {
+        for file in ["Localizable.xcstrings", "InfoPlist.xcstrings"] {
+            for (key, entry) in try catalog(file).strings {
+                let unit = entry.localizations?["es"]?.stringUnit
+                XCTAssertEqual(unit?.state, "translated", "\(file): «\(key)» has no explicit es value")
+                XCTAssertEqual(unit?.value, key, "\(file): the es value of «\(key)» differs from its key")
+            }
+        }
+    }
+
     func testTranslationsKeepTheFormatArguments() throws {
         for file in ["Localizable.xcstrings", "InfoPlist.xcstrings"] {
             for (key, entry) in try catalog(file).strings {
@@ -66,12 +81,21 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
-    func testTheAppShipsAnEnglishTable() throws {
-        let path = try XCTUnwrap(Bundle.main.path(forResource: "en", ofType: "lproj"))
-        let english = try XCTUnwrap(Bundle(path: path))
-        XCTAssertEqual(english.localizedString(forKey: "Volumen: %lld de 100", value: nil,
-                                               table: nil),
-                       "Volume: %lld of 100")
+    func testTheAppShipsBothTables() throws {
+        for (language, expected) in [("en", "Volume: %lld of 100"), ("es", "Volumen: %lld de 100")] {
+            let path = try XCTUnwrap(Bundle.main.path(forResource: language, ofType: "lproj"),
+                                     "\(language).lproj is missing")
+            let bundle = try XCTUnwrap(Bundle(path: path))
+            // A missing key comes back as the `value` argument, so this tells them apart.
+            XCTAssertEqual(bundle.localizedString(forKey: "Volumen: %lld de 100", value: "missing",
+                                                  table: nil),
+                           expected, language)
+        }
+    }
+
+    func testUnsupportedLanguagesFallBackToEnglish() {
+        XCTAssertEqual(Bundle.main.object(forInfoDictionaryKey: "CFBundleDevelopmentRegion") as? String,
+                       "en")
         XCTAssertEqual(Bundle.main.object(forInfoDictionaryKey: "CFBundleLocalizations") as? [String],
                        ["es", "en"])
     }

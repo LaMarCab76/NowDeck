@@ -10,6 +10,12 @@
             "state" : "translated",
             "value" : "Nowdeck theme"
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tema de Nowdeck"
+          }
         }
       }
     }
