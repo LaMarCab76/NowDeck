@@ -244,6 +244,26 @@ final class BackgroundPreviewTests: XCTestCase {
         XCTAssertTrue(recorder.requests.contains { $0.url?.path == "/v1/artists/08td7MxkoHQkXnWAYD8d6Q" })
     }
 
+    func testAHistoryAnswerForANewerArtistStillLooksUpItsPhoto() async throws {
+        // The lookup starts while A is the last heard; B starts before history answers, and
+        // history names B. History can't be taken (it started under A), so B's photo must
+        // still be asked for: it was never requested.
+        let (api, loader, recorder) = makeAPI { [recentPath] request in
+            let path = request.url?.path ?? ""
+            if path == recentPath { return (.stub(200), Self.recentJSON(artistID: "artistB")) }
+            if path == "/v1/artists/artistB" { return (.stub(200), Self.artistJSON) }
+            if request.url?.host == "i.scdn.co" { return (.stub(200), Self.png) }
+            return (.stub(404), Data())
+        }
+        let heard = StubBox(["artistA", "artistB"])
+        let lookup = await BackgroundPreviewModel.samplePhoto(api: api, loader: loader, seenArtistID: {
+            heard.value.count > 1 ? heard.value.removeFirst() : heard.value.first
+        })
+        XCTAssertEqual(lookup.sample?.artistID, "artistB")
+        XCTAssertEqual(lookup.heardArtistID, "artistB")
+        XCTAssertEqual(recorder.requests.filter { $0.url?.path == "/v1/artists/artistB" }.count, 1)
+    }
+
     func testACancelledLookupCanStartAgain() async throws {
         let (session, _) = StubURLProtocol.session { _ in (.stub(200), Data(#"{"items":[]}"#.utf8)) }
         let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session,

@@ -51,6 +51,9 @@ final class BackgroundPreviewModel: ObservableObject {
     /// change during a drag) only start for a different one, so polls that change nothing
     /// never send a request.
     private var lookupArtistID: String?
+    /// The last heard artist at the previous player change, to notice when it changes (also
+    /// back to an artist an earlier lookup already tried).
+    private var observedHeardArtistID: String?
     private var subscription: AnyCancellable?
 
     /// `player` is `nil` in previews: then the preview shows the background color only.
@@ -58,6 +61,7 @@ final class BackgroundPreviewModel: ObservableObject {
         self.player = player
         api = player?.api
         artworkLoader = player?.artworkLoader
+        observedHeardArtistID = player?.lastHeardArtistID
         // With "Foto del artista" on, the player already loads the photo of what plays. A
         // new photo and a playback change (pause, resume, stop) both can change the choice.
         // `@Published` sends before the value is stored, and `PlayerModel` updates the last
@@ -148,10 +152,13 @@ final class BackgroundPreviewModel: ObservableObject {
         let kept = Set([player.artistImageArtistID, player.lastHeardArtistID].compactMap { $0 })
         playerSamples = playerSamples.filter { kept.contains($0.key) }
         updateImage()
-        // Another track started under the finger and its photo is not here yet: look for
-        // one now instead of waiting for the next touch. If a lookup is running, its end
-        // checks again.
-        lookUpIfArtistChanged()
+        // Another artist started under the finger and its photo is not here yet: look for one
+        // now instead of waiting for the next touch. If a lookup is running, its end checks
+        // again. Polls that keep the same artist do nothing.
+        let heard = player.lastHeardArtistID
+        guard heard != observedHeardArtistID else { return }
+        observedHeardArtistID = heard
+        if editing != nil, selectedSample == nil { prepare() }
     }
 
     /// The sample, for the last artist heard (a track picked while paused was not heard):
@@ -195,12 +202,16 @@ final class BackgroundPreviewModel: ObservableObject {
         let heardAtStart = await seenArtistID()
         let recentArtistID = try? await api.recentlyPlayedTracks(limit: 1)
             .lazy.compactMap { NowPlaying(item: $0)?.artistID }.first
-        if let recentArtistID, heardAtStart == nil || recentArtistID == heardAtStart,
-           let sample = await photo(of: recentArtistID, api: api, loader: loader) {
-            return Lookup(sample: sample, heardArtistID: heardAtStart)
+        var triedArtistID: String?
+        if let recentArtistID, heardAtStart == nil || recentArtistID == heardAtStart {
+            triedArtistID = recentArtistID
+            if let sample = await photo(of: recentArtistID, api: api, loader: loader) {
+                return Lookup(sample: sample, heardArtistID: heardAtStart)
+            }
         }
+        // Skipped only if that artist's photo was just asked for and there was none.
         let localArtistID = await seenArtistID()
-        guard !Task.isCancelled, let localArtistID, localArtistID != recentArtistID else {
+        guard !Task.isCancelled, let localArtistID, localArtistID != triedArtistID else {
             return Lookup(sample: nil, heardArtistID: localArtistID)
         }
         let sample = await photo(of: localArtistID, api: api, loader: loader)

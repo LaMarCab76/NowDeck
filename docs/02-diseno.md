@@ -332,16 +332,16 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
     está moviendo. Al soltar, Ajustes vuelve con la misma animación y el valor se guarda.
     - Foto de ejemplo: la del **último artista que sonó** (un tema elegido en pausa no
       cuenta hasta que suena). Primero, la foto de ese artista que mostró el reproductor con
-      Ajustes abierto; si no hay, se busca la de ese artista (`GET /artists/{id}`). Solo si la
-      app todavía no escuchó nada en esta sesión se usa el último tema escuchado en Spotify
-      (`GET /me/player/recently-played`); el historial de Spotify puede ir atrasado, así que
-      si nombra a otro artista se ignora. Se recalcula cuando cambia la foto o la reproducción
+      Ajustes abierto; si no hay, se busca la de ese artista (`GET /artists/{id}`). La búsqueda
+      consulta primero el último tema escuchado en Spotify (`GET /me/player/recently-played`):
+      se usa si la app todavía no escuchó nada en esta sesión o si nombra a ese mismo
+      artista; como el historial puede ir atrasado, si nombra a otro se ignora. Se recalcula cuando cambia la foto o la reproducción
       (pausa, reanudar, parar). Sin ninguna, se ve el color de fondo del tema.
     - Se busca al aparecer los deslizadores (salvo que ya haya una foto que sirva) y se
       cancela al cerrar Ajustes. Una foto encontrada sirve mientras sea del último artista
       escuchado. Si no hay foto (un error, una espera por `429`, o dejó de servir), se busca
       de nuevo cuando los deslizadores reaparecen, al tocar uno, o si mientras se arrastra
-      cambia el último artista escuchado; si ya había una búsqueda en curso, la nueva empieza
+      cambia el último artista escuchado (también si vuelve a uno anterior); si ya había una búsqueda en curso, la nueva empieza
       cuando esa termina. Un sondeo que no cambia de artista no repite el pedido.
     - Mientras se ve una foto (y solo entonces), el ícono de Spotify queda arriba a la izquierda, en el mismo
       lugar que en el reproductor, y abre en Spotify al artista de esa foto (`docs/06`).
