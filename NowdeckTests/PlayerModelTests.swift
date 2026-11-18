@@ -154,7 +154,7 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(model.itemStarts, beforeResume + 3)
     }
 
-    func testUnreadablePlaylistShowsOnlyTheType() async throws {
+    func testUnreadablePlaylistShowsSpotifysPlaylist() async throws {
         let playback = try Fixture.data("playback-state-playing")
         let (model, recorder) = makeModel { request in
             if request.url?.host == "i.scdn.co" { return (.stub(404), Data()) }
@@ -163,13 +163,15 @@ final class PlayerModelTests: XCTestCase {
         }
 
         await model.poll()
-        try await waitUntil {
-            recorder.requests.contains { $0.url?.path.hasPrefix("/v1/playlists") == true }
-        }
-        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(model.origin?.displayName, "Una playlist", "While the name is on its way")
+
+        // A radio or another of Spotify's own playlists: the API answers 404.
+        try await waitUntil { model.origin?.isNameUnavailable == true }
+        XCTAssertEqual(model.origin?.displayName, "Playlist de Spotify")
         await model.poll()
 
         XCTAssertNil(model.origin?.name)
+        XCTAssertEqual(model.origin?.displayName, "Playlist de Spotify", "Kept from the cache")
         let playlistRequests = recorder.requests.filter { $0.url?.path.hasPrefix("/v1/playlists") == true }
         XCTAssertEqual(playlistRequests.count, 1, "A 404 is not asked again")
     }

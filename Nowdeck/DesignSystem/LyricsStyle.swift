@@ -8,7 +8,7 @@ import SwiftUI
 // `Typography.swift`.
 
 extension TextStyle {
-    /// "Desde la playlist" above the source name: 12/16, weight 500.
+    /// "Reproduciendo desde" above the source name: 12/16, weight 500.
     static let lyricsSourceLabel = TextStyle(size: 12, weight: .medium, lineHeight: 16,
                                              scalesWithDynamicType: false)
     /// Name of the playlist or album: 15/20 bold.

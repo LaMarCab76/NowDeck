@@ -77,7 +77,7 @@ struct PlayerView: View {
         }
     }
 
-    /// The origin row across the whole width, so "Desde la playlist …" always sits in the
+    /// The origin row across the whole width, so "Reproduciendo desde …" always sits in the
     /// top-left corner, and below it the artwork with the title, artist and device.
     ///
     /// The cover, title and device row form a page that follows the track swipe; the page of
@@ -245,7 +245,8 @@ private struct TrackPage<Title: View, DeviceSpace: View>: View {
 
 // MARK: - Top row
 
-/// Spotify icon and "Desde la playlist …" at the left, Cola and Biblioteca at the right.
+/// Spotify icon and the origin ("Reproduciendo desde …") at the left, Cola and Biblioteca at
+/// the right.
 /// Ajustes is reached from the library (owner's request, 2026-11-17), so it is not always on
 /// screen.
 struct PlayerTopRow: View {
@@ -379,38 +380,25 @@ struct SpotifyLogoImage: View {
     }
 }
 
-/// "Desde la playlist **Nombre**", or only the type while the name is unknown.
+/// "Reproduciendo desde" over the source's name, or over its type while the name is unknown
+/// ("Una playlist", "Playlist de Spotify"). Two lines, as in lyrics mode, so the name gets
+/// the whole width of the pill (owner's request, 2026-11-18).
 struct OriginText: View {
     var origin: PlaybackOrigin
 
     @EnvironmentObject private var theme: ThemeStore
 
     var body: some View {
-        // Long names scroll instead of staying cut (docs/06, "Metadatos").
-        MarqueeText(text, id: "\(origin.kind)|\(origin.name ?? "")")
-    }
-
-    private var text: Text {
-        let prefix = Text(prefixKey)
-            .font(TextStyle.originPrefix.fixedFont)
-            .foregroundColor(theme.palette.secondaryText.color)
-        guard let name = origin.name, !name.isEmpty else { return prefix }
-        // Names are shown verbatim: never localized nor parsed as Markdown.
-        return prefix
-            + Text(verbatim: " ")
-            + Text(verbatim: name)
-                .font(TextStyle.originName.fixedFont)
+        VStack(alignment: .leading, spacing: 0) {
+            Text(verbatim: PlaybackOrigin.heading)
+                .textStyle(.originHeading)
+                .foregroundColor(theme.palette.secondaryText.color)
+                .lineLimit(1)
+            // Long names scroll instead of staying cut (docs/06, "Metadatos"). Names are
+            // shown verbatim: never localized nor parsed as Markdown.
+            MarqueeText(verbatim: origin.displayName)
+                .textStyle(.originName)
                 .foregroundColor(theme.palette.text.color)
-    }
-
-    private var prefixKey: LocalizedStringKey {
-        let named = !(origin.name ?? "").isEmpty
-        switch origin.kind {
-        case .playlist: return named ? "Desde la playlist" : "Desde una playlist"
-        case .album: return named ? "Desde el álbum" : "Desde un álbum"
-        case .artist: return named ? "Desde el artista" : "Desde un artista"
-        case .show: return named ? "Desde el podcast" : "Desde un podcast"
-        case .likedSongs: return "Desde Tus me gusta"
         }
     }
 }

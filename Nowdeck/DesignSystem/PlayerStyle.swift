@@ -7,7 +7,7 @@ import SwiftUI
 extension Metrics {
     /// Player screen (`Main.dc.html`). Margins are in `Spacing.Player`.
     enum Player {
-        /// Row across the whole width, at the top: the Spotify icon and "Desde la playlist …"
+        /// Row across the whole width, at the top: the Spotify icon and "Reproduciendo desde …"
         /// at the left, Biblioteca at the right (owner's request, 2026-11-17: the origin
         /// always in the top-left corner; Ajustes moved to the library).
         static let topRowHeight: CGFloat = 44
@@ -29,11 +29,11 @@ extension Metrics {
         static let topRowGap: CGFloat = 12
         /// Full Spotify logo (Biblioteca): 108×30 inside a 44 pt tap zone.
         static let logoSize = CGSize(width: 108, height: 30)
-        /// Spotify icon next to "Desde la playlist" (owner's decision, 2026-11-17: the icon
+        /// Spotify icon next to the origin (owner's decision, 2026-11-17: the icon
         /// instead of the full logo, in the normal view and in lyrics mode). Spotify's minimum
         /// for the icon alone is 21 px.
         static let iconSize: CGFloat = 24
-        /// Space between the icon and "Desde la playlist": half the icon height, as Spotify's
+        /// Space between the icon and the origin: half the icon height, as Spotify's
         /// guidelines ask for the clear space (docs/06).
         static let iconClearSpace: CGFloat = 12
         static let libraryPillLeadingPadding: CGFloat = 12
@@ -42,7 +42,7 @@ extension Metrics {
         static let libraryIconSize: CGFloat = 20
         /// The symbol on the empty cover of a swipe preview (next or previous unknown).
         static let previewSymbolSize: CGFloat = 40
-        /// Side padding of the origin pill ("Desde la playlist …").
+        /// Side padding of the origin pill ("Reproduciendo desde …").
         static let originPillPadding: CGFloat = 16
 
         static let titleArtistGap: CGFloat = 6
@@ -103,9 +103,11 @@ extension Palette {
 }
 
 extension TextStyle {
-    /// "Desde la playlist" (13 pt, medium) and the name (13 pt, bold).
-    static let originPrefix = TextStyle(size: 13, weight: .medium, scalesWithDynamicType: false)
-    static let originName = TextStyle(size: 13, weight: .bold, scalesWithDynamicType: false)
+    /// "Reproduciendo desde" over the source's name, in two lines inside the 44 pt pill. The
+    /// same sizes as the source in lyrics mode (12/16 medium, 15/20 bold), so both views
+    /// match; 36 pt in all.
+    static let originHeading = lyricsSourceLabel
+    static let originName = lyricsSourceName
     /// The "Biblioteca" pill.
     static let libraryPill = TextStyle(size: 15, weight: .semibold, scalesWithDynamicType: false)
     /// "Reproduciendo en" (medium) and the device name (bold), 15 pt.

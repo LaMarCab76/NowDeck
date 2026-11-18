@@ -88,7 +88,7 @@ struct NowPlaying: Equatable {
     }
 }
 
-/// Where the item plays from ("Desde la playlist …").
+/// Where the item plays from: "Reproduciendo desde" over the source's name.
 struct PlaybackOrigin: Equatable {
     enum Kind: Equatable {
         case playlist
@@ -100,11 +100,32 @@ struct PlaybackOrigin: Equatable {
     }
 
     var kind: Kind
-    /// `nil` while unknown: the player then shows only the type ("Desde una playlist").
+    /// `nil` while unknown: the player then shows only the type ("Una playlist").
     var name: String?
     var url: URL?
     /// Set for playlists: the name has to be fetched with `GET /playlists/{id}`.
     var playlistID: String?
+    /// The Web API refused the playlist's name (`403`/`404`). That happens with Spotify's own
+    /// playlists (radios, mixes, editorial ones), which apps in Development Mode can't read,
+    /// so the player says "Playlist de Spotify" instead of a generic "Una playlist".
+    var isNameUnavailable = false
+
+    /// The first line of the origin, above `displayName`.
+    static var heading: String { String(localized: "Reproduciendo desde") }
+
+    /// The second line: the name when known, or else the type.
+    var displayName: String {
+        if let name, !name.isEmpty { return name }
+        switch kind {
+        case .playlist:
+            return isNameUnavailable
+                ? String(localized: "Playlist de Spotify") : String(localized: "Una playlist")
+        case .album: return String(localized: "Un álbum")
+        case .artist: return String(localized: "Un artista")
+        case .show: return String(localized: "Un podcast")
+        case .likedSongs: return String(localized: "Tus me gusta")
+        }
+    }
 
     /// Builds the origin from the context. Album, artist and show names come from the item
     /// itself when it belongs to the context, so they cost no extra request. Unknown context

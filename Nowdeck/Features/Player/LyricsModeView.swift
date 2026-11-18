@@ -4,16 +4,16 @@ import UIKit
 /// What lyrics mode shows around the lyrics, provided by the player (milestone 2).
 ///
 /// Texts are shown as they come: the player passes Spotify's names untouched and the source
-/// label already localized ("Desde la playlist", "Desde el álbum", …).
+/// label already localized ("Reproduciendo desde").
 struct LyricsModeContent: Equatable {
     var title: String
     /// All the artists, as the player shows them.
     var artist: String
     /// Marked like in the player (docs/06, "Explícito").
     var isExplicit = false
-    /// "Desde la playlist". `nil` hides the source.
+    /// "Reproduciendo desde". `nil` hides the source.
     var sourceLabel: String?
-    /// Name of the playlist or album.
+    /// Name of the playlist or album, or its type when the name is unknown.
     var sourceName: String?
     /// Device that is playing. `nil` hides it.
     var deviceName: String?
@@ -282,7 +282,7 @@ private extension String {
 
 // MARK: - Pieces
 
-/// Spotify icon, "Desde la playlist" and the name in two lines. All of it opens the source in
+/// Spotify icon, "Reproduciendo desde" and the name in two lines. All of it opens the source in
 /// Spotify.
 private struct LyricsSourceButton: View {
     let label: String?
