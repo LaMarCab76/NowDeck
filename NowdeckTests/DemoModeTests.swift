@@ -13,6 +13,24 @@ final class DemoModeTests: XCTestCase {
         DemoURLProtocol.answer(method: method, url: URL(string: url)!)
     }
 
+    /// Through `URLSession`, so `startLoading` is covered too. A session of its own instead
+    /// of registering on `URLSession.shared`, which would leak into other tests.
+    func testRequestsAreAnsweredThroughTheURLLoadingSystem() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [DemoURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+
+        let (data, response) = try await session.data(
+            from: URL(string: "https://api.spotify.com/v1/me/player")!)
+        XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+        let state = try SpotifyAPI.makeDecoder().decode(PlaybackState.self, from: data)
+        XCTAssertTrue(state.isPlaying)
+
+        let (_, missing) = try await session.data(from: URL(string: "https://example.invalid/")!)
+        XCTAssertEqual((missing as? HTTPURLResponse)?.statusCode, 404)
+    }
+
     func testUnknownHostsAndRoutesAnswerNotFound() {
         XCTAssertEqual(answer("https://example.com/").status, 404)
         XCTAssertEqual(answer("POST", "https://accounts.spotify.com/api/token").status, 404)
