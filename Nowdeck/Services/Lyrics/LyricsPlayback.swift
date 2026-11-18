@@ -31,8 +31,12 @@ struct LyricsPlayback: Equatable, Sendable {
     ///
     /// Small differences are poll jitter and are ignored, so the lyrics do not jump back and
     /// forth; a jump of more than 1.5 s, or a play/pause change, takes the new snapshot.
+    ///
+    /// While paused nothing is interpolated, so there is no jitter to filter: any other
+    /// position is real (a seek, or a failed seek put back) and is taken at once.
     func reconciled(with polled: LyricsPlayback) -> LyricsPlayback {
         if polled.isPlaying != isPlaying { return polled }
+        if !isPlaying { return polled.progressMs == progressMs ? self : polled }
         let interpolated = positionMs(at: polled.timestamp)
         if abs(polled.progressMs - interpolated) > Self.resyncThresholdMs { return polled }
         return self

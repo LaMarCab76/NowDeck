@@ -109,7 +109,12 @@ desde LRCLIB como "Lyricsfile format").
 - Posición = `progress_ms` del último polling + el tiempo transcurrido, mientras `is_playing`
   sea verdadero. Actualizar la vista a ~10 fps en modo palabra y ~2 fps en modo estrofa.
 - Si el polling detecta un salto de más de 1,5 s frente a lo interpolado (alguien adelantó el
-  tema), resincronizar.
+  tema), resincronizar. En pausa no hay interpolación ni, por lo tanto, ruido: cualquier
+  posición distinta se toma en el acto (un adelanto chico, o uno fallido que vuelve atrás).
+- **Tocar una estrofa** (2026-11-18) manda `PUT /me/player/seek` al comienzo de la estrofa
+  menos el desfase de "Sincronía de las letras" (nunca antes de 0), así esa estrofa queda en
+  pantalla apenas llega. Las letras toman esa posición en el acto, sin esperar el polling.
+  Recorrer las estrofas arrastrando no manda nada. Ver `docs/02`, "Modo letras".
 - **Sincronía de las letras** (Ajustes → Reproductor, 2026-11-17): un desfase de −3 a +3 s en
   pasos de 0,1 s que se suma a la posición interpolada antes de elegir la estrofa. Positivo
   las muestra antes (para cuando la posición de Spotify llega tarde o el audio va por

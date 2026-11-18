@@ -32,7 +32,11 @@ Breaking these rules can lead Spotify to revoke API access.
 - [ ] **Controls**: disable or hide whatever `actions.disallows` forbids. The guidelines:
   "Play controls must either have a disabled state to indicate that they are restricted or
   they should not be displayed at all". Nowdeck disables them (see `docs/en/03`, "`actions`").
-- [ ] **Progress**: informational, with no hint that it can be scrubbed.
+- [ ] **Progress**: where Spotify doesn't allow seeking, informational, with no hint that it
+  can be scrubbed. The guideline's sentence ("Make clear that the track progress bar is for
+  information only - there should be no indication that the user can seek") is in the section
+  *Handling Spotify Free restricted actions in your companion app* (re-read on 2026-11-18): it
+  covers restricted actions, and doesn't forbid seeking where Spotify allows it.
 - [ ] **Podcasts**: show the episode title and the podcast name. ±15 s skips for episodes:
   **applies** (verified on 2026-11-17 in *Design & Branding Guidelines* → "Playing views").
   The section starts with "If you choose to show play controls in your app, the following
@@ -228,10 +232,15 @@ Point-by-point review on the `hito/08-terminaciones` branch (milestones 1 to 7 i
 - ✅ Whatever `actions.disallows` forbids is shown **disabled** (dimmed and with no action),
   and everything is disabled on a device with `is_restricted`. See `docs/en/03`,
   "`actions`": the owner still needs to confirm with a real response that `disallows` arrives.
-- ✅ Informational progress: bar with no knob or dragging, and VoiceOver reads it as
-  "Progress, 1:25 of 3:47" (*Progreso, 1:25 de 3:47*) with no adjust action. Tapping the time
-  on the right only toggles between the duration and the time left (owner's decision of
-  2026-11-18): it doesn't seek forward or back.
+- ✅ Seeking from the bar and from the lyrics (owner's request, 2026-11-18): only when
+  `actions.disallows` doesn't forbid `seeking` and the device doesn't have `is_restricted`,
+  same as −15 s and +15 s. Web API commands already require Premium, and the guideline's rule
+  about "information only" progress is in the section on Spotify Free restricted actions.
+  Where seeking isn't allowed, the bar stays as before: no knob or dragging, VoiceOver reads
+  it as "Progress, 1:25 of 3:47" (*Progreso, 1:25 de 3:47*) with no adjust action, and the
+  lyrics don't take the finger. Tapping the time on the right only toggles between the
+  duration and the time left (owner's decision of 2026-11-18): it doesn't seek forward or
+  back.
 
 ### Podcasts
 

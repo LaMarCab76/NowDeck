@@ -62,6 +62,11 @@ extension Metrics {
         /// Extra tappable margin around the time on the right (16 pt row + 2 × 14 ≈ 44 pt).
         static let progressTimeTapOutset: CGFloat = 14
         static let progressBarHeight: CGFloat = 4
+        /// The bar while a finger drags on it.
+        static let progressBarScrubbingHeight: CGFloat = 8
+        /// The bar takes the finger this far above and below its 16 pt row (16 + 2 × 14 ≈
+        /// 44 pt, the minimum touch target).
+        static let progressBarTouchOutset: CGFloat = 14
 
         static let controlsHeight: CGFloat = 64
         /// One centered row with the same gap between every button (owner's request,

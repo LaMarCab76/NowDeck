@@ -10,6 +10,8 @@ struct PlayerActions {
     /// −15 s and +15 s, shown instead of previous and next for podcast episodes.
     var skipBackward: () -> Void = {}
     var skipForward: () -> Void = {}
+    /// Moves the playback to a position in ms (progress bar, lyrics mode).
+    var seek: (Int) -> Void = { _ in }
     var shuffle: () -> Void = {}
     var repeatMode: () -> Void = {}
     var volume: () -> Void = {}
@@ -57,6 +59,7 @@ struct PlayerScreen: View {
         wired.next = { controls.next() }
         wired.skipBackward = { controls.skipBackward() }
         wired.skipForward = { controls.skipForward() }
+        wired.seek = { controls.seek(toMs: $0) }
         wired.shuffle = { controls.toggleShuffle() }
         wired.repeatMode = { controls.cycleRepeat() }
         wired.volume = { controls.volume.toggleButton() }

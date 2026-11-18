@@ -12,6 +12,7 @@ final class PlayerControlsModelTests: XCTestCase {
         let playback: StubBox<PlaybackJSON>
         /// Status of every command.
         let commandStatus: StubBox<Int>
+        let clock: TestClock
 
         var commandRequests: [URLRequest] {
             recorder.requests.filter { $0.httpMethod != "GET" }
@@ -56,7 +57,7 @@ final class PlayerControlsModelTests: XCTestCase {
         await model.poll()
         XCTAssertEqual(model.status, .active)
         return Harness(model: model, controls: controls, recorder: recorder,
-                       playback: playback, commandStatus: commandStatus)
+                       playback: playback, commandStatus: commandStatus, clock: clock)
     }
 
     /// Lets queued commands run when the test expects nothing to happen.
@@ -271,6 +272,272 @@ final class PlayerControlsModelTests: XCTestCase {
         h.controls.skipForward()
         try await settle()
         XCTAssertEqual(h.commands, [])
+    }
+
+    // MARK: Seeking to a position (progress bar, lyrics)
+
+    func testSeekToPositionMovesThereAtOnce() async throws {
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: 84_000))
+        h.controls.seek(toMs: 30_500)
+        XCTAssertEqual(h.model.playback?.progressMs, 30_500, "Optimistic: the bar does not jump back")
+        try await eventually { h.commands.count == 1 }
+        XCTAssertEqual(h.commandRequests.map(\.commandLine), ["PUT /me/player/seek"])
+        XCTAssertEqual(h.commandRequests.last?.queryValue("position_ms"), "30500")
+    }
+
+    func testSeekToPositionStaysWithinTheTrack() async throws {
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: 84_000))
+        let duration = try XCTUnwrap(h.model.nowPlaying?.durationMs)
+        h.controls.seek(toMs: duration + 10_000)
+        h.controls.seek(toMs: -5_000)
+        try await eventually { h.commands.count == 2 }
+        XCTAssertEqual(h.commandRequests.map { $0.queryValue("position_ms") },
+                       [String(duration), "0"])
+    }
+
+    func testSeekToPositionDisallowed() async throws {
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: 84_000,
+                                            disallows: ["seeking"]))
+        h.controls.seek(toMs: 10_000)
+        try await settle()
+        XCTAssertEqual(h.commands, [])
+        XCTAssertEqual(h.model.playback?.progressMs, 84_000)
+    }
+
+    func testFailedSeekToPositionGoesBack() async throws {
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: 84_000))
+        h.commandStatus.value = 500
+        h.controls.seek(toMs: 120_000)
+        XCTAssertEqual(h.model.playback?.progressMs, 120_000)
+        try await eventually { h.model.playback?.progressMs == 84_000 }
+    }
+
+    func testSeekToPositionWorksWithoutAKnownPosition() async throws {
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: nil))
+        XCTAssertNil(h.model.currentPositionMs)
+        h.controls.seek(toMs: 30_000)
+        XCTAssertEqual(h.model.playback?.progressMs, 30_000)
+        try await eventually { h.commands.count == 1 }
+        XCTAssertEqual(h.commandRequests.last?.queryValue("position_ms"), "30000")
+    }
+
+    func testAFailedSeekDoesNotUndoALaterOne() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal(); gate.signal() } // never leave the stub blocked
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: 84_000),
+                               commandGate: gate)
+        h.controls.seek(toMs: 30_000)
+        h.controls.seek(toMs: 120_000)
+        XCTAssertEqual(h.model.playback?.progressMs, 120_000)
+
+        // The first seek fails while the second one is still on its way.
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        XCTAssertEqual(h.model.playback?.progressMs, 120_000,
+                       "Undoing the first seek would move the bar away from the second one")
+
+        h.commandStatus.value = 204
+        gate.signal()
+        try await eventually { h.commands.count == 2 }
+    }
+
+    func testTwoFailedSeeksGoBackToTheLastAcceptedPosition() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal(); gate.signal() } // never leave the stub blocked
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: 84_000),
+                               commandGate: gate)
+        h.controls.seek(toMs: 30_000)
+        h.controls.seek(toMs: 120_000)
+        // Spotify stays at 84 s, so the confirmation read cannot hide a wrong rollback.
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        XCTAssertEqual(h.model.playback?.progressMs, 120_000, "The second seek is still on its way")
+
+        gate.signal()
+        try await eventually { h.commandRequests.count == 2 && h.model.playback?.progressMs != 120_000 }
+        XCTAssertEqual(h.model.playback?.progressMs, 84_000,
+                       "Not 30 s: the first seek failed too")
+    }
+
+    func testAFailedSeekAfterAnAcceptedOneGoesBackToTheAcceptedOne() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal(); gate.signal() } // never leave the stub blocked
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: 84_000),
+                               commandGate: gate)
+        h.controls.seek(toMs: 30_000)
+        h.controls.seek(toMs: 120_000)
+        gate.signal()
+        // The second request reaches the stub (and waits at the gate) once the first one
+        // has been answered.
+        try await eventually { h.commandRequests.count == 2 }
+        // Spotify took the first seek: the confirmation read agrees with the rollback.
+        h.playback.value.progressMs = 30_000
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        XCTAssertEqual(h.model.playback?.progressMs, 30_000)
+    }
+
+    func testAFailedSeekToTheEndGoesBackWithTheTimeThatPassed() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal() } // never leave the stub blocked
+        let h = try await make(PlaybackJSON(isPlaying: true, progressMs: 84_000),
+                               commandGate: gate)
+        let duration = try XCTUnwrap(h.model.nowPlaying?.durationMs)
+        h.controls.seek(toMs: duration)
+
+        // Ten seconds go by while the seek is out; the bar stays at the end meanwhile.
+        h.clock.advance(10)
+        h.playback.value.progressMs = 94_000
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        XCTAssertEqual(h.model.playback?.progressMs, 94_000,
+                       "Back to where the track is now, not where it was ten seconds ago")
+    }
+
+    func testAPauseBetweenFailedSeeksStopsTheBaseline() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal(); gate.signal(); gate.signal() }
+        let h = try await make(PlaybackJSON(isPlaying: true, progressMs: 84_000),
+                               commandGate: gate)
+        h.controls.seek(toMs: 30_000)
+        h.controls.playPause()
+        h.controls.seek(toMs: 120_000)
+
+        // The first seek fails 2 s later, the pause goes through 2 s after that, and the
+        // last seek fails 10 s after the pause.
+        h.clock.advance(2)
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        h.clock.advance(2)
+        h.commandStatus.value = 204
+        gate.signal()
+        try await eventually { h.commandRequests.count == 3 }
+        h.clock.advance(10)
+        h.playback.value = PlaybackJSON(isPlaying: false, progressMs: 88_000)
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.model.playback?.progressMs != 120_000 }
+        XCTAssertEqual(h.model.playback?.progressMs, 88_000,
+                       "84 s plus the 4 s it played before the pause, not the 10 s after it")
+    }
+
+    func testAnAcceptedSeekKeepsPlayingUntilThePauseIsConfirmed() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal(); gate.signal(); gate.signal() }
+        let h = try await make(PlaybackJSON(isPlaying: true, progressMs: 84_000),
+                               commandGate: gate)
+        h.controls.seek(toMs: 30_000)
+        h.controls.playPause()
+        h.controls.seek(toMs: 120_000)
+        XCTAssertEqual(h.model.playback?.isPlaying, false, "The pause shows at once")
+
+        // The first seek goes through while the pause is still on its way (so the track
+        // keeps playing), the pause lands 4 s later and the last seek fails 10 s after that.
+        gate.signal()
+        try await eventually { h.commandRequests.count == 2 }
+        h.clock.advance(4)
+        gate.signal()
+        try await eventually { h.commandRequests.count == 3 }
+        h.clock.advance(10)
+        h.playback.value = PlaybackJSON(isPlaying: false, progressMs: 34_000)
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        XCTAssertEqual(h.model.playback?.progressMs, 34_000,
+                       "30 s plus the 4 s it played until the pause landed")
+    }
+
+    func testFailedPauseAndPlayLeaveTheBaselinePlaying() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { for _ in 0..<4 { gate.signal() } }
+        let h = try await make(PlaybackJSON(isPlaying: true, progressMs: 84_000),
+                               commandGate: gate)
+        h.controls.seek(toMs: 30_000)
+        h.controls.playPause() // pause
+        h.controls.playPause() // play, computed from the optimistic pause
+        h.controls.seek(toMs: 120_000)
+
+        // The first seek, the pause and the play all fail; the last seek fails 10 s later.
+        h.commandStatus.value = 500
+        for count in 2...4 {
+            gate.signal()
+            try await eventually { h.commandRequests.count == count }
+        }
+        h.clock.advance(10)
+        h.playback.value = PlaybackJSON(isPlaying: true, progressMs: 94_000)
+        gate.signal()
+        try await eventually { h.model.playback?.progressMs != 120_000 }
+        XCTAssertEqual(h.model.playback?.progressMs, 94_000,
+                       "Spotify never stopped: 84 s plus the 10 s that passed")
+    }
+
+    func testASeekAfterAPendingPauseStartsFromThePlayingState() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal(); gate.signal() }
+        let h = try await make(PlaybackJSON(isPlaying: true, progressMs: 84_000),
+                               commandGate: gate)
+        h.controls.playPause() // pause, still on its way when the seek is queued
+        h.controls.seek(toMs: 30_000)
+
+        // The pause lands 4 s later; the seek fails right after.
+        h.clock.advance(4)
+        gate.signal()
+        try await eventually { h.commandRequests.count == 2 }
+        h.playback.value = PlaybackJSON(isPlaying: false, progressMs: 88_000)
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        XCTAssertEqual(h.model.playback?.progressMs, 88_000,
+                       "It kept playing for the 4 s the pause took")
+    }
+
+    func testASeekQueuedLaterBehindAPendingPauseKeepsTheTimeBeforeIt() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal(); gate.signal() }
+        let h = try await make(PlaybackJSON(isPlaying: true, progressMs: 84_000),
+                               commandGate: gate)
+        h.controls.playPause() // pause, still on its way
+        // The bar stopped at 84 s with the optimistic pause, but Spotify keeps playing.
+        h.clock.advance(2)
+        h.controls.seek(toMs: 30_000)
+
+        // The pause lands at 4 s; the seek fails right after.
+        h.clock.advance(2)
+        gate.signal()
+        try await eventually { h.commandRequests.count == 2 }
+        h.playback.value = PlaybackJSON(isPlaying: false, progressMs: 88_000)
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        XCTAssertEqual(h.model.playback?.progressMs, 88_000,
+                       "Not 86 s: the 2 s before the seek count too")
+    }
+
+    func testAFailedSeekAfterNextLeavesThePositionToThePoll() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal(); gate.signal() }
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: 84_000),
+                               commandGate: gate)
+        h.controls.next()
+        h.controls.seek(toMs: 30_000)
+        gate.signal()
+        try await eventually { h.commandRequests.count == 2 }
+        // The new item is wherever Spotify says; the poll after the failure reads it.
+        h.playback.value = PlaybackJSON(isPlaying: false, progressMs: 45_000)
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        // The seek's preview (30 s) or the poll's answer (45 s), never the old item's 84 s.
+        XCTAssertNotEqual(h.model.playback?.progressMs, 84_000,
+                          "A failed seek on a new item must not go back to the previous one")
+        await h.model.poll()
+        XCTAssertEqual(h.model.playback?.progressMs, 45_000,
+                       "84 s belonged to the previous item: the poll tells where the new one is")
     }
 
     // MARK: Volume from polls

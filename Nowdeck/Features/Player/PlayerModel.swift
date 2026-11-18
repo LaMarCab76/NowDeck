@@ -83,7 +83,8 @@ final class PlayerModel: ObservableObject {
     /// Also used by Ajustes for the background preview's sample photo.
     let artworkLoader: ArtworkLoader
     private let policy: PollingPolicy
-    private let now: () -> Date
+    /// The clock (a test clock in tests). `PlayerControlsModel` uses it to undo failed seeks.
+    let now: () -> Date
 
     private var pollTask: Task<Void, Never>?
     /// Between `start()` and `stop()`: the screen is visible and the app in the foreground.

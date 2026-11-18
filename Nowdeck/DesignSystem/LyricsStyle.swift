@@ -23,6 +23,10 @@ extension TextStyle {
     /// Device name in the bottom row: 14 semibold.
     static let lyricsDevice = TextStyle(size: 14, weight: .semibold,
                                         scalesWithDynamicType: false)
+    /// While browsing the lyrics, when the stanza on screen starts: 13 semibold monospaced,
+    /// like the playback times.
+    static let lyricsBrowseTime = TextStyle(size: 13, weight: .semibold, design: .monospaced,
+                                            scalesWithDynamicType: false)
     /// Text of the notice pill: 15/20 semibold.
     static let notice = TextStyle(size: 15, weight: .semibold, lineHeight: 20,
                                   scalesWithDynamicType: false)

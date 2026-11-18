@@ -8,7 +8,8 @@ struct PlaybackJSON {
     var isPlaying = true
     var shuffle = false
     var repeatState = "off"
-    var progressMs = 84_000
+    /// `nil` sends `progress_ms: null`, which Spotify allows.
+    var progressMs: Int? = 84_000
     /// Actions inside `actions.disallows` (snake_case keys), all set to `true`.
     var disallows: [String] = []
     var deviceID = "device-1"
@@ -25,7 +26,7 @@ struct PlaybackJSON {
         object["is_playing"] = isPlaying
         object["shuffle_state"] = shuffle
         object["repeat_state"] = repeatState
-        object["progress_ms"] = progressMs
+        object["progress_ms"] = progressMs ?? NSNull()
         object["actions"] = ["disallows": Dictionary(uniqueKeysWithValues: disallows.map { ($0, true) })]
         var device = try XCTUnwrap(object["device"] as? [String: Any])
         device["id"] = deviceID
