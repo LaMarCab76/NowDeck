@@ -13,6 +13,7 @@ final class AppPreferencesTests: XCTestCase {
     func testDefaultsAreNoOffsetAndNoFolders() {
         let preferences = AppPreferences(defaults: freshDefaults())
         XCTAssertEqual(preferences.lyricsOffsetMs, 0)
+        XCTAssertEqual(preferences.lyricsStyle, .byWord, "Word by word when the lyrics allow it")
         XCTAssertFalse(preferences.showsRemainingTime, "The total duration by default")
         XCTAssertFalse(preferences.usesPlaylistFolders)
         XCTAssertFalse(preferences.hasAnsweredPlaylistFolders)
@@ -22,11 +23,13 @@ final class AppPreferencesTests: XCTestCase {
         let defaults = freshDefaults()
         let preferences = AppPreferences(defaults: defaults)
         preferences.lyricsOffsetMs = 400
+        preferences.lyricsStyle = .stanza
         preferences.showsRemainingTime = true
         preferences.answerPlaylistFolders(enabled: true)
 
         let reloaded = AppPreferences(defaults: defaults)
         XCTAssertEqual(reloaded.lyricsOffsetMs, 400)
+        XCTAssertEqual(reloaded.lyricsStyle, .stanza)
         XCTAssertTrue(reloaded.showsRemainingTime)
         XCTAssertTrue(reloaded.usesPlaylistFolders)
         XCTAssertTrue(reloaded.hasAnsweredPlaylistFolders)
@@ -58,6 +61,12 @@ final class AppPreferencesTests: XCTestCase {
         let paused = LyricsPlayback(progressMs: 300, isPlaying: false, timestamp: start)
         XCTAssertEqual(paused.lyricsPositionMs(at: later, offsetMs: -1_000), 0,
                        "Never before the start of the track")
+    }
+
+    func testUnknownStoredLyricsStyleFallsBackToByWord() {
+        let defaults = freshDefaults()
+        defaults.set("karaoke", forKey: "lyricsStyle")
+        XCTAssertEqual(AppPreferences(defaults: defaults).lyricsStyle, .byWord)
     }
 
     func testOffsetTexts() {

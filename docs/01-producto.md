@@ -90,8 +90,9 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
        carátula);
      - Exportar e Importar tema.
    - **Reproductor**: interruptor "Mostrar tiempo restante" (en vez de la duración, a la
-     derecha de la barra; apagado por defecto), interruptor "Mostrar letras" y "Ancho de las
-     letras" (Mitad, 2/3 o Completo; por defecto 2/3).
+     derecha de la barra; apagado por defecto), interruptor "Mostrar letras", "Ancho de las
+     letras" (Mitad, 2/3 o Completo; por defecto 2/3) y "Estilo de las letras" (Por palabra o
+     Estrofa; por defecto Por palabra).
 12. **Importar tema**: hoja con el JSON, el resultado de la validación, advertencias, vista
     previa y los botones Aplicar y Cancelar.
 13. **Nada sonando**: estado vacío con "Elegir dispositivo" y "ABRIR SPOTIFY".
@@ -105,7 +106,8 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
 - **Cambiar de dispositivo**: tocar "Reproduciendo en …" → hoja de Dispositivos → tocar un
   dispositivo → transferir la reproducción → cerrar la hoja.
 - **Letras**: tocar el botón de letras.
-  - Si hay letra con sincronía por palabra, se usa ese modo.
+  - Si hay letra con sincronía por palabra y el estilo es "Por palabra", se usa ese modo.
+  - Con el estilo "Estrofa", se muestra la estrofa completa aunque haya sincronía por palabra.
   - Si hay sincronía por línea, se muestra la estrofa completa.
   - Si no hay letra o es solo texto plano, aparece el aviso y el reproductor vuelve a la vista
     normal.

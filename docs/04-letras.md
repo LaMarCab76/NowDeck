@@ -80,7 +80,7 @@ desde LRCLIB como "Lyricsfile format").
 
 | Respuesta | Modo |
 |---|---|
-| `hasWordSync == true` | **Por palabra**: leer `lyricsfile` (YAML) → `lines[].words` con tiempos |
+| `hasWordSync == true` | **Por palabra**: leer `lyricsfile` (YAML) → `lines[].words` con tiempos. Con "Estilo de las letras" en Estrofa, se muestra la estrofa completa |
 | `syncedLyrics` no nulo | **Estrofa completa**, usando los tiempos por línea del LRC para saber en qué estrofa vamos |
 | Solo `plainLyrics`, `instrumental == true` o 404 | **Sin letra**: aviso "No encontramos la letra de este tema" durante 3 s y vuelta a la vista normal |
 
@@ -114,6 +114,11 @@ desde LRCLIB como "Lyricsfile format").
   pasos de 0,1 s que se suma a la posición interpolada antes de elegir la estrofa. Positivo
   las muestra antes (para cuando la posición de Spotify llega tarde o el audio va por
   Bluetooth). Se guarda en `UserDefaults`, no en el tema: depende del equipo y de la red.
+- **Estilo de las letras** (Ajustes → Reproductor, 2026-11-18): **Por palabra** (por defecto)
+  resalta las palabras cuando la letra tiene sincronía por palabra; **Estrofa** muestra siempre
+  la estrofa completa, con las mismas estrofas y tiempos, y se refresca a ~2 fps. Con sincronía
+  por línea las dos opciones se ven igual. También va en `UserDefaults`: es una preferencia de
+  lectura, no parte del aspecto que se comparte con un tema.
 
 ## Avisos para el usuario y el README
 

@@ -187,7 +187,8 @@ Reemplaza el bloque superior:
     100 % del ancho útil);
   - sin cortes de línea forzados, `text-wrap` equilibrado y separación de 12.
   - **Por palabra**: lo ya cantado en `texto` y lo pendiente en `letraPendiente`.
-  - **Estrofa completa**: toda la estrofa actual en `texto`.
+  - **Estrofa completa**: toda la estrofa actual en `texto`. Es lo que se ve con sincronía por
+    línea, y también con sincronía por palabra si "Estilo de las letras" está en Estrofa.
 - **Fila inferior** (56): carátula de 56 (radio 4), título en 18 bold, artista en 15 y, a la
   derecha, el dispositivo en acento.
 - Biblioteca y Ajustes no se muestran.
@@ -403,6 +404,8 @@ sigue el diseño de Cola:
 - **Reproductor**:
   - interruptor **Mostrar letras** (pista de 56×32, perilla de 26, encendido en acento);
   - **Ancho de las letras**: Mitad, **2/3** o Completo;
+  - **Estilo de las letras**: **Por palabra** o Estrofa (mismo control segmentado que el ancho;
+    agregado por el dueño el 2026-11-18, no está en el mockup);
   - nota sobre LRCLIB.
 
 ## Importar tema (`TemaImportar.dc.html`)

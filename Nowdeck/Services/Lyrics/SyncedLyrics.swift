@@ -64,3 +64,27 @@ struct LyricsWord: Equatable, Sendable {
     /// Includes the whitespace that follows the word, as in the Lyricsfile format.
     let text: String
 }
+
+/// "Estilo de las letras" (Ajustes → Reproductor): how lyrics with word timings are shown.
+/// Line-synced lyrics always show the whole stanza, whatever the style.
+enum LyricsStyle: String, CaseIterable, Sendable {
+    /// Sung words are highlighted as they play, when the lyrics have word timings.
+    case byWord = "word"
+    /// The whole current stanza at once, even when the lyrics have word timings.
+    case stanza
+
+    /// What a new install uses: the richest mode the lyrics allow.
+    static let defaultStyle: LyricsStyle = .byWord
+}
+
+extension SyncedLyrics {
+    /// The lyrics as lyrics mode shows them with `style`. In stanza style, word-synced lyrics
+    /// are treated as line-synced: the stanzas and their times stay the same, only the
+    /// highlight goes away (and the view refreshes at the slower stanza pace).
+    func displayed(as style: LyricsStyle) -> SyncedLyrics {
+        switch style {
+        case .byWord: return self
+        case .stanza: return SyncedLyrics(sync: .line, stanzas: stanzas)
+        }
+    }
+}

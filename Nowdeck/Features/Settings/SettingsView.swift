@@ -485,10 +485,25 @@ struct PlayerSettingsView: View {
             }
             .padding(.horizontal, Spacing.xxs)
 
+            HStack(spacing: Spacing.l) {
+                Text("Estilo de las letras")
+                    .textStyle(.settingsOptionTitle)
+                Spacer(minLength: 0)
+                SettingsSegmentedControl(
+                    options: [
+                        .init(value: LyricsStyle.byWord, title: "Por palabra"),
+                        .init(value: .stanza, title: "Estrofa"),
+                    ],
+                    selection: preferences.lyricsStyle,
+                    onSelect: { preferences.lyricsStyle = $0 }
+                )
+            }
+            .padding(.horizontal, Spacing.xxs)
+
             LyricsOffsetRow(offsetMs: $preferences.lyricsOffsetMs)
                 .padding(.horizontal, Spacing.xxs)
 
-            Text("Las letras vienen de LRCLIB, una base comunitaria: no las provee Spotify y pueden faltar o tener errores. Con sincronía por palabra se resaltan mientras suenan; si no, se ve la estrofa completa.")
+            Text("Las letras vienen de LRCLIB, una base comunitaria: no las provee Spotify y pueden faltar o tener errores. Con “Por palabra” se resaltan mientras suenan, si la letra tiene sincronía por palabra; si no, o con “Estrofa”, se ve la estrofa completa.")
                 .textStyle(.settingsNote)
                 .foregroundStyle(theme.palette.bodyText.color)
                 .fixedSize(horizontal: false, vertical: true)

@@ -110,4 +110,27 @@ final class LyricsTimelineTests: XCTestCase {
         let paused = LyricsPlayback(progressMs: 10_900, isPlaying: false, timestamp: start.addingTimeInterval(1))
         XCTAssertEqual(anchor.reconciled(with: paused), paused)
     }
+
+    // MARK: Lyrics style (Ajustes → Reproductor)
+
+    func testByWordStyleKeepsTheWordHighlight() {
+        let shown = wordLyrics.displayed(as: .byWord)
+        XCTAssertEqual(shown, wordLyrics)
+        XCTAssertEqual(LyricsTimeline.frame(for: shown, atMs: 1_200)?.sungWordCount, 1)
+    }
+
+    func testStanzaStyleShowsWordSyncedLyricsAsWholeStanzas() {
+        let shown = wordLyrics.displayed(as: .stanza)
+        XCTAssertEqual(shown.sync, .line)
+        XCTAssertEqual(shown.stanzas, wordLyrics.stanzas, "Same stanzas and times")
+        let frame = LyricsTimeline.frame(for: shown, atMs: 1_200)
+        XCTAssertEqual(frame?.isPrimaryActive, true)
+        XCTAssertEqual(frame?.sungWordCount, wordLyrics.stanzas[0].words.count,
+                       "The whole stanza at once, not just the first word")
+    }
+
+    func testLineSyncedLyricsAreTheSameInEitherStyle() {
+        XCTAssertEqual(lineLyrics.displayed(as: .byWord), lineLyrics)
+        XCTAssertEqual(lineLyrics.displayed(as: .stanza), lineLyrics)
+    }
 }

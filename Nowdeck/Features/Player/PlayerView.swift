@@ -56,6 +56,7 @@ struct PlayerView: View {
                 playback: playback.lyricsPlayback(fetchedAt: model.fetchedAt),
                 width: theme.lyricsWidth,
                 offsetMs: preferences.lyricsOffsetMs,
+                style: preferences.lyricsStyle,
                 artwork: model.artwork.map(Image.init(uiImage:)),
                 // Never a dead tap (both buttons): without the source's link, the item; without either,
                 // `SpotifyLink.open` falls back to Spotify's home page, as the normal view does.

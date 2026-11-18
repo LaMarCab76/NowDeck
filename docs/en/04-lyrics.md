@@ -82,7 +82,7 @@ from LRCLIB as "Lyricsfile format").
 
 | Response | Mode |
 |---|---|
-| `hasWordSync == true` | **Word by word**: read `lyricsfile` (YAML) → `lines[].words` with timestamps |
+| `hasWordSync == true` | **Word by word**: read `lyricsfile` (YAML) → `lines[].words` with timestamps. With "Lyrics style" (*Estilo de las letras*) set to Verse, the whole verse is shown |
 | `syncedLyrics` not null | **Whole verse**, using the LRC's per-line timestamps to know which verse we're on |
 | Only `plainLyrics`, `instrumental == true`, or 404 | **No lyrics**: "No lyrics found for this song" (*No encontramos la letra de este tema*) notice for 3 s and back to the normal view |
 
@@ -117,6 +117,11 @@ from LRCLIB as "Lyricsfile format").
   Positive shows them earlier (for when Spotify's position arrives late or the audio goes over
   Bluetooth). It's stored in `UserDefaults`, not in the theme: it depends on the device and the
   network.
+- **Lyrics style** (*Estilo de las letras*) (Settings → Player, 2026-11-18): **By word**
+  (default) highlights the words when the lyrics have word-by-word sync; **Verse** always shows
+  the whole verse, with the same verses and timestamps, and refreshes at ~2 fps. With line sync
+  both options look the same. It's also stored in `UserDefaults`: it's a reading preference,
+  not part of the look a theme shares.
 
 ## Notices for the user and the README
 

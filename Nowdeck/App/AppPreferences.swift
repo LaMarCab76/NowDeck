@@ -19,6 +19,11 @@ final class AppPreferences: ObservableObject {
         }
     }
 
+    /// "Estilo de las letras": highlight word by word, or show the whole stanza.
+    @Published var lyricsStyle: LyricsStyle {
+        didSet { defaults.set(lyricsStyle.rawValue, forKey: Keys.lyricsStyle) }
+    }
+
     /// Right of the progress bar: the time left ("−2:11") instead of the total duration.
     @Published var showsRemainingTime: Bool {
         didSet { defaults.set(showsRemainingTime, forKey: Keys.showsRemainingTime) }
@@ -44,6 +49,8 @@ final class AppPreferences: ObservableObject {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         lyricsOffsetMs = Self.clampedOffset(defaults.integer(forKey: Keys.lyricsOffsetMs))
+        lyricsStyle = defaults.string(forKey: Keys.lyricsStyle).flatMap(LyricsStyle.init(rawValue:))
+            ?? LyricsStyle.defaultStyle
         showsRemainingTime = defaults.bool(forKey: Keys.showsRemainingTime)
         usesPlaylistFolders = defaults.bool(forKey: Keys.usesPlaylistFolders)
         hasAnsweredPlaylistFolders = defaults.bool(forKey: Keys.answeredPlaylistFolders)
@@ -63,6 +70,7 @@ final class AppPreferences: ObservableObject {
 
     private enum Keys {
         static let lyricsOffsetMs = "lyricsOffsetMs"
+        static let lyricsStyle = "lyricsStyle"
         static let showsRemainingTime = "showsRemainingTime"
         static let usesPlaylistFolders = "usesPlaylistFolders"
         static let answeredPlaylistFolders = "answeredPlaylistFolders"
