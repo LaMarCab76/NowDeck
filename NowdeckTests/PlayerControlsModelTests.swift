@@ -532,6 +532,9 @@ final class PlayerControlsModelTests: XCTestCase {
         h.commandStatus.value = 500
         gate.signal()
         try await eventually { h.controls.notice == .failed }
+        // The seek's preview (30 s) or the poll's answer (45 s), never the old item's 84 s.
+        XCTAssertNotEqual(h.model.playback?.progressMs, 84_000,
+                          "A failed seek on a new item must not go back to the previous one")
         await h.model.poll()
         XCTAssertEqual(h.model.playback?.progressMs, 45_000,
                        "84 s belonged to the previous item: the poll tells where the new one is")
