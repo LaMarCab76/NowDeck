@@ -52,19 +52,19 @@ final class BackgroundPreviewTests: XCTestCase {
         XCTAssertEqual(items, [])
     }
 
-    func testSamplePhotoUsesTheLastTrackHeard() async throws {
+    func testSamplePhotoUsesSpotifysHistoryWhenTheAppHeardNothing() async throws {
         let (api, loader, recorder) = makeAPI { [recentPath] request in
             if request.url?.path == recentPath { return (.stub(200), Self.recentJSON(artistID: "recent")) }
             if request.url?.path == "/v1/artists/recent" { return (.stub(200), Self.artistJSON) }
             if request.url?.host == "i.scdn.co" { return (.stub(200), Self.png) }
             return (.stub(404), Data())
         }
+        // The app heard nothing yet (opened with nothing playing): history is all there is.
         let image = await BackgroundPreviewModel.samplePhoto(api: api, loader: loader,
-                                                             seenArtistID: { "seen" }).sample
+                                                             seenArtistID: { nil }).sample
         XCTAssertEqual(image?.artistID, "recent")
         XCTAssertEqual(image?.artistURL?.absoluteString, "https://open.spotify.com/artist/recent")
-        XCTAssertFalse(recorder.requests.contains { $0.url?.path == "/v1/artists/seen" },
-                       "Spotify's history wins over what the app saw")
+        XCTAssertEqual(recorder.requests.filter { $0.url?.path.hasPrefix("/v1/artists") == true }.count, 1)
     }
 
     func testSamplePhotoFallsBackToWhatTheAppSawWithoutTheScope() async throws {
@@ -83,10 +83,10 @@ final class BackgroundPreviewTests: XCTestCase {
         XCTAssertTrue(recorder.requests.contains { $0.url?.path == "/v1/artists/seen" })
     }
 
-    func testSamplePhotoTriesTheLocalArtistWhenTheHistoryOneHasNoPhoto() async throws {
-        let (api, loader, _) = makeAPI { [recentPath] request in
-            if request.url?.path == recentPath { return (.stub(200), Self.recentJSON(artistID: "bare")) }
-            if request.url?.path == "/v1/artists/bare" { return (.stub(200), Data(#"{"images":[]}"#.utf8)) }
+    func testAHistoryArtistOtherThanTheOneHeardIsSkipped() async throws {
+        // Spotify's history still shows an older track: the artist heard now wins.
+        let (api, loader, recorder) = makeAPI { [recentPath] request in
+            if request.url?.path == recentPath { return (.stub(200), Self.recentJSON(artistID: "old")) }
             if request.url?.path == "/v1/artists/seen" { return (.stub(200), Self.artistJSON) }
             if request.url?.host == "i.scdn.co" { return (.stub(200), Self.png) }
             return (.stub(404), Data())
@@ -94,8 +94,7 @@ final class BackgroundPreviewTests: XCTestCase {
         let lookup = await BackgroundPreviewModel.samplePhoto(api: api, loader: loader,
                                                               seenArtistID: { "seen" })
         XCTAssertEqual(lookup.sample?.artistID, "seen")
-        XCTAssertEqual(lookup.sample?.basis, "seen")
-        XCTAssertEqual(lookup.heardArtistID, "seen")
+        XCTAssertFalse(recorder.requests.contains { $0.url?.path == "/v1/artists/old" })
     }
 
     func testNoSamplePhotoWithoutAnyArtist() async throws {
@@ -224,6 +223,8 @@ final class BackgroundPreviewTests: XCTestCase {
         let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session,
                              sleep: { _ in }, jitter: { 0 })
         let player = PlayerModel(api: api, artworkLoader: ArtworkLoader(session: session))
+        // The preview is then the only one asking for the artist.
+        player.loadsArtistImages = false
         let preview = BackgroundPreviewModel(player: player)
         let historyRequests = { recorder.requests.filter { $0.url?.path == self.recentPath }.count }
         preview.begin(.blur, blur: 0, dim: 30)
