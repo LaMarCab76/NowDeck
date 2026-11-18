@@ -335,10 +335,11 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
       tema escuchado en Spotify (`GET /me/player/recently-played`); si eso no está disponible
       (sesiones sin el permiso nuevo), la del último tema que la app vio sonar (aunque después
       haya parado o haya sonado un episodio). Sin ninguna, se ve el color de fondo del tema.
-    - Se busca al aparecer los deslizadores, una vez por apertura de Ajustes, y se cancela al
-      cerrar Ajustes.
-    - Mientras se ve la foto, el ícono de Spotify (con enlace a Spotify) queda arriba a la
-      izquierda, en el mismo lugar que en el reproductor (`docs/06`).
+    - Se busca al aparecer los deslizadores y se cancela al cerrar Ajustes. Una vez encontrada
+      no se vuelve a pedir en esa visita; si no se encontró (un error, una espera por `429`),
+      se intenta de nuevo al tocar un deslizador.
+    - Mientras se ve la foto, el ícono de Spotify queda arriba a la izquierda, en el mismo
+      lugar que en el reproductor, y abre en Spotify al artista de esa foto (`docs/06`).
     - Lo que se desvanece tampoco recibe toques: con un dedo en un deslizador, otro dedo no
       puede empezar a mover el otro.
   - **Exportar tema** e **Importar tema**: botones contorneados de 48.

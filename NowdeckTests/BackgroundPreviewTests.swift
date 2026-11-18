@@ -60,8 +60,9 @@ final class BackgroundPreviewTests: XCTestCase {
             return (.stub(404), Data())
         }
         let image = await BackgroundPreviewModel.samplePhoto(api: api, loader: loader,
-                                                             seenArtistID: "seen")
-        XCTAssertNotNil(image)
+                                                             seenArtistID: { "seen" })
+        XCTAssertEqual(image?.artistID, "recent")
+        XCTAssertEqual(image?.artistURL?.absoluteString, "https://open.spotify.com/artist/recent")
         XCTAssertFalse(recorder.requests.contains { $0.url?.path == "/v1/artists/seen" },
                        "Spotify's history wins over what the app saw")
     }
@@ -77,15 +78,15 @@ final class BackgroundPreviewTests: XCTestCase {
             return (.stub(404), Data())
         }
         let image = await BackgroundPreviewModel.samplePhoto(api: api, loader: loader,
-                                                             seenArtistID: "seen")
-        XCTAssertNotNil(image)
+                                                             seenArtistID: { "seen" })
+        XCTAssertEqual(image?.artistID, "seen")
         XCTAssertTrue(recorder.requests.contains { $0.url?.path == "/v1/artists/seen" })
     }
 
     func testNoSamplePhotoWithoutAnyArtist() async throws {
         let (api, loader, _) = makeAPI { _ in (.stub(200), Data(#"{"items":[]}"#.utf8)) }
         let image = await BackgroundPreviewModel.samplePhoto(api: api, loader: loader,
-                                                             seenArtistID: nil)
+                                                             seenArtistID: { nil })
         XCTAssertNil(image)
     }
 
@@ -137,6 +138,34 @@ final class BackgroundPreviewTests: XCTestCase {
         _ = await player.poll()
         XCTAssertNil(player.artistImage)
         XCTAssertTrue(preview.image === photo, "The newest photo stays, not an older lookup")
+        XCTAssertEqual(preview.artistURL?.absoluteString,
+                       "https://open.spotify.com/artist/08td7MxkoHQkXnWAYD8d6Q", "The icon opens that artist")
+    }
+
+    func testAFailedLookupIsTriedAgainOnTheNextTouch() async throws {
+        let available = StubBox(false)
+        let (session, recorder) = StubURLProtocol.session { [recentPath] request in
+            if request.url?.path == recentPath {
+                return available.value ? (.stub(200), Self.recentJSON(artistID: "recent"))
+                                       : (.stub(500), Data())
+            }
+            if request.url?.path == "/v1/artists/recent" { return (.stub(200), Self.artistJSON) }
+            if request.url?.host == "i.scdn.co" { return (.stub(200), Self.png) }
+            return (.stub(204), Data())
+        }
+        let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session,
+                             sleep: { _ in }, jitter: { 0 })
+        let player = PlayerModel(api: api, artworkLoader: ArtworkLoader(session: session))
+        let preview = BackgroundPreviewModel(player: player)
+        preview.prepare()
+        try await waitUntil { recorder.requests.contains { $0.url?.path == self.recentPath } }
+        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertNil(preview.image)
+
+        available.value = true
+        preview.begin(.blur, blur: 0, dim: 30)
+        try await waitUntil { preview.image != nil }
+        XCTAssertEqual(preview.artistURL?.absoluteString, "https://open.spotify.com/artist/recent")
     }
 
     func testSlidersDriveThePreview() {

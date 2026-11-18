@@ -25,16 +25,27 @@ final class BackgroundPreviewModel: ObservableObject {
     @Published private(set) var dim = Theme.defaultBackgroundDim
     /// The sample photo, once known.
     @Published private(set) var image: UIImage?
+    /// The page of the artist in `image`, for the Spotify icon shown with it (docs/06: the
+    /// link goes to the content shown). `nil` opens Spotify's home page.
+    @Published private(set) var artistURL: URL?
+
+    /// A photo and the artist it belongs to.
+    struct Sample {
+        var image: UIImage
+        var artistID: String
+
+        var artistURL: URL? { SpotifyURI("spotify:artist:\(artistID)")?.webURL }
+    }
 
     private weak var player: PlayerModel?
     private let api: SpotifyAPI?
     private let artworkLoader: ArtworkLoader?
     /// The photo found without the player's help (nothing playing, or an episode).
-    private var fallbackImage: UIImage?
-    private var playerImage: UIImage?
+    private var fallbackSample: Sample?
+    private var playerSample: Sample?
     /// The newest photo the player showed. It is newer than anything the history lookup can
     /// find, so it stays as the sample when playback stops.
-    private var lastPlayerImage: UIImage?
+    private var lastPlayerSample: Sample?
     private var fallbackTask: Task<Void, Never>?
     private var subscription: AnyCancellable?
 
@@ -44,9 +55,13 @@ final class BackgroundPreviewModel: ObservableObject {
         api = player?.api
         artworkLoader = player?.artworkLoader
         // With "Foto del artista" on, the player already loads the photo of what plays.
-        subscription = player?.$artistImage.sink { [weak self] image in
-            self?.playerImage = image
-            if let image { self?.lastPlayerImage = image }
+        // The player publishes a photo only for the artist of what plays now.
+        subscription = player?.$artistImage.sink { [weak self, weak player] image in
+            let artistID = player?.nowPlaying?.artistID
+            var sample: Sample?
+            if let image, let artistID { sample = Sample(image: image, artistID: artistID) }
+            self?.playerSample = sample
+            if let sample { self?.lastPlayerSample = sample }
             self?.updateImage()
         }
     }
@@ -54,6 +69,8 @@ final class BackgroundPreviewModel: ObservableObject {
     // MARK: Sliders
 
     func begin(_ control: Control, blur: Int, dim: Int) {
+        // A lookup that found nothing (an error, a `429`) tries again with each new touch.
+        prepare()
         self.blur = blur
         self.dim = dim
         editing = control
@@ -74,17 +91,20 @@ final class BackgroundPreviewModel: ObservableObject {
 
     /// Looks for a sample photo when the sliders appear, so it is usually ready before the
     /// finger touches one, also while something plays (its artist may have no photo, or
-    /// playback may stop before the finger arrives). Asks Spotify at most once per opening
-    /// of Ajustes.
+    /// playback may stop before the finger arrives). Once a photo is found it is not looked
+    /// up again while Ajustes is open; a lookup that found none is tried again on the next
+    /// touch of a slider, so a temporary failure (a `429` cooldown) does not last the whole
+    /// visit.
     func prepare() {
-        guard fallbackTask == nil, let api, let artworkLoader else { return }
-        let seenArtistID = player?.lastHeardArtistID
-        fallbackTask = Task { [weak self] in
-            guard let image = await Self.samplePhoto(api: api, loader: artworkLoader,
-                                                     seenArtistID: seenArtistID),
-                  !Task.isCancelled else { return }
-            self?.fallbackImage = image
-            self?.updateImage()
+        guard fallbackTask == nil, fallbackSample == nil, let api, let artworkLoader else { return }
+        fallbackTask = Task { [weak self, weak player] in
+            let sample = await Self.samplePhoto(api: api, loader: artworkLoader,
+                                                seenArtistID: { await player?.lastHeardArtistID })
+            guard let self, !Task.isCancelled else { return }
+            self.fallbackTask = nil
+            guard let sample else { return }
+            self.fallbackSample = sample
+            self.updateImage()
         }
     }
 
@@ -97,20 +117,26 @@ final class BackgroundPreviewModel: ObservableObject {
     /// What plays wins: its photo replaces the sample as soon as the player has it, and stays
     /// when playback stops.
     private func updateImage() {
-        image = playerImage ?? lastPlayerImage ?? fallbackImage
+        let sample = playerSample ?? lastPlayerSample ?? fallbackSample
+        image = sample?.image
+        artistURL = sample?.artistURL
     }
 
     /// The photo of the last track heard on Spotify, or of `seenArtistID` when Spotify can't
-    /// say (`403` without the scope, empty history, an error). `nil` when there is none.
+    /// say (`403` without the scope, empty history, an error). `seenArtistID` is read only
+    /// then, so it is the newest track the app saw. `nil` when there is no photo.
     static func samplePhoto(api: SpotifyAPI, loader: ArtworkLoader,
-                            seenArtistID: String?) async -> UIImage? {
-        let recentArtistID = try? await api.recentlyPlayedTracks(limit: 1)
+                            seenArtistID: () async -> String?) async -> Sample? {
+        var artistID = try? await api.recentlyPlayedTracks(limit: 1)
             .lazy.compactMap { NowPlaying(item: $0)?.artistID }.first
-        guard !Task.isCancelled, let artistID = recentArtistID ?? seenArtistID,
+        guard !Task.isCancelled else { return nil }
+        if artistID == nil { artistID = await seenArtistID() }
+        guard let artistID,
               let images = try? await api.artistImages(id: artistID),
-              !Task.isCancelled, let url = NowPlaying.bestImage(images)
+              !Task.isCancelled, let url = NowPlaying.bestImage(images),
+              let image = try? await loader.loadImage(url)
         else { return nil }
-        return try? await loader.loadImage(url)
+        return Sample(image: image, artistID: artistID)
     }
 }
 

@@ -81,14 +81,14 @@ struct SettingsView: View {
     }
 
     /// The artist's photo is Spotify content: while it shows, the Spotify icon sits where the
-    /// player has it, top left, and links back to Spotify (docs/06).
+    /// player has it, top left, and opens that artist in Spotify (docs/06).
     @ViewBuilder
     private var previewAttribution: some View {
         if preview.editing != nil {
             GeometryReader { proxy in
                 let insets = margins.insets(for: proxy.safeAreaInsets)
                 // Measured from the physical edges, like the player's top row.
-                SpotifyLogoLink(url: nil, variant: .icon)
+                SpotifyLogoLink(url: preview.artistURL, variant: .icon)
                     .padding(.leading, insets.leading)
                     .padding(.top, Spacing.Player.top)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

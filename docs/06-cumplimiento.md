@@ -95,8 +95,8 @@ Romper estas reglas puede hacer que Spotify revoque el acceso a la API.
     el *blurring* y los *overlays* entre lo que no se hace con las carátulas; acá, de nuevo,
     es la foto del artista, no la carátula);
   - el contenido sigue atribuido (ícono de Spotify y enlace de vuelta en la fila superior; en
-    la vista previa de Ajustes, el ícono con su enlace aparece en el mismo lugar mientras se
-    ve la foto).
+    la vista previa de Ajustes, el ícono aparece en el mismo lugar mientras se ve la foto y
+    abre al artista de esa foto).
   El Canvas (video en loop) no está en la Web API y no se trae.
 - **Deslizar entre temas** (2026-11-17): mientras se arrastra, la carátula del tema actual y
   la del siguiente o anterior se mueven enteras, una al lado de la otra; un borde puede quedar
