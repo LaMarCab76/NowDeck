@@ -187,6 +187,28 @@ final class BackgroundPreviewTests: XCTestCase {
         XCTAssertEqual(preview.artistURL?.absoluteString, "https://open.spotify.com/artist/recent")
     }
 
+    func testPollsDuringADragDoNotRepeatTheLookup() async throws {
+        let (session, recorder) = StubURLProtocol.session { [recentPath] request in
+            if request.url?.path == recentPath {
+                return (.stub(403), spotifyErrorJSON(status: 403, message: "Forbidden"))
+            }
+            return (.stub(204), Data())
+        }
+        let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session,
+                             sleep: { _ in }, jitter: { 0 })
+        let player = PlayerModel(api: api, artworkLoader: ArtworkLoader(session: session))
+        let preview = BackgroundPreviewModel(player: player)
+        preview.begin(.blur, blur: 0, dim: 30)
+        try await waitUntil { !preview.isLookingUp }
+        for _ in 0..<3 {
+            _ = await player.poll()
+            try await Task.sleep(nanoseconds: 30_000_000)
+        }
+        XCTAssertFalse(preview.isLookingUp)
+        XCTAssertEqual(recorder.requests.filter { $0.url?.path == self.recentPath }.count, 1,
+                       "Polls with the same (no) artist ask nothing again")
+    }
+
     func testACancelledLookupCanStartAgain() async throws {
         let (session, _) = StubURLProtocol.session { _ in (.stub(200), Data(#"{"items":[]}"#.utf8)) }
         let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session,

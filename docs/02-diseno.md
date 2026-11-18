@@ -338,11 +338,13 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
       siga siendo ese. Se recalcula
       cuando cambia la foto o la reproducción (pausa, reanudar, parar). Sin ninguna, se ve el
       color de fondo del tema.
-    - Se busca al aparecer los deslizadores (salvo que el reproductor ya haya mostrado una
-      foto) y se cancela al cerrar Ajustes. Una vez encontrada
-      no se vuelve a pedir en esa visita; si no se encontró (un error, una espera por `429`),
-      se intenta de nuevo cuando los deslizadores reaparecen, al tocar uno, o si mientras se
-      arrastra empieza otro tema cuya foto todavía no está.
+    - Se busca al aparecer los deslizadores (salvo que ya haya una foto que sirva) y se
+      cancela al cerrar Ajustes. Una foto encontrada se reutiliza mientras siga sirviendo: si
+      era la del último tema que la app vio sonar y empieza a sonar otro artista, deja de
+      servir. Si no hay foto (un error, una espera por `429`, o dejó de servir), se busca de
+      nuevo cuando los deslizadores reaparecen, al tocar uno, o si mientras se arrastra
+      cambia el último artista escuchado; si ya había una búsqueda en curso, la nueva
+      empieza cuando esa termina. Un sondeo que no cambia de artista no repite el pedido.
     - Mientras se ve una foto (y solo entonces), el ícono de Spotify queda arriba a la izquierda, en el mismo
       lugar que en el reproductor, y abre en Spotify al artista de esa foto (`docs/06`).
     - Lo que se desvanece tampoco recibe toques: con un dedo en un deslizador, otro dedo no

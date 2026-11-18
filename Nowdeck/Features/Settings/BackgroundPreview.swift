@@ -49,6 +49,10 @@ final class BackgroundPreviewModel: ObservableObject {
     /// screen and the one of the last artist heard (they are the same while a track plays).
     private var playerSamples: [String: Sample] = [:]
     private var fallbackTask: Task<Void, Never>?
+    /// The last heard artist when the latest lookup started. Automatic lookups (a playback
+    /// change during a drag) only start for a different one, so polls that change nothing
+    /// never send a request.
+    private var lookupArtistID: String?
     private var subscription: AnyCancellable?
 
     /// `player` is `nil` in previews: then the preview shows the background color only.
@@ -99,16 +103,30 @@ final class BackgroundPreviewModel: ObservableObject {
     func prepare() {
         guard fallbackTask == nil, selectedSample == nil,
               let api, let artworkLoader else { return }
+        lookupArtistID = player?.lastHeardArtistID
         fallbackTask = Task { [weak self, weak player] in
             let sample = await Self.samplePhoto(api: api, loader: artworkLoader,
                                                 seenArtistID: { await player?.lastHeardArtistID })
             guard let self else { return }
             // Also when cancelled, so a later `prepare()` can start again.
             self.fallbackTask = nil
-            guard !Task.isCancelled, let sample else { return }
-            self.fallbackSample = sample
-            self.updateImage()
+            guard !Task.isCancelled else { return }
+            if let sample {
+                self.fallbackSample = sample
+                self.updateImage()
+            }
+            // Another artist started while this lookup ran and still has no photo.
+            self.lookUpIfArtistChanged()
         }
+    }
+
+    /// During a drag, a lookup for a new last heard artist that has no photo yet. Nothing for
+    /// the artist the latest lookup was already for: that one gets another try on the next
+    /// touch or when the sliders appear again.
+    private func lookUpIfArtistChanged() {
+        guard editing != nil, selectedSample == nil,
+              player?.lastHeardArtistID != lookupArtistID else { return }
+        prepare()
     }
 
     /// A lookup for the sample photo is running.
@@ -129,8 +147,9 @@ final class BackgroundPreviewModel: ObservableObject {
         playerSamples = playerSamples.filter { kept.contains($0.key) }
         updateImage()
         // Another track started under the finger and its photo is not here yet: look for
-        // one now instead of waiting for the next touch (`prepare()` skips if one is coming).
-        if editing != nil, selectedSample == nil { prepare() }
+        // one now instead of waiting for the next touch. If a lookup is running, its end
+        // checks again.
+        lookUpIfArtistChanged()
     }
 
     /// The sample, for the last artist heard (a track picked while paused was not heard):
