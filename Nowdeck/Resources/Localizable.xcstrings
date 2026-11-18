@@ -842,22 +842,6 @@
         }
       }
     },
-    "Bajar volumen" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Volume down"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bajar volumen"
-          }
-        }
-      }
-    },
     "Biblioteca" : {
       "localizations" : {
         "en" : {
@@ -4432,22 +4416,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Suavizan y oscurecen la foto del artista para que el título se lea mejor. Mientras movés uno, ves cómo queda."
-          }
-        }
-      }
-    },
-    "Subir volumen" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Volume up"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Subir volumen"
           }
         }
       }
