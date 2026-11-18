@@ -120,7 +120,8 @@ desde LRCLIB como "Lyricsfile format").
 - La nota de Ajustes ya dice que las letras vienen de una base comunitaria, no de Spotify, y que
   pueden faltar o tener errores.
 - **Derechos**: las letras de LRCLIB las cargan usuarios; los derechos son de las editoriales.
-  Por eso la función está apagada por defecto y aclarada en el README.
+  Por eso la función está aclarada en el README y se puede apagar en Ajustes. Arranca
+  **prendida**: el dueño lo decidió el 2026-11-18 (ver `docs/06-cumplimiento.md`).
 - La política de Spotify prohíbe productos "integrados con contenido de otro servicio". Mostrar
   letras de un tercero junto a la reproducción es una zona gris sin un precedente claro. Está
   anotado en `docs/06-cumplimiento.md`.

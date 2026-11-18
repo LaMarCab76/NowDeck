@@ -5,7 +5,7 @@
 Prop it up in landscape, plugged in with the screen on, and at a glance you can see what's
 playing, control it, and choose which device it plays on.
 
-> Nowdeck is an independent open source project. It is not affiliated with or endorsed by
+> Nowdeck is an independent open-source project. It is not affiliated with or endorsed by
 > Spotify.
 
 > The app's interface is currently in Spanish only. Its texts live in a String Catalog, so
@@ -190,4 +190,4 @@ Issues and pull requests are welcome.
 
 ## License
 
-Pending: the project owner will choose it, and it will go in the `LICENSE` file.
+[MIT](LICENSE).
