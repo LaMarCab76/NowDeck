@@ -66,7 +66,8 @@ Breaking these rules can lead Spotify to revoke API access.
 - **Each user's own Client ID**: Spotify neither forbids nor endorses it in writing. It's the
   only practical way to distribute an open app with the 5-user limit.
 - **Lyrics from LRCLIB**: the policy forbids products integrated with another service's
-  content. That's why the feature is off by default and explained.
+  content. That's why the feature is explained and can be turned off in Settings. It starts
+  on, per the owner's decision of 2026-11-18 (see "Gray areas" in the review below).
 
 - **Playlist folders (experimental, optional)**: owner's decision of 2026-11-17. The Web
   API doesn't provide folders; with the option on, Nowdeck reads the *rootlist* from Spotify's
