@@ -334,13 +334,15 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
       cuenta hasta que suena). En orden: la foto de ese artista que mostró el reproductor con
       Ajustes abierto; si no hubo, la del último tema escuchado en Spotify
       (`GET /me/player/recently-played`); si eso no está disponible (sesiones sin el permiso
-      nuevo), la del último tema que la app vio sonar, mientras siga siendo ese. Se recalcula
+      nuevo) o ese artista no tiene foto, la del último tema que la app vio sonar, mientras
+      siga siendo ese. Se recalcula
       cuando cambia la foto o la reproducción (pausa, reanudar, parar). Sin ninguna, se ve el
       color de fondo del tema.
     - Se busca al aparecer los deslizadores (salvo que el reproductor ya haya mostrado una
       foto) y se cancela al cerrar Ajustes. Una vez encontrada
       no se vuelve a pedir en esa visita; si no se encontró (un error, una espera por `429`),
-      se intenta de nuevo cuando los deslizadores reaparecen o al tocar uno.
+      se intenta de nuevo cuando los deslizadores reaparecen, al tocar uno, o si mientras se
+      arrastra empieza otro tema cuya foto todavía no está.
     - Mientras se ve una foto (y solo entonces), el ícono de Spotify queda arriba a la izquierda, en el mismo
       lugar que en el reproductor, y abre en Spotify al artista de esa foto (`docs/06`).
     - Lo que se desvanece tampoco recibe toques: con un dedo en un deslizador, otro dedo no

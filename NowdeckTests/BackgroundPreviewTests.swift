@@ -83,6 +83,20 @@ final class BackgroundPreviewTests: XCTestCase {
         XCTAssertTrue(recorder.requests.contains { $0.url?.path == "/v1/artists/seen" })
     }
 
+    func testSamplePhotoTriesTheLocalArtistWhenTheHistoryOneHasNoPhoto() async throws {
+        let (api, loader, _) = makeAPI { [recentPath] request in
+            if request.url?.path == recentPath { return (.stub(200), Self.recentJSON(artistID: "bare")) }
+            if request.url?.path == "/v1/artists/bare" { return (.stub(200), Data(#"{"images":[]}"#.utf8)) }
+            if request.url?.path == "/v1/artists/seen" { return (.stub(200), Self.artistJSON) }
+            if request.url?.host == "i.scdn.co" { return (.stub(200), Self.png) }
+            return (.stub(404), Data())
+        }
+        let sample = await BackgroundPreviewModel.samplePhoto(api: api, loader: loader,
+                                                              seenArtistID: { "seen" })
+        XCTAssertEqual(sample?.artistID, "seen")
+        XCTAssertEqual(sample?.isLocal, true)
+    }
+
     func testNoSamplePhotoWithoutAnyArtist() async throws {
         let (api, loader, _) = makeAPI { _ in (.stub(200), Data(#"{"items":[]}"#.utf8)) }
         let image = await BackgroundPreviewModel.samplePhoto(api: api, loader: loader,
@@ -240,16 +254,24 @@ final class BackgroundPreviewTests: XCTestCase {
                              sleep: { _ in }, jitter: { 0 })
         let player = PlayerModel(api: api, artworkLoader: ArtworkLoader(session: session))
         let preview = BackgroundPreviewModel(player: player)
+        var photoUpdates = 0
+        let counter = player.$artistImage.dropFirst().sink { _ in photoUpdates += 1 }
+        defer { counter.cancel() }
         _ = await player.poll()
         try await waitUntil { player.artistImage != nil }
+        let pausedPhoto = try XCTUnwrap(player.artistImage)
+        // Let the photo event reach the preview first: it must not pick a paused track.
+        try await Task.sleep(nanoseconds: 50_000_000)
         XCTAssertNil(preview.image)
+        XCTAssertEqual(photoUpdates, 1)
 
         // Same track, now playing: the photo is not published again, the playback change
         // alone makes it the sample.
         state.value = try PlaybackJSON(isPlaying: true).data()
         _ = await player.poll()
         try await waitUntil { preview.image != nil }
-        XCTAssertTrue(preview.image === player.artistImage)
+        XCTAssertTrue(preview.image === pausedPhoto)
+        XCTAssertEqual(photoUpdates, 1, "No new photo: the playback change did it")
     }
 
     func testNoLookupOnceThePlayerShowedAPhoto() async throws {

@@ -128,6 +128,9 @@ final class BackgroundPreviewModel: ObservableObject {
         let kept = Set([player.artistImageArtistID, player.lastHeardArtistID].compactMap { $0 })
         playerSamples = playerSamples.filter { kept.contains($0.key) }
         updateImage()
+        // Another track started under the finger and its photo is not here yet: look for
+        // one now instead of waiting for the next touch (`prepare()` skips if one is coming).
+        if editing != nil, selectedSample == nil { prepare() }
     }
 
     /// The sample, for the last artist heard (a track picked while paused was not heard):
@@ -142,23 +145,35 @@ final class BackgroundPreviewModel: ObservableObject {
         return fallbackSample
     }
 
+    /// Publishes only real changes, so the preview does not redraw on every poll.
     private func updateImage() {
         let sample = selectedSample
-        image = sample?.image
-        artistURL = sample?.artistURL
+        if image !== sample?.image { image = sample?.image }
+        if artistURL != sample?.artistURL { artistURL = sample?.artistURL }
     }
 
     /// The photo of the last track heard on Spotify, or of `seenArtistID` when Spotify can't
-    /// say (`403` without the scope, empty history, an error). `seenArtistID` is read only
-    /// then, so it is the newest track the app saw. `nil` when there is no photo.
+    /// say (`403` without the scope, empty history, an error) or its artist has no photo.
+    /// `seenArtistID` is read only then, so it is the newest track the app saw. `nil` when
+    /// there is no photo.
     static func samplePhoto(api: SpotifyAPI, loader: ArtworkLoader,
                             seenArtistID: () async -> String?) async -> Sample? {
-        var artistID = try? await api.recentlyPlayedTracks(limit: 1)
+        let recentArtistID = try? await api.recentlyPlayedTracks(limit: 1)
             .lazy.compactMap { NowPlaying(item: $0)?.artistID }.first
-        guard !Task.isCancelled else { return nil }
-        let isLocal = artistID == nil
-        if isLocal { artistID = await seenArtistID() }
-        guard let artistID,
+        if let recentArtistID,
+           let sample = await photo(of: recentArtistID, isLocal: false, api: api, loader: loader) {
+            return sample
+        }
+        guard !Task.isCancelled, let localArtistID = await seenArtistID(),
+              localArtistID != recentArtistID else { return nil }
+        return await photo(of: localArtistID, isLocal: true, api: api, loader: loader)
+    }
+
+    /// The widest photo of an artist (`GET /artists/{id}`), loaded. `nil` if there is none,
+    /// on any error, or once cancelled.
+    private static func photo(of artistID: String, isLocal: Bool, api: SpotifyAPI,
+                              loader: ArtworkLoader) async -> Sample? {
+        guard !Task.isCancelled,
               let images = try? await api.artistImages(id: artistID),
               !Task.isCancelled, let url = NowPlaying.bestImage(images),
               let image = try? await loader.loadImage(url)
