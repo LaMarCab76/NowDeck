@@ -216,12 +216,40 @@ final class BackgroundPreviewTests: XCTestCase {
         let player = PlayerModel(api: api, artworkLoader: ArtworkLoader(session: session))
         let preview = BackgroundPreviewModel(player: player)
         _ = await player.poll()
-        try await waitUntil { preview.image != nil }
+        try await waitUntil { player.artistImage != nil }
+        try await Task.sleep(nanoseconds: 50_000_000)
+        XCTAssertNil(preview.image, "Picked while paused: not heard")
 
         state.value = Data()
         _ = await player.poll()
         XCTAssertNil(player.nowPlaying)
-        XCTAssertNil(preview.image, "Never heard: not kept once playback is idle")
+        try await Task.sleep(nanoseconds: 50_000_000)
+        XCTAssertNil(preview.image, "Still not heard once playback is idle")
+    }
+
+    func testResumingAPausedTrackMakesItsPhotoTheSample() async throws {
+        let state = StubBox(try PlaybackJSON(isPlaying: false).data())
+        let (session, _) = StubURLProtocol.session { request in
+            let path = request.url?.path ?? ""
+            if path.hasPrefix("/v1/artists") { return (.stub(200), Self.artistJSON) }
+            if request.url?.host == "i.scdn.co" { return (.stub(200), Self.png) }
+            if path == "/v1/me/player" { return (.stub(200), state.value) }
+            return (.stub(404), Data())
+        }
+        let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session,
+                             sleep: { _ in }, jitter: { 0 })
+        let player = PlayerModel(api: api, artworkLoader: ArtworkLoader(session: session))
+        let preview = BackgroundPreviewModel(player: player)
+        _ = await player.poll()
+        try await waitUntil { player.artistImage != nil }
+        XCTAssertNil(preview.image)
+
+        // Same track, now playing: the photo is not published again, the playback change
+        // alone makes it the sample.
+        state.value = try PlaybackJSON(isPlaying: true).data()
+        _ = await player.poll()
+        try await waitUntil { preview.image != nil }
+        XCTAssertTrue(preview.image === player.artistImage)
     }
 
     func testNoLookupOnceThePlayerShowedAPhoto() async throws {

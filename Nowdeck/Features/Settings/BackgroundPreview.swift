@@ -42,19 +42,12 @@ final class BackgroundPreviewModel: ObservableObject {
     private weak var player: PlayerModel?
     private let api: SpotifyAPI?
     private let artworkLoader: ArtworkLoader?
-    /// The photo found without the player's help (nothing playing, or an episode).
+    /// The photo found without the player's help: Spotify's history, or the last track the
+    /// app saw (`isLocal`).
     private var fallbackSample: Sample?
-    private var playerSample: Sample?
-    /// Every photo the player showed during this visit, by artist. When playback stops, the
-    /// one of the last artist heard is the sample: it is newer than anything the history
-    /// lookup can find. A photo of a track picked while paused is kept too, but not used
-    /// unless that track then played.
+    /// The player's photos during this visit, by artist. Only two are kept: the one on
+    /// screen and the one of the last artist heard (they are the same while a track plays).
     private var playerSamples: [String: Sample] = [:]
-
-    /// The player's photo of the last artist heard, if it showed one during this visit.
-    private var retainedSample: Sample? {
-        player?.lastHeardArtistID.flatMap { playerSamples[$0] }
-    }
     private var fallbackTask: Task<Void, Never>?
     private var subscription: AnyCancellable?
 
@@ -63,15 +56,16 @@ final class BackgroundPreviewModel: ObservableObject {
         self.player = player
         api = player?.api
         artworkLoader = player?.artworkLoader
-        // With "Foto del artista" on, the player already loads the photo of what plays.
-        // `artistImageArtistID` is set before each photo is published, so it matches `image`.
-        subscription = player?.$artistImage.sink { [weak self, weak player] image in
-            let artistID = player?.artistImageArtistID
-            var sample: Sample?
-            if let image, let artistID { sample = Sample(image: image, artistID: artistID) }
-            self?.playerSample = sample
-            if let sample { self?.playerSamples[sample.artistID] = sample }
-            self?.updateImage()
+        // With "Foto del artista" on, the player already loads the photo of what plays. A
+        // new photo and a playback change (pause, resume, stop) both can change the choice.
+        // `@Published` sends before the value is stored, and `PlayerModel` updates the last
+        // heard artist after `playback`, so the choice is made on the next main-queue turn,
+        // when the player is consistent again.
+        if let player {
+            subscription = player.$artistImage.map { _ in () }
+                .merge(with: player.$playback.map { _ in () })
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] in self?.playerDidChange() }
         }
     }
 
@@ -99,14 +93,11 @@ final class BackgroundPreviewModel: ObservableObject {
     // MARK: Sample photo
 
     /// Looks for a sample photo when the sliders appear, so it is usually ready before the
-    /// finger touches one, also while something plays (its artist may have no photo, or
-    /// playback may stop before the finger arrives). Once a photo is found it is not looked
-    /// up again while Ajustes is open; a lookup that found none is tried again when the
-    /// sliders appear again (another tab and back) or on the next touch of a slider, so a
-    /// temporary failure (a `429` cooldown) does not last the whole visit. Not needed once the
-    /// player showed a photo: that one wins for the rest of the visit.
+    /// finger touches one. Only when there is no sample yet: a lookup that found none is
+    /// tried again when the sliders appear again (another tab and back) or on the next touch
+    /// of a slider, so a temporary failure (a `429` cooldown) does not last the whole visit.
     func prepare() {
-        guard fallbackTask == nil, fallbackSample == nil, retainedSample == nil,
+        guard fallbackTask == nil, selectedSample == nil,
               let api, let artworkLoader else { return }
         fallbackTask = Task { [weak self, weak player] in
             let sample = await Self.samplePhoto(api: api, loader: artworkLoader,
@@ -115,9 +106,6 @@ final class BackgroundPreviewModel: ObservableObject {
             // Also when cancelled, so a later `prepare()` can start again.
             self.fallbackTask = nil
             guard !Task.isCancelled, let sample else { return }
-            // Another track played while the photo loaded: this one is no longer the last
-            // the app saw. Dropped, so the next `prepare()` looks up the new one.
-            if sample.isLocal, sample.artistID != player?.lastHeardArtistID { return }
             self.fallbackSample = sample
             self.updateImage()
         }
@@ -132,10 +120,30 @@ final class BackgroundPreviewModel: ObservableObject {
         fallbackTask?.cancel()
     }
 
-    /// What plays wins: its photo replaces the sample as soon as the player has it, and stays
-    /// when playback stops.
+    private func playerDidChange() {
+        guard let player else { return }
+        if let image = player.artistImage, let artistID = player.artistImageArtistID {
+            playerSamples[artistID] = Sample(image: image, artistID: artistID)
+        }
+        let kept = Set([player.artistImageArtistID, player.lastHeardArtistID].compactMap { $0 })
+        playerSamples = playerSamples.filter { kept.contains($0.key) }
+        updateImage()
+    }
+
+    /// The sample, for the last artist heard (a track picked while paused was not heard):
+    /// 1. the player's photo of that artist, the newest thing the app knows;
+    /// 2. else Spotify's history;
+    /// 3. else the photo found for the last track the app saw, if that is still the one.
+    private var selectedSample: Sample? {
+        let lastHeard = player?.lastHeardArtistID
+        if let lastHeard, let sample = playerSamples[lastHeard] { return sample }
+        guard let fallbackSample else { return nil }
+        if fallbackSample.isLocal, fallbackSample.artistID != lastHeard { return nil }
+        return fallbackSample
+    }
+
     private func updateImage() {
-        let sample = playerSample ?? retainedSample ?? fallbackSample
+        let sample = selectedSample
         image = sample?.image
         artistURL = sample?.artistURL
     }

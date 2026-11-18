@@ -330,12 +330,13 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
     deslizador) se desvanece en 0,25 s y detrás aparece el fondo del reproductor con la foto
     de ejemplo y los valores que se están eligiendo, en vivo. Solo queda el deslizador que se
     está moviendo. Al soltar, Ajustes vuelve con la misma animación y el valor se guarda.
-    - Foto de ejemplo: la del artista de lo que suena. Si no suena nada (o suena un episodio),
-      la foto que mostró el reproductor con Ajustes abierto del último artista que sonó (no
-      cuenta un tema elegido en pausa); si no hubo, la del último
-      tema escuchado en Spotify (`GET /me/player/recently-played`); si eso no está disponible
-      (sesiones sin el permiso nuevo), la del último tema que la app vio sonar (aunque después
-      haya parado o haya sonado un episodio). Sin ninguna, se ve el color de fondo del tema.
+    - Foto de ejemplo: la del **último artista que sonó** (un tema elegido en pausa no
+      cuenta hasta que suena). En orden: la foto de ese artista que mostró el reproductor con
+      Ajustes abierto; si no hubo, la del último tema escuchado en Spotify
+      (`GET /me/player/recently-played`); si eso no está disponible (sesiones sin el permiso
+      nuevo), la del último tema que la app vio sonar, mientras siga siendo ese. Se recalcula
+      cuando cambia la foto o la reproducción (pausa, reanudar, parar). Sin ninguna, se ve el
+      color de fondo del tema.
     - Se busca al aparecer los deslizadores (salvo que el reproductor ya haya mostrado una
       foto) y se cancela al cerrar Ajustes. Una vez encontrada
       no se vuelve a pedir en esa visita; si no se encontró (un error, una espera por `429`),
