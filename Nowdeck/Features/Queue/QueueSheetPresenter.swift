@@ -43,6 +43,10 @@ private struct QueueSheetHost: View {
 
     var body: some View {
         QueueSheetView(model: model, nowPlaying: player.nowPlaying, artwork: player.artwork,
+                       context: player.playback?.context,
+                       // Same delay as a library card: Spotify needs a moment before the
+                       // state shows the new track.
+                       onPlayed: { player.refresh(after: 0.6) },
                        dismiss: dismiss)
             .task { await model.reload() }
             // `itemStarts`, not `transitionKey`: the same track queued twice in a row also

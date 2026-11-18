@@ -279,6 +279,140 @@ final class QueueTests: XCTestCase {
         XCTAssertEqual(recorder.requests.count, 2)
         XCTAssertEqual(model.entries?.map(\.track.title), ["Nuevo"])
     }
+
+    // MARK: Playing a tapped row
+
+    private static let tappedURI = "spotify:track:Dos"
+
+    private static func entry(_ uri: String? = tappedURI) -> QueueEntry {
+        QueueEntry(track: CollectionTrack(id: 1, number: 2, title: "Dos", subtitle: "Artista",
+                                          durationMs: 200_000, isExplicit: false,
+                                          isAvailable: true, pageURL: nil),
+                   artworkURL: nil, playURI: uri)
+    }
+
+    private static func body(_ request: URLRequest) throws -> [String: Any] {
+        let data = try XCTUnwrap(request.httpBody)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    }
+
+    func testTracksArePlayableButEpisodesAndLocalFilesAreNot() async throws {
+        let fixture = try Fixture.data("queue-playing")
+        let queue = try SpotifyAPI.decode(PlaybackQueue.self, from: fixture)
+
+        let entries = QueueEntry.entries(from: queue)
+
+        XCTAssertEqual(entries.map(\.playURI),
+                       ["spotify:track:4iV5W9uYEdYUVa79Axb7Rh", nil, nil],
+                       "A track, an episode and a local file")
+    }
+
+    func testTrackURIAcceptsOnlyTracks() {
+        XCTAssertEqual(QueueEntry.trackURI("spotify:track:abc"), "spotify:track:abc")
+        XCTAssertNil(QueueEntry.trackURI("spotify:episode:abc"))
+        XCTAssertNil(QueueEntry.trackURI("spotify:track:"))
+        XCTAssertNil(QueueEntry.trackURI("spotify:local:a:b:c:1"))
+    }
+
+    func testPlaysInsideThePlaylist() async throws {
+        let (api, recorder) = makeAPI { _ in (.stub(204), Data()) }
+        let model = QueueModel(api: api)
+
+        let played = await model.play(Self.entry(),
+                                      context: PlaybackContext(type: "playlist",
+                                                               uri: "spotify:playlist:abc"))
+
+        XCTAssertTrue(played)
+        XCTAssertEqual(recorder.requests.count, 1)
+        let request = try XCTUnwrap(recorder.requests.first)
+        XCTAssertEqual(request.httpMethod, "PUT")
+        XCTAssertEqual(request.url?.absoluteString, "https://api.spotify.com/v1/me/player/play")
+        let body = try Self.body(request)
+        XCTAssertEqual(body["context_uri"] as? String, "spotify:playlist:abc")
+        XCTAssertEqual((body["offset"] as? [String: Any])?["uri"] as? String, Self.tappedURI)
+        XCTAssertNil(body["uris"])
+        XCTAssertNil(model.startingID)
+    }
+
+    func testPlaysTheTrackAloneWhenTheOffsetIsRejected() async throws {
+        let answers = AnswerQueue([
+            .success((.stub(404), spotifyErrorJSON(status: 404, message: "Not found"))),
+            .success((.stub(204), Data())),
+        ])
+        let (api, recorder) = makeAPI { _ in try answers.next() }
+        let model = QueueModel(api: api)
+
+        let played = await model.play(Self.entry(),
+                                      context: PlaybackContext(type: "album",
+                                                               uri: "spotify:album:abc"))
+
+        XCTAssertTrue(played)
+        XCTAssertEqual(recorder.requests.count, 2)
+        let second = try Self.body(XCTUnwrap(recorder.requests.last))
+        XCTAssertEqual(second["uris"] as? [String], [Self.tappedURI])
+        XCTAssertNil(second["context_uri"])
+        XCTAssertNil(model.problem)
+    }
+
+    func testOtherContextsPlayTheTrackAlone() async throws {
+        for context in [nil,
+                        PlaybackContext(type: "artist", uri: "spotify:artist:abc"),
+                        PlaybackContext(type: "collection", uri: "spotify:user:me:collection")] {
+            let (api, recorder) = makeAPI { _ in (.stub(204), Data()) }
+            let model = QueueModel(api: api)
+
+            let played = await model.play(Self.entry(), context: context)
+
+            XCTAssertTrue(played)
+            XCTAssertEqual(recorder.requests.count, 1)
+            let body = try Self.body(XCTUnwrap(recorder.requests.first))
+            XCTAssertEqual(body["uris"] as? [String], [Self.tappedURI])
+            XCTAssertNil(body["context_uri"])
+            XCTAssertNil(body["offset"])
+        }
+    }
+
+    func testNoActiveDeviceIsShown() async {
+        let (api, recorder) = makeAPI { _ in
+            (.stub(404), spotifyErrorJSON(status: 404, message: "No active device found"))
+        }
+        let model = QueueModel(api: api)
+
+        let played = await model.play(Self.entry(),
+                                      context: PlaybackContext(type: "playlist",
+                                                               uri: "spotify:playlist:abc"))
+
+        XCTAssertFalse(played)
+        XCTAssertEqual(recorder.requests.count, 2, "The offset, then the track alone")
+        XCTAssertEqual(model.problem, .noActiveDevice)
+        XCTAssertNil(model.startingID)
+    }
+
+    func testForbiddenIsNotRetriedAsATrackAlone() async {
+        let (api, recorder) = makeAPI { _ in
+            (.stub(403), spotifyErrorJSON(status: 403, message: "Premium required"))
+        }
+        let model = QueueModel(api: api)
+
+        let played = await model.play(Self.entry(),
+                                      context: PlaybackContext(type: "playlist",
+                                                               uri: "spotify:playlist:abc"))
+
+        XCTAssertFalse(played)
+        XCTAssertEqual(recorder.requests.count, 1)
+        XCTAssertEqual(model.problem, .forbidden)
+    }
+
+    func testRowsWithoutATrackURIAreNotPlayed() async {
+        let (api, recorder) = makeAPI { _ in (.stub(204), Data()) }
+        let model = QueueModel(api: api)
+
+        let played = await model.play(Self.entry(nil), context: nil)
+
+        XCTAssertFalse(played)
+        XCTAssertTrue(recorder.requests.isEmpty)
+    }
+
 }
 
 /// Polls `condition` on the main actor; the calls under test join the worker

@@ -4,6 +4,10 @@ import SwiftUI
 struct QueueEntry: Identifiable, Equatable, Sendable {
     var track: CollectionTrack
     var artworkURL: URL?
+    /// The `spotify:track:` URI that a tap plays, or `nil` when the row cannot be played
+    /// from here: episodes (`uris` is documented for tracks only, and shows are not a valid
+    /// `context_uri`) and local files.
+    var playURI: String? = nil
 
     /// The position in the queue: the same track can be queued twice.
     var id: Int { track.id }
@@ -45,7 +49,8 @@ extension QueueEntry {
                         : NowPlaying.pageURL(externalURL: track.externalUrls?.spotify,
                                              uri: track.uri)
                 ),
-                artworkURL: Self.thumbnail(track.album?.images ?? [])
+                artworkURL: Self.thumbnail(track.album?.images ?? []),
+                playURI: track.isLocal ? nil : track.uri.flatMap(Self.trackURI)
             )
 
         case .episode(let episode):
@@ -71,6 +76,14 @@ extension QueueEntry {
         }
     }
 
+    /// `uri` when it is a track URI (`spotify:track:<id>`).
+    static func trackURI(_ uri: String) -> String? {
+        let parts = uri.split(separator: ":", omittingEmptySubsequences: false)
+        guard parts.count == 3, parts[0] == "spotify", parts[1] == "track",
+              !parts[2].isEmpty else { return nil }
+        return uri
+    }
+
     /// The smallest image that is still sharp at 40 pt on a 3× screen (120 px): Spotify
     /// sends 640, 300 and 64 px, so this picks the 300 one. Without sizes, the first image.
     static func thumbnail(_ images: [SpotifyImage], minimumWidth: Int = 120) -> URL? {
@@ -92,6 +105,10 @@ enum QueueProblem: Equatable {
     /// No connection, timeouts or `5xx`.
     case connection
     case unknown
+    /// Playing a tapped track: `404`, there is no active device.
+    case noActiveDevice
+    /// Playing a tapped track failed for another reason.
+    case playbackFailed
 
     init(_ error: Error) {
         switch error {
@@ -112,6 +129,21 @@ enum QueueProblem: Equatable {
             return "No hay conexión con Spotify. Revisá internet y probá de nuevo."
         case .unknown:
             return "Algo salió mal. Probá de nuevo."
+        case .noActiveDevice:
+            return "No hay un dispositivo activo. Elegí uno para escuchar."
+        case .playbackFailed:
+            return "No pudimos reproducirlo. Probá de nuevo."
+        }
+    }
+
+    /// The problem for a failed `playFromQueue`. A `404` there means no active device.
+    init(playing error: Error) {
+        switch error {
+        case SpotifyAPIError.notFound: self = .noActiveDevice
+        case SpotifyAPIError.forbidden: self = .forbidden
+        case SpotifyAPIError.rateLimited: self = .rateLimited
+        case SpotifyAPIError.network: self = .connection
+        default: self = .playbackFailed
         }
     }
 }
@@ -129,6 +161,8 @@ final class QueueModel: ObservableObject {
     /// stays below it.
     @Published private(set) var problem: QueueProblem?
     @Published private(set) var isLoading = false
+    /// The row whose track is starting, while its request runs. Other taps wait for it.
+    @Published private(set) var startingID: QueueEntry.ID?
 
     private let api: SpotifyAPI
     /// The only worker that reads the queue. Reads never overlap, so an older answer can
@@ -177,6 +211,25 @@ final class QueueModel: ObservableObject {
         }
         loadTask = task
         return task
+    }
+
+    /// Plays a tapped row (after the confirmation) and returns whether Spotify accepted it.
+    /// The queue is not read here: the new track changes the player's `itemStarts`, and
+    /// the sheet reads the queue then. A failure is shown above the list.
+    func play(_ entry: QueueEntry, context: PlaybackContext?) async -> Bool {
+        guard let uri = entry.playURI, startingID == nil else { return false }
+        startingID = entry.id
+        defer { startingID = nil }
+        do {
+            try await api.playFromQueue(trackURI: uri, context: context)
+            problem = nil
+            return true
+        } catch is CancellationError {
+            return false
+        } catch {
+            problem = QueueProblem(playing: error)
+            return false
+        }
     }
 
     private func fetch() async {
