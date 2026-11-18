@@ -496,6 +496,46 @@ final class PlayerControlsModelTests: XCTestCase {
                        "It kept playing for the 4 s the pause took")
     }
 
+    func testASeekQueuedLaterBehindAPendingPauseKeepsTheTimeBeforeIt() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal(); gate.signal() }
+        let h = try await make(PlaybackJSON(isPlaying: true, progressMs: 84_000),
+                               commandGate: gate)
+        h.controls.playPause() // pause, still on its way
+        // The bar stopped at 84 s with the optimistic pause, but Spotify keeps playing.
+        h.clock.advance(2)
+        h.controls.seek(toMs: 30_000)
+
+        // The pause lands at 4 s; the seek fails right after.
+        h.clock.advance(2)
+        gate.signal()
+        try await eventually { h.commandRequests.count == 2 }
+        h.playback.value = PlaybackJSON(isPlaying: false, progressMs: 88_000)
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        XCTAssertEqual(h.model.playback?.progressMs, 88_000,
+                       "Not 86 s: the 2 s before the seek count too")
+    }
+
+    func testAFailedSeekAfterNextLeavesThePositionToThePoll() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal(); gate.signal() }
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: 84_000),
+                               commandGate: gate)
+        h.controls.next()
+        h.controls.seek(toMs: 30_000)
+        gate.signal()
+        try await eventually { h.commandRequests.count == 2 }
+        // The new item is wherever Spotify says; the poll after the failure reads it.
+        h.playback.value = PlaybackJSON(isPlaying: false, progressMs: 30_000)
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        XCTAssertEqual(h.model.playback?.progressMs, 30_000,
+                       "84 s belonged to the previous item: nothing to go back to")
+    }
+
     // MARK: Volume from polls
 
     func testPolledVolumeChangeShowsThePanel() async throws {

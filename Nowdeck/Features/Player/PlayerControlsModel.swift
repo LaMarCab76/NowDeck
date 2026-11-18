@@ -49,15 +49,11 @@ final class PlayerControlsModel: ObservableObject {
     private var batchFailed = false
     private var noticeTask: Task<Void, Never>?
     private var playbackSubscription: AnyCancellable?
-    /// Whether Spotify is playing as far as answered commands tell: taken from the screen
-    /// when a burst of commands starts (nothing optimistic on it then) and changed only by
-    /// an accepted play or pause, never by a failed one.
-    private var confirmedIsPlaying: Bool?
     /// Seeks sent and not answered yet.
     private var pendingSeeks = 0
-    /// Where the playback is if the seeks on their way fail: the position before the first
-    /// of them, or the target of the last one Spotify accepted.
-    private var seekBaseline: SeekBaseline?
+    /// Where Spotify is as far as answered commands tell: read from the screen when a burst
+    /// of commands starts, then moved only by accepted commands (see `seekFinished`).
+    private var confirmed: ConfirmedPosition?
 
     init(player: PlayerModel,
          confirmDelay: TimeInterval = 0.6,
@@ -100,12 +96,12 @@ final class PlayerControlsModel: ObservableObject {
     func next() {
         guard availability.next else { return }
         // There is no honest optimistic change: the next item is unknown until Spotify says.
-        run(.next)
+        run(.next, completion: { [weak self] in if $0 { self?.itemChanged() } })
     }
 
     func previous() {
         guard availability.previous else { return }
-        run(.previous)
+        run(.previous, completion: { [weak self] in if $0 { self?.itemChanged() } })
     }
 
     func toggleShuffle() {
@@ -155,11 +151,6 @@ final class PlayerControlsModel: ObservableObject {
         let target = min(max(0, positionMs), durationMs)
         let position = player.currentPositionMs
         guard target != position else { return }
-        if pendingSeeks == 0 {
-            // The first seek of a burst: where Spotify is now is where a failure goes back to.
-            seekBaseline = SeekBaseline(positionMs: position, isPlaying: confirmedPlayState,
-                                        date: player.now())
-        }
         pendingSeeks += 1
         run(.seek(positionMs: target),
             optimistic: { $0.progressMs = target },
@@ -168,49 +159,49 @@ final class PlayerControlsModel: ObservableObject {
             })
     }
 
-    /// Play or pause accepted. While seeks are on their way, from now on the baseline they
-    /// would go back to runs, or stops, as Spotify left the playback. Commands finish in
-    /// order, so the baseline always holds the play state Spotify confirmed so far, never
-    /// the optimistic one on screen.
+    // MARK: Where Spotify is
+
+    // Commands finish in the order they were sent, so `confirmed` follows Spotify's answers
+    // one by one: a failed seek can go back to it without trusting the screen, which may
+    // already show later optimistic changes.
+
+    /// Play or pause accepted: the position keeps running, or stops, from now on.
     private func playStateChanged(isPlaying: Bool) {
-        confirmedIsPlaying = isPlaying
-        guard pendingSeeks > 0, let player, let baseline = seekBaseline else { return }
+        guard let player, let confirmed else { return }
         let date = player.now()
-        seekBaseline = SeekBaseline(positionMs: baseline.position(at: date),
-                                    isPlaying: isPlaying, date: date)
+        self.confirmed = ConfirmedPosition(positionMs: confirmed.position(at: date),
+                                           isPlaying: isPlaying, date: date)
     }
 
-    /// The confirmed play state (`confirmedIsPlaying`), or the one on screen when no command
-    /// is on its way.
-    private var confirmedPlayState: Bool {
-        if pendingCommands > 0, let confirmedIsPlaying { return confirmedIsPlaying }
-        return player?.playback?.isPlaying == true
+    /// Next or previous accepted: another item, whose position only a poll can tell.
+    private func itemChanged() {
+        confirmed = nil
     }
 
-    /// Seeks finish in the order they were sent. A failed one is undone only once no seek
-    /// is left on its way, and then back to the last position Spotify accepted: undoing it
-    /// earlier would move the bar away from a newer target, and undoing it alone would land
-    /// on the target of an earlier seek that may have failed too.
+    /// A failed seek is undone only once no seek is left on its way, and then back to the
+    /// confirmed position: undoing it earlier would move the bar away from a newer target,
+    /// and undoing it alone would land on the target of an earlier seek that may have
+    /// failed too.
     private func seekFinished(target: Int, succeeded: Bool) {
         guard let player, pendingSeeks > 0 else { return }
         pendingSeeks -= 1
         let date = player.now()
         if succeeded {
-            // Spotify is now where this seek went: earlier failures no longer count. The
-            // play state is the confirmed one: the screen may already show a pause that is
-            // still on its way.
-            seekBaseline = SeekBaseline(positionMs: target,
-                                        isPlaying: seekBaseline?.isPlaying ?? confirmedPlayState,
-                                        date: date)
+            confirmed = ConfirmedPosition(positionMs: target,
+                                          isPlaying: confirmed?.isPlaying
+                                              ?? (player.playback?.isPlaying == true),
+                                          date: date)
             return
         }
-        guard pendingSeeks == 0, let baseline = seekBaseline else { return }
+        // Without a confirmed position (another item started), the poll after the
+        // failure tells.
+        guard pendingSeeks == 0, let confirmed else { return }
         let durationMs = player.nowPlaying?.durationMs
         player.updatePlayback { state in
-            // The baseline kept running while the seeks were out; it is not rebuilt from
-            // the bar, which stops at the end of the track. An unknown position goes back
-            // to unknown.
-            state.progressMs = baseline.position(at: date).map { position in
+            // The confirmed position kept running while the seeks were out; it is not
+            // rebuilt from the bar, which stops at the end of the track. An unknown
+            // position goes back to unknown.
+            state.progressMs = confirmed.position(at: date).map { position in
                 durationMs.map { min(position, $0) } ?? position
             }
         }
@@ -223,7 +214,12 @@ final class PlayerControlsModel: ObservableObject {
                      rollback: ((inout PlaybackState) -> Void)? = nil,
                      completion: ((_ succeeded: Bool) -> Void)? = nil) {
         guard let player else { return }
-        if pendingCommands == 0 { confirmedIsPlaying = player.playback?.isPlaying }
+        if pendingCommands == 0 {
+            // Nothing optimistic on screen yet: it shows where Spotify is.
+            confirmed = ConfirmedPosition(positionMs: player.currentPositionMs,
+                                          isPlaying: player.playback?.isPlaying == true,
+                                          date: player.now())
+        }
         player.holdPolling()
         if let optimistic { player.updatePlayback(optimistic) }
         pendingCommands += 1
@@ -294,7 +290,7 @@ final class PlayerControlsModel: ObservableObject {
 }
 
 /// A playback position and when it was true, advancing with the clock while playing.
-private struct SeekBaseline {
+private struct ConfirmedPosition {
     /// `nil` when Spotify did not say (`progress_ms: null`).
     var positionMs: Int?
     var isPlaying: Bool
