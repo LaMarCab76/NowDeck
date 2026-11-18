@@ -528,12 +528,13 @@ final class PlayerControlsModelTests: XCTestCase {
         gate.signal()
         try await eventually { h.commandRequests.count == 2 }
         // The new item is wherever Spotify says; the poll after the failure reads it.
-        h.playback.value = PlaybackJSON(isPlaying: false, progressMs: 30_000)
+        h.playback.value = PlaybackJSON(isPlaying: false, progressMs: 45_000)
         h.commandStatus.value = 500
         gate.signal()
         try await eventually { h.controls.notice == .failed }
-        XCTAssertEqual(h.model.playback?.progressMs, 30_000,
-                       "84 s belonged to the previous item: nothing to go back to")
+        await h.model.poll()
+        XCTAssertEqual(h.model.playback?.progressMs, 45_000,
+                       "84 s belonged to the previous item: the poll tells where the new one is")
     }
 
     // MARK: Volume from polls
