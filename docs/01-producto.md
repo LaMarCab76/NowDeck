@@ -75,7 +75,14 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
    - **Solo lectura**: la Web API no deja quitar, reordenar ni saltar a un tema de la cola. Los
      temas no se tocan; mantenerlos apretados muestra el nombre completo y "Abrir en Spotify".
      La lista termina con "Para quitar o reordenar temas, usá Spotify." y "ABRIR SPOTIFY".
-10. **Ajustes**
+10. **Agregar a una playlist** (agregada el 2026-11-18, a pedido del dueño)
+   - Botón en el extremo izquierdo de los controles del reproductor y del mini reproductor de
+     la Biblioteca.
+   - Hoja con las playlists que el usuario puede editar (propias y colaborativas); tocar una
+     agrega el tema o episodio que suena. Lo agregado queda marcado. Quitar se hace en Spotify.
+   - Pide un permiso nuevo (editar playlists): las sesiones anteriores lo dan desde la misma
+     hoja con "Dar permiso".
+11. **Ajustes**
    - **Apariencia**:
      - tema (Negro y verde, Ámbar, Azul noche, Personalizado);
      - color de resaltado (6 opciones);
@@ -85,9 +92,9 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
    - **Reproductor**: interruptor "Mostrar tiempo restante" (en vez de la duración, a la
      derecha de la barra; apagado por defecto), interruptor "Mostrar letras" y "Ancho de las
      letras" (Mitad, 2/3 o Completo; por defecto 2/3).
-11. **Importar tema**: hoja con el JSON, el resultado de la validación, advertencias, vista
+12. **Importar tema**: hoja con el JSON, el resultado de la validación, advertencias, vista
     previa y los botones Aplicar y Cancelar.
-12. **Nada sonando**: estado vacío con "Elegir dispositivo" y "ABRIR SPOTIFY".
+13. **Nada sonando**: estado vacío con "Elegir dispositivo" y "ABRIR SPOTIFY".
 
 ## Flujos clave
 

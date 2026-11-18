@@ -151,11 +151,17 @@ Repaso punto por punto sobre la rama `hito/08-terminaciones` (hitos 1 a 7 integr
 - ✅ Cola (2026-11-17): logo completo en la cabecera (enlace al tema que suena), hasta 20
   temas, marca de explícito, nombres completos al mantener apretado y "ABRIR SPOTIFY ↗" al
   final de la lista.
+- ✅ Agregar a una playlist (2026-11-18): logo completo en la cabecera (enlace al tema),
+  marca de explícito, título y artistas con marquesina, y "ABRIR SPOTIFY ↗" al final.
+- ⚠️ Agregar a una playlist muestra **todas** las playlists editables, sin cortar en 20: se
+  interpretó que no es una fila de contenido sino un selector de destino (mismo criterio que
+  la lista de temas del detalle).
 
 ### Carátulas
 
 - ✅ Se muestran tal cual (`.fit`, sin recortar), con radio de 4 pt, sin texto, controles ni
-  logos encima, en Reproducción, modo letras, mini reproductor, tarjetas y Cola.
+  logos encima, en Reproducción, modo letras, mini reproductor, tarjetas, Cola y Agregar a una
+  playlist.
 - ✅ Corregido en este hito: mientras arranca una tarjeta se atenuaba la tarjeta entera,
   carátula incluida. Ahora se atenúan solo los textos.
 - ⚠️ **Superposiciones pasajeras**: el panel de volumen (520×64, centrado arriba, como en

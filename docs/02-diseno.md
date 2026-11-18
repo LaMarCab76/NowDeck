@@ -126,6 +126,13 @@ Cambia lo anterior en estos puntos (no está en los mockups):
   del tema se reparten a los dos lados igual que antes (`PlayerControlLayout`), y los dos lados
   ocupan el mismo ancho flexible, así que Play/Pausa queda siempre en el centro exacto. Con los
   siete botones la fila mide 584 (entra en los 640 del 8 Plus).
+- **Agregar a una playlist** (2026-11-18, a pedido del dueño): botón redondo de 48 con
+  `plus.circle` en el **extremo izquierdo** de la fila de controles, con el estilo de los
+  opcionales (ícono 20 en `textoTerciario`). Deshabilitado con publicidades y archivos
+  locales. No es un control del tema, igual que Cola. Como el lado izquierdo tiene que caber
+  en la mitad que deja el centro (`2 × izquierda + centro + 4 espacios ≤ ancho`), el espacio
+  entre botones baja cuando no alcanza (`PlayerControlLayout.gap(forWidth:)`): 36 en el
+  11 Pro Max (800 de ancho útil) y **22 en el 8 Plus** (640), nunca menos de 12.
 - **Deslizar para pasar de tema**, como un carrusel:
   - El arrastre puede empezar en cualquier punto de la franja de la carátula y el título, de
     borde a borde de la pantalla. Solo cuenta si arranca más horizontal que vertical (se
@@ -244,8 +251,10 @@ Reemplaza el bloque superior:
   se vuelve a la carpeta desde la que se abrió.
 - **Buscar**: campo de 56 (radio 28, blanco al 10 %) con el placeholder "Temas, artistas,
   álbumes, podcasts o audiolibros" y una línea de ayuda.
-- **Mini reproductor** (56, radio 14, fondo según la carátula): carátula de 40, título y
-  artista, "Suena en **Dispositivo**" en acento (abre Dispositivos) y Pausa (44).
+- **Mini reproductor** (56, radio 14, fondo según la carátula): Agregar a una playlist
+  (`plus.circle` de 20 en `texto`, zona de 44; desde el 2026-11-18, en el extremo izquierdo),
+  carátula de 40, título y artista, "Suena en **Dispositivo**" en acento (abre Dispositivos)
+  y Pausa (44).
 
 ## Detalle de playlist o álbum (`Detalle.dc.html`)
 
@@ -287,6 +296,31 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
   3. Si es un parlante o una tele, despertalo primero.
 
   Más "Actualizar lista" (principal) y "Volver a la lista".
+
+## Agregar a una playlist (2026-11-18, sin mockup)
+
+A pedido del dueño. Se abre desde el botón del reproductor y desde el del mini reproductor, y
+sigue el diseño de Cola:
+
+- La misma hoja de 640×398 (manija, superficie, radio 20 arriba, degradado de 40 al final).
+- **Cabecera**: la de Cola con "AGREGAR A UNA PLAYLIST" en acento en lugar de "SONANDO". El
+  tema queda **fijo** al abrir: si la música avanza mientras el usuario elige, se agrega el
+  que sonaba al tocar el botón.
+- "TUS PLAYLISTS" y filas de 56: carátula de 40 (sin recortar, radio 4), nombre en 16
+  semibold, "Colaborativa · N temas" en 13 `textoCuerpo`, y a la derecha el estado en una
+  zona de 44: `plus.circle` (`textoTerciario`), indicador de carga, `checkmark.circle.fill`
+  en acento (agregado) o `exclamationmark.circle` en `advertencia` (falló; tocar reintenta).
+  Toda la fila es el botón y **agrega de inmediato**, sin confirmar.
+- Solo aparecen las playlists **propias y las colaborativas** (`owner.id` = usuario o
+  `collaborative: true`), en el orden de Spotify. Al final: "Solo aparecen tus playlists y las
+  colaborativas. Para quitar temas, usá Spotify." y "ABRIR SPOTIFY ↗".
+- Lo agregado queda marcado mientras la app está abierta y no se vuelve a agregar con otro
+  toque (evita duplicados por accidente). **No se puede quitar** desde la app (ver docs/03).
+- **Falta un permiso**: con sesiones de antes del 2026-11-18, en lugar de la lista se ve un
+  candado, "Falta un permiso", la explicación y "Dar permiso" (cápsula de acento), que vuelve a
+  abrir el login de Spotify sin salir del reproductor.
+- **Sin playlists editables**: ícono de lista, "No tenés playlists para editar" y cómo crear
+  una. **Error**: la línea de aviso de Dispositivos y "Reintentar".
 
 ## Cola (`Cola.html`)
 
