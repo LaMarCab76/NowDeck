@@ -173,6 +173,33 @@ final class BackgroundPreviewTests: XCTestCase {
         XCTAssertEqual(preview.artistURL?.absoluteString, "https://open.spotify.com/artist/recent")
     }
 
+    func testACancelledLookupCanStartAgain() async throws {
+        let (session, _) = StubURLProtocol.session { _ in (.stub(200), Data(#"{"items":[]}"#.utf8)) }
+        let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session,
+                             sleep: { _ in }, jitter: { 0 })
+        let preview = BackgroundPreviewModel(
+            player: PlayerModel(api: api, artworkLoader: ArtworkLoader(session: session)))
+        preview.prepare()
+        preview.cancel()
+        try await waitUntil { !preview.isLookingUp }
+        preview.prepare()
+        XCTAssertTrue(preview.isLookingUp, "Not stuck on the cancelled task")
+    }
+
+    func testOnlyAPlayingTrackCountsAsHeard() async throws {
+        let paused = try PlaybackJSON(isPlaying: false).data()
+        let (session, _) = StubURLProtocol.session { request in
+            if request.url?.path == "/v1/me/player" { return (.stub(200), paused) }
+            return (.stub(404), Data())
+        }
+        let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session,
+                             sleep: { _ in }, jitter: { 0 })
+        let player = PlayerModel(api: api, artworkLoader: ArtworkLoader(session: session))
+        _ = await player.poll()
+        XCTAssertNotNil(player.nowPlaying)
+        XCTAssertNil(player.lastHeardArtistID)
+    }
+
     func testNoLookupOnceThePlayerShowedAPhoto() async throws {
         let playing = StubBox(true)
         let player = try makePlayer(playing: playing)

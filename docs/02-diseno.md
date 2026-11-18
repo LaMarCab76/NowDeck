@@ -338,7 +338,7 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
     - Se busca al aparecer los deslizadores (salvo que el reproductor ya haya mostrado una
       foto) y se cancela al cerrar Ajustes. Una vez encontrada
       no se vuelve a pedir en esa visita; si no se encontró (un error, una espera por `429`),
-      se intenta de nuevo al tocar un deslizador.
+      se intenta de nuevo cuando los deslizadores reaparecen o al tocar uno.
     - Mientras se ve una foto (y solo entonces), el ícono de Spotify queda arriba a la izquierda, en el mismo
       lugar que en el reproductor, y abre en Spotify al artista de esa foto (`docs/06`).
     - Lo que se desvanece tampoco recibe toques: con un dedo en un deslizador, otro dedo no

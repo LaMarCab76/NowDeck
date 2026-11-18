@@ -33,6 +33,8 @@ final class BackgroundPreviewModel: ObservableObject {
     struct Sample {
         var image: UIImage
         var artistID: String
+        /// Found through the last track the app saw, not Spotify's history.
+        var isLocal = false
 
         var artistURL: URL? { SpotifyURI("spotify:artist:\(artistID)")?.webURL }
     }
@@ -92,19 +94,23 @@ final class BackgroundPreviewModel: ObservableObject {
     /// Looks for a sample photo when the sliders appear, so it is usually ready before the
     /// finger touches one, also while something plays (its artist may have no photo, or
     /// playback may stop before the finger arrives). Once a photo is found it is not looked
-    /// up again while Ajustes is open; a lookup that found none is tried again on the next
-    /// touch of a slider, so a temporary failure (a `429` cooldown) does not last the whole
-    /// visit. Not needed once the player showed a photo: that one wins for the rest of the
-    /// visit.
+    /// up again while Ajustes is open; a lookup that found none is tried again when the
+    /// sliders appear again (another tab and back) or on the next touch of a slider, so a
+    /// temporary failure (a `429` cooldown) does not last the whole visit. Not needed once the
+    /// player showed a photo: that one wins for the rest of the visit.
     func prepare() {
         guard fallbackTask == nil, fallbackSample == nil, lastPlayerSample == nil,
               let api, let artworkLoader else { return }
         fallbackTask = Task { [weak self, weak player] in
             let sample = await Self.samplePhoto(api: api, loader: artworkLoader,
                                                 seenArtistID: { await player?.lastHeardArtistID })
-            guard let self, !Task.isCancelled else { return }
+            guard let self else { return }
+            // Also when cancelled, so a later `prepare()` can start again.
             self.fallbackTask = nil
-            guard let sample else { return }
+            guard !Task.isCancelled, let sample else { return }
+            // Another track played while the photo loaded: this one is no longer the last
+            // the app saw. Dropped, so the next `prepare()` looks up the new one.
+            if sample.isLocal, sample.artistID != player?.lastHeardArtistID { return }
             self.fallbackSample = sample
             self.updateImage()
         }
@@ -135,13 +141,14 @@ final class BackgroundPreviewModel: ObservableObject {
         var artistID = try? await api.recentlyPlayedTracks(limit: 1)
             .lazy.compactMap { NowPlaying(item: $0)?.artistID }.first
         guard !Task.isCancelled else { return nil }
-        if artistID == nil { artistID = await seenArtistID() }
+        let isLocal = artistID == nil
+        if isLocal { artistID = await seenArtistID() }
         guard let artistID,
               let images = try? await api.artistImages(id: artistID),
               !Task.isCancelled, let url = NowPlaying.bestImage(images),
               let image = try? await loader.loadImage(url)
         else { return nil }
-        return Sample(image: image, artistID: artistID)
+        return Sample(image: image, artistID: artistID, isLocal: isLocal)
     }
 }
 

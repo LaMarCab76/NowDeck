@@ -338,7 +338,8 @@ final class PlayerModel: ObservableObject {
             }
             nowPlaying = item
         }
-        if let artistID = item.artistID { lastHeardArtistID = artistID }
+        // Only while it plays: a track picked while paused was not heard.
+        if state.isPlaying, let artistID = item.artistID { lastHeardArtistID = artistID }
         status = .active
 
         let newOrigin = resolvedOrigin(for: state)
