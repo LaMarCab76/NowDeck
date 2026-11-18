@@ -12,7 +12,8 @@ values: colors, sizes, margins, radii, text and states.
 | `Main.dc.html` | Playback. Includes lyrics mode, the volume panel and the toast, depending on its state |
 | `Letras.dc.html` / `LetrasEstrofa.dc.html` | Lyrics mode word by word and by verse |
 | `SinLetra.dc.html` | "No lyrics found" notice (*No encontramos la letra*) |
-| `Volumen.dc.html` | Volume panel visible |
+| `Volumen.dc.html` | Volume panel visible (replaced by `VolumenLateral.html`) |
+| `VolumenLateral.html` | Volume bar that opens sideways from the speaker, interactive. Made by hand on 2026-11-18 and approved by the owner; it can be viewed in a browser without `support.js` |
 | `Biblioteca.dc.html` | Library and Search, with filters and mini player |
 | `Detalle.dc.html` | Detail of a playlist or an album: your own, an album, and someone else's playlist |
 | `Dispositivos.dc.html` | Devices sheet and help |

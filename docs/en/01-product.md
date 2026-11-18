@@ -53,9 +53,9 @@ While the app is in the foreground, **the screen does not turn off**
    - Center: current verse and next verse, at the configured width (2/3 by default).
    - Bottom row: small artwork, title, artist, and device.
    - Library and Settings are hidden while it's active.
-4. **Volume panel**: a floating horizontal bar that slides down from the top when the volume
-   button is tapped or when the volume changes (also if it changes from another device). It
-   hides after 3 s.
+4. **Volume bar**: it opens sideways from the volume button, inside the controls row, which
+   moves to make room for it. It opens when the button is tapped or when the volume changes
+   (also if it changes from another device). It closes after 3 s.
 5. **"No lyrics found for this song" notice** (*No encontramos la letra de este tema*): it
    appears at the top for 3 s and the player goes back to the normal view.
 6. **Library**

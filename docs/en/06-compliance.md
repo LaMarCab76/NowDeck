@@ -166,11 +166,11 @@ Point-by-point review on the `hito/08-terminaciones` branch (milestones 1 to 7 i
   on top, in the Player, lyrics mode, mini player, cards, Queue and Add to a playlist.
 - ✅ Fixed in this milestone: while a card was starting, the whole card was dimmed, artwork
   included. Now only the text is dimmed.
-- ⚠️ **Temporary overlays**: the volume panel (520×64, centered at the top, as in
-  `Volumen.dc.html`) and the notices (pill centered at the top) sit for a few seconds over the
-  top-right corner of the artwork. It's the mockups' design and doesn't cover anything
+- ⚠️ **Temporary overlays**: the notices (pill centered at the top) sit for a few seconds over
+  the top-right corner of the artwork. It's the mockups' design and doesn't cover anything
   permanently, but the guide says "no controls overlaid on it". Options: leave it as is, or
-  center the panel and notices over the text column instead of the screen. Not changed.
+  center the notices over the text column instead of the screen. Not changed. The volume no
+  longer overlays anything: since 2026-11-18 it opens inside the controls row.
 
 ### Metadata
 
