@@ -38,7 +38,7 @@ actor TokenManager {
     /// A token that is valid for at least another 60 s.
     func validAccessToken() async throws -> String {
         if let refreshTask {
-            return try await refreshTask.value.accessToken
+            return try await join(refreshTask).accessToken
         }
         guard let tokens = try credentials.tokens() else { throw AuthError.notLoggedIn }
         if !tokens.needsRefresh(now: now()) {
@@ -51,7 +51,7 @@ actor TokenManager {
     /// failed, so a burst of `401`s still produces a single refresh.
     func accessTokenAfterUnauthorized(rejectedToken: String) async throws -> String {
         if let refreshTask {
-            return try await refreshTask.value.accessToken
+            return try await join(refreshTask).accessToken
         }
         guard let tokens = try credentials.tokens() else { throw AuthError.notLoggedIn }
         if tokens.accessToken != rejectedToken {
@@ -63,27 +63,43 @@ actor TokenManager {
     /// Stores the tokens of a new login of the same session (Agregar a una playlist asks for
     /// more scopes). Goes through the actor so a refresh that is still out can neither
     /// overwrite them with the old scopes nor delete them if the old refresh token fails.
+    ///
+    /// The generation moves only once the write worked: if it fails, a refresh that is out
+    /// still stores its (possibly rotated) tokens as usual.
     func install(_ tokens: OAuthTokens) throws {
+        try credentials.setTokens(tokens)
         generation += 1
         refreshTask = nil
-        try credentials.setTokens(tokens)
+    }
+
+    /// Callers that joined a refresh already running. Only read by tests, to know that a
+    /// second caller is really waiting on the shared refresh.
+    private(set) var joinedRefreshes = 0
+
+    private func join(_ task: Task<OAuthTokens, Error>) async throws -> OAuthTokens {
+        joinedRefreshes += 1
+        return try await task.value
     }
 
     private func refresh(from tokens: OAuthTokens) async throws -> OAuthTokens {
         // No `await` between checking `refreshTask` (in the callers) and setting it here, so
         // no other call can slip in and start a second refresh.
         let startedIn = generation
-        let task = Task { [clientID, accounts, now] in
-            let response = try await accounts.refresh(refreshToken: tokens.refreshToken,
-                                                      clientID: clientID)
-            return try response.tokens(receivedAt: now(), previous: tokens)
-        }
+        // The whole refresh, including deciding what to store, runs in this one task, so the
+        // caller that started it and every caller that joined get the same outcome.
+        let task = Task { try await self.completeRefresh(from: tokens, startedIn: startedIn) }
         refreshTask = task
+        return try await task.value
+    }
+
+    private func completeRefresh(from tokens: OAuthTokens,
+                                 startedIn: Int) async throws -> OAuthTokens {
         // After `install(_:)` another refresh may already be running: leave it alone.
         defer { if generation == startedIn { refreshTask = nil } }
-
         do {
-            let newTokens = try await task.value
+            let response = try await accounts.refresh(refreshToken: tokens.refreshToken,
+                                                      clientID: clientID)
+            let newTokens = try response.tokens(receivedAt: now(), previous: tokens)
             guard generation == startedIn else { return try installedTokens(newTokens) }
             try credentials.setTokens(newTokens)
             return newTokens
