@@ -331,6 +331,7 @@ final class AddToPlaylistTests: XCTestCase {
 
     func testAFailureForAnotherItemDoesNotShowInTheOpenSheet() async throws {
         let gate = AsyncGate()
+        defer { gate.open() }  // Never leave the stub blocked, even if the test fails.
         let (api, _) = makeAPI { request in
             if request.httpMethod == "POST" {
                 gate.waitBlocking()
@@ -344,7 +345,7 @@ final class AddToPlaylistTests: XCTestCase {
         let playlist = try XCTUnwrap(model.playlists?.first)
 
         let first = Task { await model.add(to: playlist) }
-        while model.state(of: playlist) != .adding { await Task.yield() }
+        try await waitUntil("the add to start") { model.state(of: playlist) == .adding }
         model.open(for: "spotify:track:other1", access: .granted)
         gate.open()
         await first.value
@@ -356,6 +357,7 @@ final class AddToPlaylistTests: XCTestCase {
 
     func testACountReadWhileAnAddWasOutIsDropped() async throws {
         let gate = AsyncGate()
+        defer { gate.open() }  // Never leave the stub blocked, even if the test fails.
         let (api, _) = makeAPI { request in
             if request.httpMethod == "POST" {
                 gate.waitBlocking()
@@ -369,7 +371,7 @@ final class AddToPlaylistTests: XCTestCase {
         let playlist = try XCTUnwrap(model.playlists?.first)
 
         let adding = Task { await model.add(to: playlist) }
-        while model.state(of: playlist) != .adding { await Task.yield() }
+        try await waitUntil("the add to start") { model.state(of: playlist) == .adding }
         await model.load(force: true)
         gate.open()
         await adding.value
@@ -452,6 +454,7 @@ final class AddToPlaylistTests: XCTestCase {
 
     func testAnAddInFlightSurvivesReopeningTheSheet() async throws {
         let gate = AsyncGate()
+        defer { gate.open() }  // Never leave the stub blocked, even if the test fails.
         let (api, recorder) = makeAPI { request in
             if request.httpMethod == "POST" {
                 gate.waitBlocking()
@@ -465,7 +468,7 @@ final class AddToPlaylistTests: XCTestCase {
         let playlist = try XCTUnwrap(model.playlists?.first)
 
         let first = Task { await model.add(to: playlist) }
-        while model.state(of: playlist) != .adding { await Task.yield() }
+        try await waitUntil("the add to start") { model.state(of: playlist) == .adding }
 
         // The sheet closes and opens again for the same item while the request travels.
         model.open(for: trackURI, access: .granted)

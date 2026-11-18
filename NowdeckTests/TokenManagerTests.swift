@@ -125,15 +125,18 @@ final class TokenManagerTests: XCTestCase {
             tokens: tokens(expiresIn: -10),
             onSessionRejected: { _ in rejected.set() }
         ) { _ in
-            _ = release.wait(timeout: .now() + 5)
+            // Never answer before the test lets it: a late answer would end the race early.
+            guard release.wait(timeout: .now() + 5) == .success else { return (.stub(599), Data()) }
             return answer()
         }
+        // Whatever happens below, the stub must not stay blocked.
+        defer { release.signal() }
 
         let refresh = Task { try await manager.validAccessToken() }
-        while recorder.requests.isEmpty { await Task.yield() }
+        try await waitUntil("the refresh request") { !recorder.requests.isEmpty }
         // A second caller joins the same refresh before the new login lands.
         let joined = Task { try await manager.accessTokenAfterUnauthorized(rejectedToken: "old-access") }
-        while await manager.joinedRefreshes < 1 { await Task.yield() }
+        try await waitUntil("the second caller to join") { await manager.joinedRefreshes >= 1 }
         try await manager.install(OAuthTokens(accessToken: "upgraded", refreshToken: "r2",
                                               expiresAt: now.addingTimeInterval(3600),
                                               scope: "playlist-modify-private"))
@@ -171,16 +174,17 @@ final class TokenManagerTests: XCTestCase {
         try credentials.setTokens(tokens(expiresIn: -10))
         let release = DispatchSemaphore(value: 0)
         let (session, recorder) = StubURLProtocol.session { _ in
-            _ = release.wait(timeout: .now() + 5)
+            guard release.wait(timeout: .now() + 5) == .success else { return (.stub(599), Data()) }
             return (.stub(200), tokenJSON(access: "rotated", refresh: "rotated-refresh"))
         }
+        defer { release.signal() }
         let fixedNow = now
         let manager = TokenManager(clientID: clientID, credentials: credentials,
                                    accounts: SpotifyAccountsClient(session: session),
                                    now: { fixedNow })
 
         let refresh = Task { try await manager.validAccessToken() }
-        while recorder.requests.isEmpty { await Task.yield() }
+        try await waitUntil("the refresh request") { !recorder.requests.isEmpty }
         store.failsWrites = true
         do {
             try await manager.install(OAuthTokens(accessToken: "upgraded", refreshToken: "r2",
