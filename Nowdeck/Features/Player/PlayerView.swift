@@ -555,8 +555,10 @@ struct ProgressRow: View {
             ? PlaybackProgress.remainingFormatted(positionMs: positionMs, durationMs: durationMs)
             : total
         return HStack(spacing: Layout.progressRowGap) {
-            Text(verbatim: elapsed)
-                .frame(minWidth: Layout.progressTimeWidth, alignment: .leading)
+            // Both times reserve the width of their longest possible text, so the bar keeps
+            // its length when the time on the right is toggled and when a long episode
+            // crosses the one-hour mark (`1:00:00` → `59:59`).
+            timeSlot(elapsed, widest: total, alignment: .leading)
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Palette.progressTrack)
@@ -568,8 +570,10 @@ struct ProgressRow: View {
                 }
             }
             .frame(height: Layout.progressBarHeight)
-            Text(verbatim: trailing)
-                .frame(minWidth: Layout.progressTimeWidth, alignment: .trailing)
+            timeSlot(trailing,
+                     widest: PlaybackProgress.remainingFormatted(positionMs: 0,
+                                                                 durationMs: durationMs),
+                     alignment: .trailing)
                 // The 12 pt text is a small target: the tappable area grows to about 44 pt
                 // without changing the layout.
                 .contentShape(Rectangle().inset(by: -Layout.progressTimeTapOutset))
@@ -592,6 +596,17 @@ struct ProgressRow: View {
                 }
             }
         }
+    }
+
+    /// A time label as wide as `widest` (hidden). The font is monospaced, so the text with
+    /// the most characters is the widest one.
+    private func timeSlot(_ text: String, widest: String,
+                          alignment: Alignment) -> some View {
+        ZStack(alignment: alignment) {
+            Text(verbatim: widest).hidden()
+            Text(verbatim: text)
+        }
+        .frame(minWidth: Layout.progressTimeWidth, alignment: alignment)
     }
 }
 
