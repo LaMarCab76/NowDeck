@@ -213,26 +213,41 @@ Reemplaza el bloque superior:
   derecha, el dispositivo en acento.
 - Biblioteca y Ajustes no se muestran.
 
-### Panel de volumen
+### Barra de volumen
 
-- Píldora de 520×64, centrada, con radio 32 y fondo `rgba(8,10,14,0.94)` con sombra.
-- **Posición** (pedido del dueño, 2026-11-18; el mockup la ponía a 16 del borde superior):
-  a 16 del borde **inferior**. Mientras está abierta, el resto del reproductor se achica hacia
-  arriba (escala 0,78, anclado arriba al centro) para dejarle lugar: en 414 de alto quedan 92
-  abajo, los 64 + 16 del panel y 12 de aire. El fondo y los avisos no se achican. Al cerrarse,
-  el reproductor vuelve a su tamaño con la misma animación. Mientras está abierta no se puede
-  deslizar entre temas.
-- Contenido: [−] (48) · ícono de parlante · barra de 8 de alto (relleno en acento) · valor en
-  monoespaciada de 14 · [+] (48). Cada toque cambia el volumen 5 %.
+Pedido del dueño (2026-11-18), aprobado sobre el mock `design/mockups/VolumenLateral.html`.
+Reemplaza a la píldora flotante de `Volumen.dc.html`, que se queda como referencia histórica.
+
+- **Se abre hacia el costado, desde el botón Volumen**: toda la fila de controles se corre a la
+  izquierda hasta que Anterior (o −15 s) queda en el borde izquierdo, y la barra se despliega
+  desde el borde derecho del parlante hasta el final de la fila. Al cerrarse, la barra se
+  repliega hasta meterse en el parlante y la fila vuelve a su lugar.
+- Mientras está abierta se desvanecen Agregar a una playlist, el grupo izquierdo y los controles
+  del grupo derecho que estén después del parlante (quedarían debajo de la barra). Anterior,
+  Play/Pausa, Siguiente y los del grupo derecho antes del parlante (Letras, con el orden por
+  defecto) siguen visibles y se pueden tocar.
+- El parlante abierto se marca como activo (acento sobre acento al 16 %); tocarlo de nuevo
+  cierra la barra.
+- Si el tema no tiene Volumen en el grupo derecho (está a la izquierda o no está) y la barra se
+  abre (por ejemplo, porque cambió el volumen desde otro dispositivo), entra un parlante propio
+  junto con la barra, después del grupo derecho.
+- **Sin fondo**: ni panel, ni sombra, ni botones − y +. La barra va directo sobre el fondo del
+  reproductor, que ya no se achica: se puede deslizar entre temas con la barra abierta.
+- Contenido: 12 de aire · barra de 8 de alto (pista blanca al 14 %, relleno en acento) · 12 ·
+  valor en monoespaciada de 14 (30 de ancho, alineado a la derecha). Con los controles por
+  defecto, el espacio para barra y valor es de 384 en el 11 Pro Max y 280 en el 8 Plus.
 - **Arrastre** (pedido del dueño, 2026-11-17): toda la fila de 44 alrededor de la barra toma
   el dedo; tocar o arrastrar fija el nivel al instante. Mientras se arrastra se manda como
-  máximo un cambio cada 250 ms, y el valor final al soltar.
-- **Entrada**: sube desde `y = +112` (debajo de la pantalla) hasta 0 en 0,30 s, con curva
-  `(0.2, 0.8, 0.2, 1)`; el reproductor se achica con la misma curva.
-- **Salida**: a los 3 s sin interacción, en 0,22 s ease-in.
-- **Se muestra** al tocar Volumen, al tocar − o +, o cuando el polling detecta otro volumen.
-- Si el dispositivo no soporta cambiar el volumen (`supports_volume: false`), el panel lo
-  indica y deshabilita − y +.
+  máximo un cambio cada 250 ms, y el valor final al soltar. Con VoiceOver, cada deslizamiento
+  sobre la barra cambia el volumen 5 %.
+- **Apertura**: la fila se corre y la barra se despliega en 0,30 s, con curva
+  `(0.2, 0.8, 0.2, 1)`. Lo que se va se desvanece en 0,12 s; el contenido de la barra aparece
+  en 0,2 s, 0,06 s después.
+- **Cierre**: a los 3 s sin interacción (nunca con el dedo sobre la barra), o al tocar el
+  parlante, en 0,22 s ease-in. Los controles vuelven a aparecer en 0,2 s.
+- **Se abre** al tocar Volumen o cuando el polling detecta otro volumen.
+- Si el dispositivo no soporta cambiar el volumen (`supports_volume: false`), en lugar de la
+  barra se lee "Este dispositivo no permite cambiar el volumen" (hasta dos líneas).
 
 ### Aviso (toast)
 
@@ -336,8 +351,23 @@ sigue el diseño de Cola:
   ofrece "Abrir en Spotify" con la página de esa playlist (el enlace de vuelta de docs/06).
 - El total de temas suma uno al agregar. Si una lectura de la lista se cruza con el pedido,
   ese total se oculta hasta la próxima lectura en lugar de adivinarlo.
+- **Buscador** (2026-11-18, a pedido del dueño): entre la cabecera y la lista, una versión
+  chica del campo de Buscar: cápsula de 40 (blanco al 10 %), lupa de 18, texto de 16 y el
+  placeholder "Buscar en tus playlists" en `etiqueta`; con texto, una ✕ para borrarlo. Filtra
+  por nombre sin distinguir mayúsculas ni tildes. Sin coincidencias: "Ninguna playlist se llama
+  así.". Deslizar la lista cierra el teclado (en horizontal tapa casi toda la hoja).
+- **Primero, donde ya está** (2026-11-18, a pedido del dueño): "YA ESTÁ EN" con las playlists
+  que ya tienen el tema (check en acento; tocarlas no agrega otra copia), y debajo "OTRAS
+  PLAYLISTS". Si no está en ninguna, un solo grupo "TUS PLAYLISTS". La primera vez se leen
+  todas las playlists: hasta terminar se ve un indicador con "Buscando el tema en tus
+  playlists… N de M" en lugar de la lista, para que las filas no se muevan bajo el dedo. Lo
+  que se agrega con la hoja abierta queda en su lugar; sube a "YA ESTÁ EN" la próxima vez. Si
+  alguna playlist no se pudo leer, un aviso lo dice arriba de la lista, y esa playlist no se
+  marca como "ya está" con datos viejos. Al deslizar para actualizar, la lista sigue a la vista
+  con su orden anterior; un toque en ese momento espera la lectura y no agrega si el tema ya
+  estaba.
 - Solo aparecen las playlists **propias y las colaborativas** (`owner.id` = usuario o
-  `collaborative: true`), en el orden de Spotify. Al final: "Solo aparecen tus playlists y las
+  `collaborative: true`), en el orden de Spotify dentro de cada grupo. Al final: "Solo aparecen tus playlists y las
   colaborativas. Para quitar temas, usá Spotify." y "ABRIR SPOTIFY ↗".
 - Lo agregado queda marcado mientras la app está abierta y no se vuelve a agregar con otro
   toque (evita duplicados por accidente). **No se puede quitar** desde la app (ver docs/03).

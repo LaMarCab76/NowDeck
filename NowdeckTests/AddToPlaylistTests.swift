@@ -21,16 +21,25 @@ final class AddToPlaylistTests: XCTestCase {
 
     nonisolated private static func playlist(_ id: String, owner: String,
                                              collaborative: Bool = false,
-                                             count: Int = 3) -> [String: Any] {
+                                             count: Int = 3,
+                                             snapshot: String = "v1") -> [String: Any] {
         ["id": id, "name": "Lista \(id)", "uri": "spotify:playlist:\(id)",
          "collaborative": collaborative, "owner": ["id": owner],
-         "items": ["total": count], "images": []]
+         "items": ["total": count], "images": [], "snapshot_id": snapshot]
+    }
+
+    /// One page of `GET /playlists/{id}/items` with these URIs, in the February 2026 shape.
+    nonisolated private static func itemsPage(_ uris: [String]) -> Data {
+        json(["items": uris.map { ["is_local": false, "item": ["type": "track", "uri": $0]] },
+              "limit": 50, "offset": 0, "total": uris.count, "next": NSNull()])
     }
 
     /// `GET /me` answers `me`; `GET /me/playlists` answers one page with `playlists`;
+    /// `GET /playlists/{id}/items` answers the URIs in `items` (none if missing);
     /// `POST …/items` answers `addStatus`.
     nonisolated private static func routes(
         playlists: [[String: Any]],
+        items: [String: [String]] = [:],
         addStatus: Int = 201
     ) -> StubURLProtocol.Handler {
         let page = json(["items": playlists, "limit": 50, "offset": 0,
@@ -42,6 +51,9 @@ final class AddToPlaylistTests: XCTestCase {
                 return (.stub(200), json(["id": "me"]))
             case ("GET", "/v1/me/playlists"):
                 return (.stub(200), page)
+            case ("GET", _) where path.hasPrefix("/v1/playlists/") && path.hasSuffix("/items"):
+                let id = path.split(separator: "/")[2]
+                return (.stub(200), itemsPage(items[String(id)] ?? []))
             case ("POST", _):
                 if addStatus == 201 { return (.stub(201), json(["snapshot_id": "snap"])) }
                 return (.stub(addStatus), spotifyErrorJSON(status: addStatus, message: "No"))
@@ -481,6 +493,327 @@ final class AddToPlaylistTests: XCTestCase {
         XCTAssertEqual(recorder.requests.filter { $0.httpMethod == "POST" }.count, 1)
     }
 
+    // MARK: Already in, first
+
+    nonisolated private static func itemReads(_ requests: [URLRequest]) -> [String] {
+        requests.compactMap { request in
+            let path = request.url?.path ?? ""
+            guard request.httpMethod == "GET", path.hasPrefix("/v1/playlists/") else { return nil }
+            return String(path.split(separator: "/")[2])
+        }
+    }
+
+    func testItemURIsFollowThePagesAndReadBothNames() async throws {
+        let (api, recorder) = makeAPI { request in
+            switch Self.offset(of: request) {
+            case 0:
+                return (.stub(200), Self.json([
+                    "items": [["item": ["uri": "spotify:track:a"]],
+                              ["track": ["uri": "spotify:track:b"]],
+                              ["item": NSNull()]],
+                    "limit": 50, "offset": 0,
+                    "next": "https://api.spotify.com/v1/playlists/p/items?offset=50"]))
+            default:
+                return (.stub(200), Self.json([
+                    "items": [["item": ["type": "episode", "uri": "spotify:episode:c"]]],
+                    "limit": 50, "offset": 50, "next": NSNull()]))
+            }
+        }
+
+        let uris = try await api.playlistItemURIs(playlistID: "p")
+
+        XCTAssertEqual(uris, ["spotify:track:a", "spotify:track:b", "spotify:episode:c"])
+        XCTAssertEqual(recorder.requests.map(Self.offset(of:)), [0, 50])
+        let url = recorder.requests[0].url!.absoluteString
+        XCTAssertTrue(url.hasPrefix("https://api.spotify.com/v1/playlists/p/items?"))
+        XCTAssertTrue(url.contains("limit=50"))
+        XCTAssertTrue(url.contains("additional_types=track,episode"))
+    }
+
+    func testTheSearchIgnoresCaseAndAccentsAndKeepsTheGroups() {
+        func playlist(_ id: String, _ name: String) -> EditablePlaylist {
+            EditablePlaylist(id: id, name: name, isCollaborative: false)
+        }
+        let all = [playlist("1", "Canción de cuna"), playlist("2", "Rock nacional"),
+                   playlist("3", "CANCIONES tristes"), playlist("4", "Otra")]
+
+        let everything = PlaylistSections(playlists: all, containing: ["3"], query: "  ")
+        XCTAssertEqual(everything.alreadyIn.map(\.id), ["3"])
+        XCTAssertEqual(everything.others.map(\.id), ["1", "2", "4"],
+                       "Spotify's order inside each group")
+
+        let filtered = PlaylistSections(playlists: all, containing: ["3"], query: "cancion")
+        XCTAssertEqual(filtered.alreadyIn.map(\.id), ["3"])
+        XCTAssertEqual(filtered.others.map(\.id), ["1"])
+
+        XCTAssertTrue(PlaylistSections(playlists: all, containing: [], query: "jazz").isEmpty)
+    }
+
+    func testPlaylistsThatHoldTheItemAreFoundAndCannotGetASecondCopy() async throws {
+        let (api, recorder) = makeAPI(handler: Self.routes(
+            playlists: [Self.playlist("a", owner: "me"), Self.playlist("b", owner: "me"),
+                        Self.playlist("c", owner: "x", collaborative: true)],
+            items: ["b": ["spotify:track:other1"], "c": [trackURI, "spotify:track:other2"]]))
+        let model = AddToPlaylistModel(api: api)
+        model.open(for: trackURI, access: .granted)
+
+        await model.prepare()
+
+        XCTAssertTrue(model.isMembershipReady)
+        XCTAssertFalse(model.membershipIncomplete)
+        XCTAssertEqual(model.containingIDs, ["c"])
+        let sections = PlaylistSections(playlists: model.playlists ?? [],
+                                        containing: model.containingIDs, query: "")
+        XCTAssertEqual(sections.alreadyIn.map(\.id), ["c"])
+        XCTAssertEqual(sections.others.map(\.id), ["a", "b"])
+        XCTAssertEqual(Set(Self.itemReads(recorder.requests)), ["a", "b", "c"])
+
+        let c = try XCTUnwrap(model.playlists?.first { $0.id == "c" })
+        XCTAssertEqual(model.state(of: c), .added)
+        await model.add(to: c)
+        XCTAssertFalse(recorder.requests.contains { $0.httpMethod == "POST" })
+    }
+
+    func testOnlyPlaylistsThatChangedAreReadAgain() async throws {
+        let snapshots = SnapshotBox(["a": "v1", "b": "v1"])
+        let uri = trackURI
+        let (api, recorder) = makeAPI { request in
+            let list = [Self.playlist("a", owner: "me", snapshot: snapshots["a"]),
+                        Self.playlist("b", owner: "me", snapshot: snapshots["b"])]
+            let inB = snapshots["b"] == "v2" ? [uri, "spotify:track:x"] : ["spotify:track:x"]
+            return try Self.routes(playlists: list, items: ["b": inB])(request)
+        }
+        var now = Date(timeIntervalSince1970: 0)
+        let model = AddToPlaylistModel(api: api, now: { now })
+        model.open(for: trackURI, access: .granted)
+        await model.prepare()
+        XCTAssertEqual(Self.itemReads(recorder.requests).count, 2)
+        XCTAssertEqual(model.containingIDs, [])
+
+        // Another opening for another track: nothing is read again.
+        model.open(for: "spotify:track:x", access: .granted)
+        XCTAssertTrue(model.isMembershipReady, "Fresh list, every playlist read: no wait")
+        XCTAssertEqual(model.containingIDs, ["b"])
+        await model.prepare()
+        XCTAssertEqual(Self.itemReads(recorder.requests).count, 2)
+
+        // The track was added to "b" in Spotify: only "b" is read again.
+        snapshots["b"] = "v2"
+        now = now.addingTimeInterval(AddToPlaylistModel.maximumListAge + 1)
+        model.open(for: trackURI, access: .granted)
+        XCTAssertFalse(model.isMembershipReady, "The list is stale: wait for the new order")
+        await model.prepare()
+        XCTAssertEqual(Self.itemReads(recorder.requests).suffix(1), ["b"])
+        XCTAssertEqual(Self.itemReads(recorder.requests).count, 3)
+        XCTAssertEqual(model.containingIDs, ["b"])
+    }
+
+    func testAPlaylistThatCannotBeReadIsListedAndFlagged() async throws {
+        let uri = trackURI
+        let (api, _) = makeAPI { request in
+            if request.url?.path == "/v1/playlists/bad/items" { return (.stub(404), Data()) }
+            return try Self.routes(playlists: [Self.playlist("bad", owner: "me"),
+                                               Self.playlist("good", owner: "me")],
+                                   items: ["good": [uri]])(request)
+        }
+        let model = AddToPlaylistModel(api: api)
+        model.open(for: trackURI, access: .granted)
+
+        await model.prepare()
+
+        XCTAssertTrue(model.isMembershipReady)
+        XCTAssertTrue(model.membershipIncomplete)
+        XCTAssertEqual(model.containingIDs, ["good"])
+        XCTAssertEqual(model.playlists?.map(\.id), ["bad", "good"])
+    }
+
+    func testOldContentsDoNotConfirmTheItemWhenTheNewVersionCannotBeRead() async throws {
+        let snapshots = SnapshotBox(["b": "v1"])
+        let uri = trackURI
+        let (api, _) = makeAPI { request in
+            if request.url?.path == "/v1/playlists/b/items", snapshots["b"] == "v2" {
+                return (.stub(404), Data())
+            }
+            return try Self.routes(playlists: [Self.playlist("b", owner: "me",
+                                                             snapshot: snapshots["b"])],
+                                   items: ["b": [uri]])(request)
+        }
+        var now = Date(timeIntervalSince1970: 0)
+        let model = AddToPlaylistModel(api: api, now: { now })
+        model.open(for: trackURI, access: .granted)
+        await model.prepare()
+        XCTAssertEqual(model.containingIDs, ["b"])
+
+        // The playlist changed in Spotify (the track may be gone) and can't be read now.
+        snapshots["b"] = "v2"
+        now = now.addingTimeInterval(AddToPlaylistModel.maximumListAge + 1)
+        model.open(for: trackURI, access: .granted)
+        await model.prepare()
+
+        XCTAssertEqual(model.containingIDs, [])
+        XCTAssertTrue(model.membershipIncomplete)
+        let b = try XCTUnwrap(model.playlists?.first)
+        XCTAssertEqual(model.state(of: b), .idle, "The user can still add it")
+    }
+
+    func testATapDuringARefreshWaitsAndDoesNotAddASecondCopy() async throws {
+        let snapshots = SnapshotBox(["a": "v1"])
+        let gate = AsyncGate()
+        defer { gate.open() }  // Never leave the stub blocked, even if the test fails.
+        let uri = trackURI
+        let (api, recorder) = makeAPI { request in
+            let changed = snapshots["a"] == "v2"
+            if request.url?.path == "/v1/playlists/a/items", changed { gate.waitBlocking() }
+            if request.httpMethod == "POST" { return (.stub(201), Self.json(["snapshot_id": "v3"])) }
+            return try Self.routes(playlists: [Self.playlist("a", owner: "me",
+                                                             snapshot: snapshots["a"])],
+                                   items: ["a": changed ? [uri] : []])(request)
+        }
+        let model = AddToPlaylistModel(api: api)
+        model.open(for: trackURI, access: .granted)
+        await model.prepare()
+        let a = try XCTUnwrap(model.playlists?.first)
+        XCTAssertEqual(model.state(of: a), .idle)
+
+        // The track was added to "a" elsewhere; the user pulls to refresh and taps "a".
+        snapshots["a"] = "v2"
+        let refresh = Task { await model.prepare(force: true) }
+        try await waitUntil("the refresh to read the playlist") {
+            model.membershipProgress != nil
+        }
+        let tap = Task { await model.add(to: a) }
+        try await waitUntil("the tap to wait") { model.state(of: a) == .adding }
+        gate.open()
+        await refresh.value
+        await tap.value
+
+        XCTAssertFalse(recorder.requests.contains { $0.httpMethod == "POST" })
+        XCTAssertEqual(model.state(of: a), .added)
+    }
+
+    func testAnAddThatFinishesDuringAReadIsNotLost() async throws {
+        // The stub serves one request at a time, so nothing may block its thread. The add
+        // and the read are held with async waits instead: the POST gets a 401 and waits for
+        // the token refresh, the read gets a 503 and waits for its retry.
+        let snapshots = SnapshotBox(["a": "v1"])
+        let posts = Counter()
+        let changedReads = Counter()
+        let tokens = HeldTokenProvider()
+        let retry = AsyncSignal()
+        let (session, _) = StubURLProtocol.session { request in
+            if request.httpMethod == "POST" {
+                return posts.next() == 1 ? (.stub(401), Data())
+                    : (.stub(201), Self.json(["snapshot_id": "v3"]))
+            }
+            if request.url?.path == "/v1/playlists/a/items", snapshots["a"] == "v2",
+               changedReads.next() == 1 {
+                return (.stub(503), Data())
+            }
+            return try Self.routes(playlists: [Self.playlist("a", owner: "me",
+                                                             snapshot: snapshots["a"])])(request)
+        }
+        let api = SpotifyAPI(tokens: tokens, session: session, now: { Date() },
+                             sleep: { _ in await retry.wait() }, jitter: { 0 })
+        let model = AddToPlaylistModel(api: api)
+        model.open(for: trackURI, access: .granted)
+        await model.prepare()
+        let a = try XCTUnwrap(model.playlists?.first)
+
+        let adding = Task { await model.add(to: a) }
+        try await waitUntil("the add to wait for a token") { await tokens.release.isWaiting }
+        snapshots["a"] = "v2"  // Changed elsewhere: the refresh reads it again.
+        let refresh = Task { await model.prepare(force: true) }
+        try await waitUntil("the read to wait for its retry") { await retry.isWaiting }
+        await tokens.release.open()
+        await adding.value
+        XCTAssertEqual(model.state(of: a), .added)
+        await retry.open()
+        await refresh.value
+
+        model.open(for: trackURI, access: .granted)
+        await model.prepare()
+        XCTAssertEqual(model.containingIDs, ["a"],
+                       "The read predates the add: the add must not be lost from the cache")
+    }
+
+    func testEmptyPlaylistsNeedNoRequest() async {
+        let (api, recorder) = makeAPI(handler: Self.routes(playlists: [
+            Self.playlist("empty", owner: "me", count: 0),
+        ]))
+        let model = AddToPlaylistModel(api: api)
+        model.open(for: trackURI, access: .granted)
+
+        await model.prepare()
+
+        XCTAssertTrue(model.isMembershipReady)
+        XCTAssertEqual(Self.itemReads(recorder.requests), [])
+    }
+
+    func testAnAddedRowStaysInPlaceAndComesFirstNextTime() async throws {
+        let snapshots = SnapshotBox(["a": "v1", "b": "v1"])
+        let uri = trackURI
+        let (api, recorder) = makeAPI { request in
+            if request.httpMethod == "POST" {
+                snapshots["b"] = "v2"
+                return (.stub(201), Self.json(["snapshot_id": "v2"]))
+            }
+            let list = [Self.playlist("a", owner: "me", snapshot: snapshots["a"]),
+                        Self.playlist("b", owner: "me", snapshot: snapshots["b"])]
+            let inB = snapshots["b"] == "v2" ? [uri] : []
+            return try Self.routes(playlists: list, items: ["b": inB])(request)
+        }
+        var now = Date(timeIntervalSince1970: 0)
+        let model = AddToPlaylistModel(api: api, now: { now })
+        model.open(for: trackURI, access: .granted)
+        await model.prepare()
+        let b = try XCTUnwrap(model.playlists?.last)
+
+        await model.add(to: b)
+
+        XCTAssertEqual(model.state(of: b), .added)
+        XCTAssertEqual(model.containingIDs, [], "No row moves while the sheet is open")
+
+        model.open(for: trackURI, access: .granted)
+        XCTAssertTrue(model.isMembershipReady)
+        XCTAssertEqual(model.containingIDs, ["b"])
+        await model.prepare()
+        XCTAssertEqual(Self.itemReads(recorder.requests).count, 2,
+                       "Same list as before: the cached contents plus the add are used")
+
+        // The next list read brings the new version: the playlist is read again instead of
+        // trusting contents that may miss changes made elsewhere.
+        now = now.addingTimeInterval(AddToPlaylistModel.maximumListAge + 1)
+        model.open(for: trackURI, access: .granted)
+        await model.prepare()
+        XCTAssertEqual(Self.itemReads(recorder.requests).suffix(1), ["b"])
+        XCTAssertEqual(model.containingIDs, ["b"])
+    }
+
+    func testGrantingThePermissionAlsoChecksWhereTheItemIs() async throws {
+        let online = Counter()
+        let uri = trackURI
+        let (api, _) = makeAPI { request in
+            if online.next() <= 1 { throw URLError(.notConnectedToInternet) }
+            return try Self.routes(playlists: [Self.playlist("a", owner: "me"),
+                                               Self.playlist("b", owner: "me")],
+                                   items: ["b": [uri]])(request)
+        }
+        let model = AddToPlaylistModel(api: api)
+        var grant = PlaylistEditingAccess.Grant.missing
+        model.open(for: trackURI, access: PlaylistEditingAccess(grant: { grant }, request: {
+            grant = .granted
+            return nil
+        }))
+        await model.prepare()
+        XCTAssertNil(model.playlists)
+        XCTAssertFalse(model.isMembershipReady)
+
+        await model.requestPermission()
+
+        XCTAssertTrue(model.isMembershipReady, "Otherwise the sheet would wait forever")
+        XCTAssertEqual(model.containingIDs, ["b"])
+    }
+
     // MARK: Presentation
 
     func testTheSheetOpensOnTheVisibleScreen() {
@@ -535,6 +868,50 @@ private final class AsyncGate: @unchecked Sendable {
 
     func open() {
         semaphore.signal()
+    }
+}
+
+/// A one-shot async signal: `wait()` suspends (without blocking a thread) until `open()`.
+private actor AsyncSignal {
+    private var opened = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    var isWaiting: Bool { !waiters.isEmpty }
+
+    func wait() async {
+        if opened { return }
+        await withCheckedContinuation { waiters.append($0) }
+    }
+
+    func open() {
+        opened = true
+        waiters.forEach { $0.resume() }
+        waiters = []
+    }
+}
+
+/// Holds the token refresh that follows a `401` until the test releases it.
+private actor HeldTokenProvider: AccessTokenProvider {
+    let release = AsyncSignal()
+
+    func validAccessToken() async throws -> String { "token" }
+
+    func accessTokenAfterUnauthorized(rejectedToken: String) async throws -> String {
+        await release.wait()
+        return "token-2"
+    }
+}
+
+/// Snapshot IDs that a test changes while the stub reads them from URLSession's thread.
+private final class SnapshotBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var values: [String: String]
+
+    init(_ values: [String: String]) { self.values = values }
+
+    subscript(id: String) -> String {
+        get { lock.withLock { values[id] ?? "" } }
+        set { lock.withLock { values[id] = newValue } }
     }
 }
 

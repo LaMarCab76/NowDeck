@@ -1,16 +1,16 @@
 import Foundation
 
-/// State of the floating volume panel (docs/02-diseno.md, "Panel de volumen").
+/// State of the volume bar in the controls row (docs/02-diseno.md, "Barra de volumen").
 ///
-/// - Each tap on − or + moves the shown level 5 % at once. Taps are **coalesced**: only one
-///   `PUT /me/player/volume` goes out, `debounce` (250 ms) after the last tap, with the final
-///   value. Requests go out one after the other, never in parallel.
+/// - Each step (a VoiceOver swipe on the bar) moves the shown level 5 % at once. Steps are
+///   **coalesced**: only one `PUT /me/player/volume` goes out, `debounce` (250 ms) after the
+///   last one, with the final value. Requests go out one after the other, never in parallel.
 /// - Dragging on the bar moves the shown level with the finger. While it moves, the level is
 ///   sent at most once every `debounce` (a throttle, so the speaker follows along), and the
 ///   final level goes out as soon as the finger lifts.
 /// - Only one request is out at a time. Levels chosen while it travels are not queued: when
 ///   it finishes, only the newest one goes out (a slow network never replays a whole drag).
-/// - The panel appears when the volume button, − or + are tapped, or when a poll brings a
+/// - The bar opens when the volume button is tapped, on a step, or when a poll brings a
 ///   level that the app did not set (changed on the computer, the speaker, another phone…),
 ///   and hides `hideAfter` (3 s) after the last interaction. While the finger is on the bar
 ///   it stays, however long the finger rests there.
@@ -18,13 +18,13 @@ import Foundation
 ///   moment. Those answers are ignored for `settleTime` after the request; a poll with the
 ///   level the app sent ends that wait early.
 /// - Devices with `supports_volume: false` or `is_restricted: true` cannot change the volume:
-///   the panel says so and − and + are disabled. Nothing is sent.
+///   the bar's place says so. Nothing is sent.
 @MainActor
 final class VolumeController: ObservableObject {
     @Published private(set) var isPanelVisible = false
     /// The level shown in the panel, 0–100. `nil` while unknown (`volume_percent` is `null`).
     @Published private(set) var level: Int?
-    /// Whether − and + work on the current device.
+    /// Whether the level can change on the current device.
     @Published private(set) var isAdjustable = false
     /// There is a device at all (to tell "no device" from "this device can't").
     @Published private(set) var hasDevice = false
@@ -300,7 +300,7 @@ final class VolumeController: ObservableObject {
 
 /// What VoiceOver says when the volume panel appears or its level changes (docs/07, Hito 8:
 /// "anuncios del aviso y del panel de volumen"). The panel never takes the VoiceOver focus,
-/// so without an announcement a change made with − and +, or on another device, is silent.
+/// so without an announcement a change made on another device is silent.
 enum VolumeAnnouncement: Equatable {
     case level(Int)
     /// The device does not let the app change its volume (`supports_volume: false`,
