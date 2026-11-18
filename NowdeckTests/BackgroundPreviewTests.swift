@@ -146,8 +146,9 @@ final class BackgroundPreviewTests: XCTestCase {
         let available = StubBox(false)
         let (session, recorder) = StubURLProtocol.session { [recentPath] request in
             if request.url?.path == recentPath {
+                // 403 is not retried by `SpotifyAPI`, so the first lookup ends after one request.
                 return available.value ? (.stub(200), Self.recentJSON(artistID: "recent"))
-                                       : (.stub(500), Data())
+                                       : (.stub(403), spotifyErrorJSON(status: 403, message: "Forbidden"))
             }
             if request.url?.path == "/v1/artists/recent" { return (.stub(200), Self.artistJSON) }
             if request.url?.host == "i.scdn.co" { return (.stub(200), Self.png) }
@@ -157,15 +158,29 @@ final class BackgroundPreviewTests: XCTestCase {
                              sleep: { _ in }, jitter: { 0 })
         let player = PlayerModel(api: api, artworkLoader: ArtworkLoader(session: session))
         let preview = BackgroundPreviewModel(player: player)
+        let historyRequests = { recorder.requests.filter { $0.url?.path == self.recentPath }.count }
         preview.prepare()
-        try await waitUntil { recorder.requests.contains { $0.url?.path == self.recentPath } }
-        try await Task.sleep(nanoseconds: 200_000_000)
+        XCTAssertTrue(preview.isLookingUp)
+        try await waitUntil { !preview.isLookingUp }
+        XCTAssertEqual(historyRequests(), 1)
         XCTAssertNil(preview.image)
 
         available.value = true
         preview.begin(.blur, blur: 0, dim: 30)
+        XCTAssertTrue(preview.isLookingUp, "The touch starts a new lookup")
         try await waitUntil { preview.image != nil }
+        XCTAssertEqual(historyRequests(), 2)
         XCTAssertEqual(preview.artistURL?.absoluteString, "https://open.spotify.com/artist/recent")
+    }
+
+    func testNoLookupOnceThePlayerShowedAPhoto() async throws {
+        let playing = StubBox(true)
+        let player = try makePlayer(playing: playing)
+        let preview = BackgroundPreviewModel(player: player)
+        _ = await player.poll()
+        try await waitUntil { preview.image != nil }
+        preview.prepare()
+        XCTAssertFalse(preview.isLookingUp, "The player's photo wins for the whole visit")
     }
 
     func testSlidersDriveThePreview() {

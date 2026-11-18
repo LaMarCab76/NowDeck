@@ -45,6 +45,10 @@ final class PlayerModel: ObservableObject {
     /// Photo of the track's first artist, shown behind the player (`PlayerBackgroundView`).
     /// `nil` for episodes, ads, artists without photos, or with the option off.
     @Published private(set) var artistImage: UIImage?
+    /// The artist whose photo `artistImage` is. Set just before each photo is published, so
+    /// observers of `artistImage` read the matching ID (the photo of a previous artist can
+    /// stay on screen while the next one loads, so `nowPlaying` may already be another).
+    private(set) var artistImageArtistID: String?
     @Published private(set) var freshness: Freshness = .live
     /// Grows each time an item starts playing: another track or episode, or the same one
     /// again from an earlier point (queued twice in a row, repeat one, or Previous going
@@ -586,6 +590,7 @@ final class PlayerModel: ObservableObject {
             do {
                 let image = try await artworkLoader.loadImage(photoURL)
                 guard !Task.isCancelled, self.artistImageKey == artistID else { return }
+                self.artistImageArtistID = artistID
                 self.artistImage = image
             } catch {
                 guard !Task.isCancelled, self.artistImageKey == artistID else { return }

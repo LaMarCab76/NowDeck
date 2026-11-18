@@ -84,7 +84,8 @@ struct SettingsView: View {
     /// player has it, top left, and opens that artist in Spotify (docs/06).
     @ViewBuilder
     private var previewAttribution: some View {
-        if preview.editing != nil {
+        // Only with a photo: without one the preview is just the theme's color.
+        if preview.editing != nil, preview.image != nil, preview.artistURL != nil {
             GeometryReader { proxy in
                 let insets = margins.insets(for: proxy.safeAreaInsets)
                 // Measured from the physical edges, like the player's top row.

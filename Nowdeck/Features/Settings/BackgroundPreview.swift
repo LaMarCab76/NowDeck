@@ -55,9 +55,9 @@ final class BackgroundPreviewModel: ObservableObject {
         api = player?.api
         artworkLoader = player?.artworkLoader
         // With "Foto del artista" on, the player already loads the photo of what plays.
-        // The player publishes a photo only for the artist of what plays now.
+        // `artistImageArtistID` is set before each photo is published, so it matches `image`.
         subscription = player?.$artistImage.sink { [weak self, weak player] image in
-            let artistID = player?.nowPlaying?.artistID
+            let artistID = player?.artistImageArtistID
             var sample: Sample?
             if let image, let artistID { sample = Sample(image: image, artistID: artistID) }
             self?.playerSample = sample
@@ -94,9 +94,11 @@ final class BackgroundPreviewModel: ObservableObject {
     /// playback may stop before the finger arrives). Once a photo is found it is not looked
     /// up again while Ajustes is open; a lookup that found none is tried again on the next
     /// touch of a slider, so a temporary failure (a `429` cooldown) does not last the whole
+    /// visit. Not needed once the player showed a photo: that one wins for the rest of the
     /// visit.
     func prepare() {
-        guard fallbackTask == nil, fallbackSample == nil, let api, let artworkLoader else { return }
+        guard fallbackTask == nil, fallbackSample == nil, lastPlayerSample == nil,
+              let api, let artworkLoader else { return }
         fallbackTask = Task { [weak self, weak player] in
             let sample = await Self.samplePhoto(api: api, loader: artworkLoader,
                                                 seenArtistID: { await player?.lastHeardArtistID })
@@ -107,6 +109,9 @@ final class BackgroundPreviewModel: ObservableObject {
             self.updateImage()
         }
     }
+
+    /// A lookup for the sample photo is running.
+    var isLookingUp: Bool { fallbackTask != nil }
 
     /// Ajustes closed: stop looking, so no request of ours shares the player's rate limit
     /// for nothing.
