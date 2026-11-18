@@ -195,7 +195,8 @@ Replaces the top block:
     (50%, **66.7%** or 100% of the usable width);
   - no forced line breaks, balanced `text-wrap` and 12 of spacing.
   - **Word by word**: what's already sung in `texto` and what's pending in `letraPendiente`.
-  - **Full verse**: the whole current verse in `texto`.
+  - **Full verse**: the whole current verse in `texto`. That's what line sync shows, and also
+    word sync when "Lyrics style" (*Estilo de las letras*) is set to Verse.
 - **Bottom row** (56): 56 artwork (radius 4), title in 18 bold, artist in 15 and, on the
   right, the device in accent.
 - Library and Settings are not shown.
@@ -433,6 +434,9 @@ follows the Queue design:
   - **Show lyrics** (*Mostrar letras*) toggle (56×32 track, 26 knob, on in accent);
   - **Lyrics width** (*Ancho de las letras*): Half, **2/3** or Full (*Mitad*, *2/3* or
     *Completo*);
+  - **Lyrics style** (*Estilo de las letras*): **By word** or Verse (*Por palabra* or
+    *Estrofa*; the same segmented control as the width; added by the owner on 2026-11-18, not
+    in the mockup);
   - note about LRCLIB.
 
 ## Import theme (`TemaImportar.dc.html`)

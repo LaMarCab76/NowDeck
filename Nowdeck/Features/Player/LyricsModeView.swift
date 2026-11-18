@@ -39,6 +39,8 @@ struct LyricsModeView: View {
     var width: Theme.LyricsWidth = .twoThirds
     /// "Sincronía de las letras" (Ajustes → Reproductor). Positive shows them earlier.
     var offsetMs: Int = 0
+    /// "Estilo de las letras" (Ajustes → Reproductor). Stanza style drops the word highlight.
+    var style: LyricsStyle = .byWord
     /// The track's artwork, already loaded by the player. Shown as is, never cropped.
     var artwork: Image?
     /// Opens the playlist or album in Spotify (milestone 2).
@@ -58,7 +60,7 @@ struct LyricsModeView: View {
         VStack(spacing: 0) {
             header
                 .frame(height: Metrics.Lyrics.headerHeight)
-            LyricsStanzasView(lyrics: lyrics, playback: playback, width: width, offsetMs: offsetMs)
+            LyricsStanzasView(lyrics: lyrics?.displayed(as: style), playback: playback, width: width, offsetMs: offsetMs)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             footer
                 .frame(height: Metrics.Lyrics.footerHeight)

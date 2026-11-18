@@ -1997,6 +1997,38 @@
         }
       }
     },
+    "Estilo de las letras" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lyrics style"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estilo de las letras"
+          }
+        }
+      }
+    },
+    "Estrofa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verse"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estrofa"
+          }
+        }
+      }
+    },
     "Explícito" : {
       "localizations" : {
         "en" : {
@@ -2253,18 +2285,18 @@
         }
       }
     },
-    "Las letras vienen de LRCLIB, una base comunitaria: no las provee Spotify y pueden faltar o tener errores. Con sincronía por palabra se resaltan mientras suenan; si no, se ve la estrofa completa." : {
+    "Las letras vienen de LRCLIB, una base comunitaria: no las provee Spotify y pueden faltar o tener errores. Con “Por palabra” se resaltan mientras suenan, si la letra tiene sincronía por palabra; si no, o con “Estrofa”, se ve la estrofa completa." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lyrics come from LRCLIB, a community database: they aren't provided by Spotify and may be missing or contain mistakes. With word-by-word sync, words light up as they're sung; otherwise you see the whole verse."
+            "value" : "Lyrics come from LRCLIB, a community database: they aren't provided by Spotify and may be missing or contain mistakes. With “By word”, words light up as they're sung if the lyrics have word-by-word sync; otherwise, or with “Verse”, you see the whole verse."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Las letras vienen de LRCLIB, una base comunitaria: no las provee Spotify y pueden faltar o tener errores. Con sincronía por palabra se resaltan mientras suenan; si no, se ve la estrofa completa."
+            "value" : "Las letras vienen de LRCLIB, una base comunitaria: no las provee Spotify y pueden faltar o tener errores. Con “Por palabra” se resaltan mientras suenan, si la letra tiene sincronía por palabra; si no, o con “Estrofa”, se ve la estrofa completa."
           }
         }
       }
@@ -3487,6 +3519,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Poné algo en Spotify en cualquiera de tus dispositivos y aparece acá."
+          }
+        }
+      }
+    },
+    "Por palabra" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By word"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por palabra"
           }
         }
       }

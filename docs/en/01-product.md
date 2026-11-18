@@ -99,8 +99,9 @@ While the app is in the foreground, **the screen does not turn off**
        artwork);
      - Export theme and Import theme.
    - **Player**: "Show time left" (*Mostrar tiempo restante*) switch (instead of the duration,
-     to the right of the bar; off by default), "Show lyrics" (*Mostrar letras*) switch, and
-     "Lyrics width" (*Ancho de las letras*) (Half, 2/3, or Full; 2/3 by default).
+     to the right of the bar; off by default), "Show lyrics" (*Mostrar letras*) switch,
+     "Lyrics width" (*Ancho de las letras*) (Half, 2/3, or Full; 2/3 by default), and
+     "Lyrics style" (*Estilo de las letras*) (By word or Verse; By word by default).
 12. **Import theme**: sheet with the JSON, the validation result, warnings, a
     preview, and the Apply and Cancel buttons.
 13. **Nothing playing** (*Nada sonando*): empty state with "Choose device" (*Elegir
@@ -115,7 +116,8 @@ While the app is in the foreground, **the screen does not turn off**
 - **Switch devices**: tap "Playing on …" → Devices sheet → tap a
   device → transfer playback → close the sheet.
 - **Lyrics**: tap the lyrics button.
-  - If there are lyrics with word-by-word sync, that mode is used.
+  - If there are lyrics with word-by-word sync and the style is "By word", that mode is used.
+  - With the "Verse" style, the whole verse is shown even when there's word-by-word sync.
   - If there's line sync, the whole verse is shown.
   - If there are no lyrics or only plain text, the notice appears and the player goes back to the
     normal view.
