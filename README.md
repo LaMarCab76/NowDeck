@@ -12,6 +12,19 @@ playing, control it, and choose which device it plays on.
 > English can be added later. Screen and setting names below are given as they appear in the
 > app, with a translation.
 
+## Screenshots
+
+![Nowdeck showing the track that's playing, in landscape](docs/screenshots/01-now-playing.png)
+
+| | |
+|---|---|
+| ![Synced lyrics](docs/screenshots/03-lyrics.png) | ![Choosing a Spotify Connect device](docs/screenshots/04-devices.png) |
+| ![Library](docs/screenshots/05-library.png) | ![Playback queue](docs/screenshots/06-queue.png) |
+| ![Another theme](docs/screenshots/02-now-playing-theme.png) | ![Theme settings](docs/screenshots/07-themes.png) |
+
+<sub>Screenshots use made-up tracks, artists, artwork and lyrics from the app's demo mode
+(debug builds, `-demoMode YES`).</sub>
+
 ## What it does
 
 - Shows what's playing: artwork, track, artist, which playlist or album it comes from and on
