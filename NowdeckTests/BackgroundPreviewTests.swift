@@ -254,9 +254,11 @@ final class BackgroundPreviewTests: XCTestCase {
             if request.url?.host == "i.scdn.co" { return (.stub(200), Self.png) }
             return (.stub(404), Data())
         }
-        // The artist heard is read when history answers: by then it is B.
-        let lookup = await BackgroundPreviewModel.samplePhoto(api: api, loader: loader,
-                                                              seenArtistID: { "artistB" })
+        // The artist heard is A until history has been asked, B after: reading it too early
+        // would get A, whose history-mismatched lookup finds nothing.
+        let lookup = await BackgroundPreviewModel.samplePhoto(api: api, loader: loader, seenArtistID: {
+            recorder.requests.contains { $0.url?.path == self.recentPath } ? "artistB" : "artistA"
+        })
         XCTAssertEqual(lookup.sample?.artistID, "artistB")
         XCTAssertEqual(lookup.heardArtistID, "artistB")
         XCTAssertEqual(recorder.requests.filter { $0.url?.path == "/v1/artists/artistB" }.count, 1)
