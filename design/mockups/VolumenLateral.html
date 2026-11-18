@@ -418,6 +418,8 @@ td.num { font-family: var(--font-mono); }
     volExtra.style.width = state.open ? g.extraW + "px" : "0px";
     volInner.style.opacity = state.open ? "1" : "0";
     ["add", "shuffle", "repeat"].forEach(function (id) {
+      // Opening with the focus on a control that is about to hide: hand it to the speaker.
+      if (state.open && ctl[id] === document.activeElement) volBtn.focus();
       ctl[id].style.opacity = state.open ? "0" : "1";
       ctl[id].style.pointerEvents = state.open ? "none" : "auto";
       ctl[id].tabIndex = state.open ? -1 : 0;
