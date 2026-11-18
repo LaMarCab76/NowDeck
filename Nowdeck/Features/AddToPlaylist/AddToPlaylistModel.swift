@@ -363,6 +363,7 @@ final class AddToPlaylistModel: ObservableObject {
         guard !toRead.isEmpty else { return }
         membershipProgress = MembershipProgress(done: 0, total: toRead.count)
         defer { membershipProgress = nil }
+        let readStartedAt = sequence
         let api = self.api
         await withTaskGroup(of: (EditablePlaylist, Set<String>?).self) { group in
             // At most `membershipConcurrency` reads at a time: one starts as another ends.
@@ -372,7 +373,13 @@ final class AddToPlaylistModel: ObservableObject {
                 group.addTask { (playlist, await Self.readURIs(of: playlist, api: api)) }
             }
             while let (playlist, uris) = await group.next() {
-                if let uris {
+                if var uris {
+                    // An add that finished while this read was out may be missing from it:
+                    // keep what this session added, or the playlist would not come first
+                    // next time (the list, and so its snapshot, may not be read again).
+                    if let lastAdd = lastAdd[playlist.id], lastAdd > readStartedAt {
+                        uris.formUnion(addedURIs(to: playlist.id))
+                    }
                     contents[playlist.id] = PlaylistContents(snapshotID: playlist.snapshotID,
                                                              uris: uris)
                     unreadable.remove(playlist.id)
@@ -534,6 +541,15 @@ final class AddToPlaylistModel: ObservableObject {
             }
             return playlist
         }
+    }
+
+    /// The URIs this session added to the playlist (from `added`'s keys).
+    private func addedURIs(to playlistID: String) -> Set<String> {
+        Set(added.compactMap { key in
+            let parts = key.split(separator: "|", maxSplits: 1)
+            guard parts.count == 2, parts[1] == playlistID else { return nil }
+            return String(parts[0])
+        })
     }
 
     private static func key(uri: String, playlistID: String) -> String {

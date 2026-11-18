@@ -691,6 +691,51 @@ final class AddToPlaylistTests: XCTestCase {
         XCTAssertEqual(model.state(of: a), .added)
     }
 
+    func testAnAddThatFinishesDuringAReadIsNotLost() async throws {
+        // The stub serves one request at a time, so nothing may block its thread. The add
+        // and the read are held with async waits instead: the POST gets a 401 and waits for
+        // the token refresh, the read gets a 503 and waits for its retry.
+        let snapshots = SnapshotBox(["a": "v1"])
+        let posts = Counter()
+        let changedReads = Counter()
+        let tokens = HeldTokenProvider()
+        let retry = AsyncSignal()
+        let (session, _) = StubURLProtocol.session { request in
+            if request.httpMethod == "POST" {
+                return posts.next() == 1 ? (.stub(401), Data())
+                    : (.stub(201), Self.json(["snapshot_id": "v3"]))
+            }
+            if request.url?.path == "/v1/playlists/a/items", snapshots["a"] == "v2",
+               changedReads.next() == 1 {
+                return (.stub(503), Data())
+            }
+            return try Self.routes(playlists: [Self.playlist("a", owner: "me",
+                                                             snapshot: snapshots["a"])])(request)
+        }
+        let api = SpotifyAPI(tokens: tokens, session: session, now: { Date() },
+                             sleep: { _ in await retry.wait() }, jitter: { 0 })
+        let model = AddToPlaylistModel(api: api)
+        model.open(for: trackURI, access: .granted)
+        await model.prepare()
+        let a = try XCTUnwrap(model.playlists?.first)
+
+        let adding = Task { await model.add(to: a) }
+        try await waitUntil("the add to wait for a token") { await tokens.release.isWaiting }
+        snapshots["a"] = "v2"  // Changed elsewhere: the refresh reads it again.
+        let refresh = Task { await model.prepare(force: true) }
+        try await waitUntil("the read to wait for its retry") { await retry.isWaiting }
+        await tokens.release.open()
+        await adding.value
+        XCTAssertEqual(model.state(of: a), .added)
+        await retry.open()
+        await refresh.value
+
+        model.open(for: trackURI, access: .granted)
+        await model.prepare()
+        XCTAssertEqual(model.containingIDs, ["a"],
+                       "The read predates the add: the add must not be lost from the cache")
+    }
+
     func testEmptyPlaylistsNeedNoRequest() async {
         let (api, recorder) = makeAPI(handler: Self.routes(playlists: [
             Self.playlist("empty", owner: "me", count: 0),
@@ -823,6 +868,37 @@ private final class AsyncGate: @unchecked Sendable {
 
     func open() {
         semaphore.signal()
+    }
+}
+
+/// A one-shot async signal: `wait()` suspends (without blocking a thread) until `open()`.
+private actor AsyncSignal {
+    private var opened = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    var isWaiting: Bool { !waiters.isEmpty }
+
+    func wait() async {
+        if opened { return }
+        await withCheckedContinuation { waiters.append($0) }
+    }
+
+    func open() {
+        opened = true
+        waiters.forEach { $0.resume() }
+        waiters = []
+    }
+}
+
+/// Holds the token refresh that follows a `401` until the test releases it.
+private actor HeldTokenProvider: AccessTokenProvider {
+    let release = AsyncSignal()
+
+    func validAccessToken() async throws -> String { "token" }
+
+    func accessTokenAfterUnauthorized(rejectedToken: String) async throws -> String {
+        await release.wait()
+        return "token-2"
     }
 }
 
