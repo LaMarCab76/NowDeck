@@ -225,7 +225,7 @@ struct AppearanceSettingsView: View {
         SettingsSection(title: "TEMA") {
             FlowLayout(spacing: Spacing.xs) {
                 ForEach(theme.presets) { preset in
-                    ThemeChip(name: Text(verbatim: preset.theme.name),
+                    ThemeChip(name: presetName(preset),
                               accent: RGBColor(hex: preset.theme.colors?.accent ?? "") ?? .white,
                               background: RGBColor(hex: preset.theme.colors?.background ?? "") ?? .black,
                               isSelected: theme.selectedPreset?.id == preset.id) {
@@ -234,6 +234,18 @@ struct AppearanceSettingsView: View {
                 }
                 customChip
             }
+        }
+    }
+
+    /// The chip label of a built-in theme, in the UI language. The `nombre` inside the
+    /// bundled file stays in Spanish: it is theme data (exported files keep it), so the
+    /// translation is looked up by the preset's file name instead.
+    private func presetName(_ preset: ThemePreset) -> Text {
+        switch preset.id {
+        case "negro-y-verde": return Text("Negro y verde")
+        case "ambar": return Text("Ámbar")
+        case "azul-noche": return Text("Azul noche")
+        default: return Text(verbatim: preset.theme.name)
         }
     }
 

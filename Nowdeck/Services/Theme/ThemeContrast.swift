@@ -187,8 +187,8 @@ enum ThemeContrast {
     }
 
     /// "4,3:1". Rounded **down** to one decimal, so a failing 4,46 never shows as "4,5:1".
-    /// Uses the app's UI language for the decimal separator (the app is in Spanish even on a
-    /// device set to an English region).
+    /// Uses the app's UI language for the decimal separator, not the device region: a Spanish
+    /// UI on a device set to a US region still shows "4,3:1", and an English UI "4.3:1".
     static func formattedRatio(_ ratio: Double, locale: Locale = .appLanguage) -> String {
         let truncated = (ratio * 10).rounded(.down) / 10
         let formatter = NumberFormatter()
@@ -202,7 +202,7 @@ enum ThemeContrast {
 
 extension Locale {
     /// The locale of the language the UI is shown in (the first localization of the bundle
-    /// that matches the user's preferences; today always Spanish).
+    /// that matches the user's preferences: Spanish or English).
     static var appLanguage: Locale {
         Locale(identifier: Bundle.main.preferredLocalizations.first ?? "es")
     }
