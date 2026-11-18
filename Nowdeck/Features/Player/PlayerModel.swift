@@ -45,9 +45,11 @@ final class PlayerModel: ObservableObject {
     /// Photo of the track's first artist, shown behind the player (`PlayerBackgroundView`).
     /// `nil` for episodes, ads, artists without photos, or with the option off.
     @Published private(set) var artistImage: UIImage?
-    /// The artist whose photo `artistImage` is. Set just before each photo is published, so
-    /// observers of `artistImage` read the matching ID (the photo of a previous artist can
-    /// stay on screen while the next one loads, so `nowPlaying` may already be another).
+    /// The artist of the photo being published. It is set just before each photo is
+    /// published, so it matches the value a `$artistImage` subscriber receives. Inside that
+    /// callback, `artistImage` itself still holds the previous photo (`@Published` sends
+    /// before storing): read both after the notification, as Ajustes does. `nowPlaying` is no
+    /// substitute, since the previous artist's photo stays while the next one loads.
     private(set) var artistImageArtistID: String?
     @Published private(set) var freshness: Freshness = .live
     /// Grows each time an item starts playing: another track or episode, or the same one

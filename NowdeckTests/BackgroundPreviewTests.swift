@@ -264,17 +264,40 @@ final class BackgroundPreviewTests: XCTestCase {
         XCTAssertEqual(recorder.requests.filter { $0.url?.path == "/v1/artists/artistB" }.count, 1)
     }
 
-    func testACancelledLookupCanStartAgain() async throws {
-        let (session, _) = StubURLProtocol.session { _ in (.stub(200), Data(#"{"items":[]}"#.utf8)) }
+    func testACancelledLookupStopsAndCanStartAgain() async throws {
+        // History is held until the lookup is cancelled. Had the cancel not reached it, the
+        // lookup would go on to the artist's photo and show it.
+        let gate = DispatchSemaphore(value: 0)
+        let (session, recorder) = StubURLProtocol.session { [recentPath] request in
+            let path = request.url?.path ?? ""
+            if path == recentPath {
+                gate.wait()
+                return (.stub(200), Self.recentJSON(artistID: "recent"))
+            }
+            if path == "/v1/artists/recent" { return (.stub(200), Self.artistJSON) }
+            if request.url?.host == "i.scdn.co" { return (.stub(200), Self.png) }
+            return (.stub(204), Data())
+        }
         let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session,
                              sleep: { _ in }, jitter: { 0 })
         let preview = BackgroundPreviewModel(
             player: PlayerModel(api: api, artworkLoader: ArtworkLoader(session: session)))
+        let historyRequests = { recorder.requests.filter { $0.url?.path == self.recentPath }.count }
+
         preview.prepare()
+        try await waitUntil { historyRequests() == 1 }
         preview.cancel()
+        gate.signal()
         try await waitUntil { !preview.isLookingUp }
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertNil(preview.image, "The cancelled lookup went no further")
+        XCTAssertFalse(recorder.requests.contains { $0.url?.path == "/v1/artists/recent" })
+
         preview.prepare()
         XCTAssertTrue(preview.isLookingUp, "Not stuck on the cancelled task")
+        gate.signal()
+        try await waitUntil { preview.image != nil }
+        XCTAssertEqual(historyRequests(), 2)
     }
 
     func testOnlyAPlayingTrackCountsAsHeard() async throws {

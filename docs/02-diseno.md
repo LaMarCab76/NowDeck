@@ -149,9 +149,11 @@ Cambia lo anterior en estos puntos (no está en los mockups):
 - **Fondo "Foto del artista"** (estilo app de TV de Spotify): cuarta opción de FONDO DEL
   REPRODUCTOR (`fondoReproductor: "artista"`). Usa la foto más grande de `GET /artists/{id}`
   del primer artista, a pantalla completa (`fill`).
-  - Desde el 2026-11-18 (pedido del dueño) la foto va sola y entera: sin fundido hacia la
-    carátula ni el color de la carátula abajo. El color de la carátula solo se ve mientras la
-    foto carga o si el artista no tiene foto.
+  - Desde el 2026-11-18 (pedido del dueño) la foto va sola y llena la pantalla (recortada,
+    ver `docs/06`): sin fundido hacia la carátula ni el color de la carátula abajo.
+  - Al cambiar de artista, la foto anterior queda hasta que la nueva está lista y pasan de una
+    a otra con el fundido de 0,8 s. El color de la carátula solo se ve cuando no hay ninguna
+    foto: al empezar, antes de la primera, o si el artista no tiene foto.
   - Encima, una capa negra la oscurece un poco (**Oscurecer**, `oscurecerFondo`, 30 % por
     defecto). El 100 % es negro al 80 %: la foto nunca desaparece del todo.
   - Zoom lento de 1 a 1,06 en 30 s, ida y vuelta (sin zoom con *Reducir movimiento*), y
