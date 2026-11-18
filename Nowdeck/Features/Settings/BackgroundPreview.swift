@@ -47,12 +47,13 @@ final class BackgroundPreviewModel: ObservableObject {
     /// screen and the one of the last artist heard (they are the same while a track plays).
     private var playerSamples: [String: Sample] = [:]
     private var fallbackTask: Task<Void, Never>?
-    /// The last heard artist when the latest lookup started. Automatic lookups (a playback
-    /// change during a drag) only start for a different one, so polls that change nothing
-    /// never send a request.
-    private var lookupArtistID: String?
-    /// The last heard artist at the previous player change, to notice when it changes (also
-    /// back to an artist an earlier lookup already tried).
+    /// Counts the changes of the last heard artist seen during this visit (going back to an
+    /// earlier artist counts too). Polls that change nothing don't move it, so they never
+    /// send a request.
+    private var heardRevision = 0
+    /// `heardRevision` when the latest lookup started: a newer one still needs a lookup.
+    private var lookupRevision = 0
+    /// The last heard artist at the previous player change, to count its changes.
     private var observedHeardArtistID: String?
     private var subscription: AnyCancellable?
 
@@ -105,7 +106,7 @@ final class BackgroundPreviewModel: ObservableObject {
     func prepare() {
         guard fallbackTask == nil, selectedSample == nil,
               let api, let artworkLoader else { return }
-        lookupArtistID = player?.lastHeardArtistID
+        lookupRevision = heardRevision
         fallbackTask = Task { [weak self, weak player] in
             let lookup = await Self.samplePhoto(api: api, loader: artworkLoader,
                                                 seenArtistID: { await player?.lastHeardArtistID })
@@ -113,8 +114,6 @@ final class BackgroundPreviewModel: ObservableObject {
             // Also when cancelled, so a later `prepare()` can start again.
             self.fallbackTask = nil
             guard !Task.isCancelled else { return }
-            // The artist this lookup really accounted for, even if it found no photo.
-            self.lookupArtistID = lookup.heardArtistID
             // A result for an artist that is no longer the last heard would only replace a
             // photo that may still serve.
             if let sample = lookup.sample, self.serves(sample) {
@@ -126,12 +125,11 @@ final class BackgroundPreviewModel: ObservableObject {
         }
     }
 
-    /// During a drag, a lookup for a new last heard artist that has no photo yet. Nothing for
-    /// the artist the latest lookup was already for: that one gets another try on the next
-    /// touch or when the sliders appear again.
+    /// During a drag, a lookup when the last heard artist changed after the latest one
+    /// started and there is still no photo. Without a change, a failed lookup gets another
+    /// try only on the next touch or when the sliders appear again.
     private func lookUpIfArtistChanged() {
-        guard editing != nil, selectedSample == nil,
-              player?.lastHeardArtistID != lookupArtistID else { return }
+        guard editing != nil, selectedSample == nil, heardRevision != lookupRevision else { return }
         prepare()
     }
 
@@ -158,7 +156,8 @@ final class BackgroundPreviewModel: ObservableObject {
         let heard = player.lastHeardArtistID
         guard heard != observedHeardArtistID else { return }
         observedHeardArtistID = heard
-        if editing != nil, selectedSample == nil { prepare() }
+        heardRevision += 1
+        lookUpIfArtistChanged()
     }
 
     /// The sample, for the last artist heard (a track picked while paused was not heard):
@@ -195,27 +194,22 @@ final class BackgroundPreviewModel: ObservableObject {
 
     /// The photo of the last track heard on Spotify, or of `seenArtistID` when Spotify can't
     /// say (`403` without the scope, empty history, an error), its artist has no photo, or
-    /// it is not the artist the app heard last (Spotify's history may lag behind). Every
-    /// photo found is of the last artist heard, or of history while the app heard nothing.
+    /// it is not the artist the app heard last (Spotify's history may lag behind). The
+    /// artist heard is read once history answered, so it is the newest one. Every photo found
+    /// is of that artist, or of history while the app heard nothing.
     static func samplePhoto(api: SpotifyAPI, loader: ArtworkLoader,
                             seenArtistID: () async -> String?) async -> Lookup {
-        let heardAtStart = await seenArtistID()
         let recentArtistID = try? await api.recentlyPlayedTracks(limit: 1)
             .lazy.compactMap { NowPlaying(item: $0)?.artistID }.first
-        var triedArtistID: String?
-        if let recentArtistID, heardAtStart == nil || recentArtistID == heardAtStart {
-            triedArtistID = recentArtistID
-            if let sample = await photo(of: recentArtistID, api: api, loader: loader) {
-                return Lookup(sample: sample, heardArtistID: heardAtStart)
-            }
+        guard !Task.isCancelled else { return Lookup(sample: nil, heardArtistID: nil) }
+        let heard = await seenArtistID()
+        if let recentArtistID, heard == nil || recentArtistID == heard {
+            let sample = await photo(of: recentArtistID, api: api, loader: loader)
+            // Same artist (or none heard): no other photo to try.
+            return Lookup(sample: sample, heardArtistID: heard)
         }
-        // Skipped only if that artist's photo was just asked for and there was none.
-        let localArtistID = await seenArtistID()
-        guard !Task.isCancelled, let localArtistID, localArtistID != triedArtistID else {
-            return Lookup(sample: nil, heardArtistID: localArtistID)
-        }
-        let sample = await photo(of: localArtistID, api: api, loader: loader)
-        return Lookup(sample: sample, heardArtistID: localArtistID)
+        guard let heard else { return Lookup(sample: nil, heardArtistID: nil) }
+        return Lookup(sample: await photo(of: heard, api: api, loader: loader), heardArtistID: heard)
     }
 
     /// The widest photo of an artist (`GET /artists/{id}`), loaded. `nil` if there is none,

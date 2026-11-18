@@ -246,8 +246,7 @@ final class BackgroundPreviewTests: XCTestCase {
 
     func testAHistoryAnswerForANewerArtistStillLooksUpItsPhoto() async throws {
         // The lookup starts while A is the last heard; B starts before history answers, and
-        // history names B. History can't be taken (it started under A), so B's photo must
-        // still be asked for: it was never requested.
+        // history names B: B's photo is the one to ask for, once.
         let (api, loader, recorder) = makeAPI { [recentPath] request in
             let path = request.url?.path ?? ""
             if path == recentPath { return (.stub(200), Self.recentJSON(artistID: "artistB")) }
@@ -255,10 +254,9 @@ final class BackgroundPreviewTests: XCTestCase {
             if request.url?.host == "i.scdn.co" { return (.stub(200), Self.png) }
             return (.stub(404), Data())
         }
-        let heard = StubBox(["artistA", "artistB"])
-        let lookup = await BackgroundPreviewModel.samplePhoto(api: api, loader: loader, seenArtistID: {
-            heard.value.count > 1 ? heard.value.removeFirst() : heard.value.first
-        })
+        // The artist heard is read when history answers: by then it is B.
+        let lookup = await BackgroundPreviewModel.samplePhoto(api: api, loader: loader,
+                                                              seenArtistID: { "artistB" })
         XCTAssertEqual(lookup.sample?.artistID, "artistB")
         XCTAssertEqual(lookup.heardArtistID, "artistB")
         XCTAssertEqual(recorder.requests.filter { $0.url?.path == "/v1/artists/artistB" }.count, 1)
