@@ -21,6 +21,9 @@ struct Theme: Codable, Equatable, Sendable {
     /// means 0; it is not filled in by the merge, so themes that never touched it (the
     /// presets) do not grow the field.
     var backgroundBlur: Int?
+    /// How much the artist's photo is darkened (`oscurecerFondo`), 0 to 100. Missing means
+    /// `defaultBackgroundDim`; like the blur, the merge does not fill it in.
+    var backgroundDim: Int?
     var player: Player?
     var lyrics: Lyrics?
 
@@ -30,6 +33,7 @@ struct Theme: Codable, Equatable, Sendable {
         case colors = "colores"
         case playerBackground = "fondoReproductor"
         case backgroundBlur = "desenfoqueFondo"
+        case backgroundDim = "oscurecerFondo"
         case player = "reproductor"
         case lyrics = "letras"
     }
@@ -57,15 +61,21 @@ struct Theme: Codable, Equatable, Sendable {
         case solid = "solido"
         /// Uses a soft color taken from the artwork.
         case artwork = "caratula"
-        /// The artist's photo over the artwork color (owner's request, 2026-11-17).
+        /// The artist's photo, alone (owner's request, 2026-11-17; since 2026-11-18 it covers
+        /// the whole screen, without the artwork color around it).
         case artistPhoto = "artista"
 
-        /// `caratula` and `artista` both start from the artwork color.
+        /// `caratula`, and `artista` while its photo loads or when the artist has none.
         var usesArtworkColor: Bool { self != .solid }
     }
 
     /// `desenfoqueFondo`: 0 (sharp) to 100.
     static let backgroundBlurRange = 0...100
+    /// `oscurecerFondo`: 0 (the photo as is) to 100.
+    static let backgroundDimRange = 0...100
+    /// "Se oscurece un toque" (owner, 2026-11-18): the photo is a bit darker unless the theme
+    /// says otherwise.
+    static let defaultBackgroundDim = 30
 
     struct Player: Codable, Equatable, Sendable {
         var artworkPosition: ArtworkPosition?
@@ -147,6 +157,7 @@ extension Theme {
             ),
             playerBackground: playerBackground ?? base.playerBackground,
             backgroundBlur: backgroundBlur,
+            backgroundDim: backgroundDim,
             player: Player(
                 artworkPosition: player?.artworkPosition ?? base.player?.artworkPosition,
                 controls: player?.controls ?? base.player?.controls

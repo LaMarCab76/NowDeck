@@ -20,6 +20,7 @@
     },
     "fondoReproductor": { "enum": ["solido", "caratula", "artista"] },
     "desenfoqueFondo": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "oscurecerFondo": { "type": "integer", "minimum": 0, "maximum": 100 },
     "reproductor": {
       "type": "object",
       "properties": {

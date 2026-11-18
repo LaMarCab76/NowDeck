@@ -66,7 +66,8 @@ final class PlayerModel: ObservableObject {
     /// Shared with `controls` (playback commands) and the sheets that call the API on their
     /// own (Dispositivos, Biblioteca).
     let api: SpotifyAPI
-    private let artworkLoader: ArtworkLoader
+    /// Also used by Ajustes for the background preview's sample photo.
+    let artworkLoader: ArtworkLoader
     private let policy: PollingPolicy
     private let now: () -> Date
 

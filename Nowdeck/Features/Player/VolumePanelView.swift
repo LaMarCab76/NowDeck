@@ -1,11 +1,13 @@
 import SwiftUI
 
-/// The floating volume pill (`Main.dc.html`, shown in `Volumen.dc.html`):
+/// The volume pill (`Main.dc.html`, shown in `Volumen.dc.html`):
 /// [−] · speaker · bar · value · [+].
 ///
-/// It is always in the hierarchy and slides between `y = −112` (hidden, above the screen) and
-/// its place 16 pt from the top, so the entry and exit animate like the mockup's
-/// `translateY`. While hidden it takes no touches and VoiceOver skips it.
+/// Since 2026-11-18 (owner's request) it comes up from the bottom of the screen instead of
+/// down from the top, while the rest of the player shrinks to make room (`PlayerContent`).
+/// It is always in the hierarchy and slides between `y = +112` (hidden, below the screen)
+/// and its place 16 pt from the bottom, with the mockup's timing. While hidden it takes no
+/// touches and VoiceOver skips it. The caller pins it to the bottom of the screen.
 struct VolumePanelView: View {
     @ObservedObject var volume: VolumeController
 
@@ -57,7 +59,7 @@ struct VolumePanelView: View {
         .frame(width: Layout.width, height: Layout.height)
         .background(Capsule().fill(Palette.volumePanelBackground))
         .shadow(color: Palette.volumePanelShadow, radius: Layout.shadowRadius, y: Layout.shadowY)
-        .padding(.top, Layout.top)
+        .padding(.bottom, Layout.bottom)
         .offset(y: volume.isPanelVisible ? 0 : Layout.hiddenOffset)
         .animation(volume.isPanelVisible ? VolumePanelMotion.entry : VolumePanelMotion.exit,
                    value: volume.isPanelVisible)

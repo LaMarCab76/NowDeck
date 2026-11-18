@@ -6,7 +6,8 @@ import UniformTypeIdentifiers
 ///
 /// It is self-contained: the player presents it full screen (for example with
 /// `.fullScreenCover`), and "Volver" dismisses it. It needs `ThemeStore` and
-/// `ThemeImportCoordinator` in the environment.
+/// `ThemeImportCoordinator` in the environment. The player model, when given, supplies the
+/// sample photo of the background preview (`BackgroundPreviewModel`).
 struct SettingsView: View {
     enum Section: Hashable {
         case appearance
@@ -16,9 +17,11 @@ struct SettingsView: View {
     @State private var section: Section
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var theme: ThemeStore
+    @StateObject private var preview: BackgroundPreviewModel
 
-    init(section: Section = .appearance) {
+    init(section: Section = .appearance, player: PlayerModel? = nil) {
         _section = State(initialValue: section)
+        _preview = StateObject(wrappedValue: BackgroundPreviewModel(player: player))
     }
 
     /// Mockup: padding 28 (top and bottom) and 48 (sides).
@@ -33,6 +36,7 @@ struct SettingsView: View {
                 sidebar
                     .frame(width: 200, alignment: .leading)
                     .padding(.bottom, insets.bottom)
+                    .fadesDuringBackgroundPreview()
 
                 // The sections scroll when they do not fit (narrow screens, large Dynamic
                 // Type). Their bottom margin goes inside the scroll view, so content scrolls
@@ -51,10 +55,27 @@ struct SettingsView: View {
             .ignoresSafeArea()
         }
         .foregroundStyle(theme.palette.text.color)
-        .background(theme.palette.background.color.ignoresSafeArea())
+        .environment(\.backgroundPreview, preview)
+        .environment(\.backgroundPreviewEditing, preview.editing)
+        .background(background.ignoresSafeArea())
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
         .themeImportPresenter()
+    }
+
+    /// The theme's background and, while the finger is on a background slider, the preview
+    /// of the player's background over it.
+    private var background: some View {
+        ZStack {
+            theme.palette.background.color
+            if preview.editing != nil {
+                PlayerBackgroundView(color: theme.palette.background.color,
+                                     artistImage: preview.image,
+                                     blur: preview.blur, dim: preview.dim)
+                    .transition(.opacity)
+            }
+        }
+        .animation(Motion.backgroundPreview, value: preview.editing != nil)
     }
 
     private var sidebar: some View {
@@ -112,6 +133,7 @@ struct SettingsColumn<Content: View>: View {
     var spacing: CGFloat
     var bottomMargin: CGFloat
     @ViewBuilder var content: Content
+    @Environment(\.backgroundPreviewEditing) private var previewEditing
 
     var body: some View {
         GeometryReader { proxy in
@@ -123,6 +145,20 @@ struct SettingsColumn<Content: View>: View {
                 .padding(.bottom, bottomMargin)
                 .frame(maxWidth: .infinity, minHeight: proxy.size.height, alignment: .topLeading)
             }
+            .hidesScrollEdgeEffect(previewEditing != nil)
+        }
+    }
+}
+
+private extension View {
+    /// iOS 26 darkens and blurs the edges of a scroll view. Over the background preview that
+    /// shows as a dark band on the photo, so it is hidden while the preview shows.
+    @ViewBuilder
+    func hidesScrollEdgeEffect(_ hidden: Bool) -> some View {
+        if #available(iOS 26.0, *) {
+            scrollEdgeEffectHidden(hidden, for: .all)
+        } else {
+            self
         }
     }
 }
@@ -137,77 +173,97 @@ struct AppearanceSettingsView: View {
 
     var body: some View {
         SettingsColumn(spacing: 18, bottomMargin: bottomMargin) {
-            SettingsSection(title: "TEMA") {
-                FlowLayout(spacing: Spacing.xs) {
-                    ForEach(theme.presets) { preset in
-                        ThemeChip(name: Text(verbatim: preset.theme.name),
-                                  accent: RGBColor(hex: preset.theme.colors?.accent ?? "") ?? .white,
-                                  background: RGBColor(hex: preset.theme.colors?.background ?? "") ?? .black,
-                                  isSelected: theme.selectedPreset?.id == preset.id) {
-                            theme.selectPreset(preset)
-                        }
-                    }
-                    customChip
-                }
-            }
+            themeSection
+                .fadesDuringBackgroundPreview()
 
-            SettingsSection(title: "COLOR DE RESALTADO") {
-                HStack(spacing: Spacing.xxs) {
-                    ForEach(AccentChoice.all) { choice in
-                        AccentSwatch(choice: choice, isSelected: choice.color == theme.accent) {
-                            theme.setAccent(choice.color)
-                        }
-                    }
-                }
-                // The 44 pt tap areas are wider than the 32 pt circles: align the first circle
-                // with the label, as in the mockup.
-                .padding(.leading, -6)
-            }
+            accentSection
+                .fadesDuringBackgroundPreview()
 
-            SettingsSection(title: "FONDO DEL REPRODUCTOR") {
-                // Four options do not fit the iPhone 8 Plus column (400 pt) with the full
-                // names: there the shorter ones are used.
-                ViewThatFits(in: .horizontal) {
-                    backgroundControl(short: false)
-                    backgroundControl(short: true)
-                }
-
-                if theme.backgroundOption == .artistPhoto {
-                    BackgroundBlurRow(value: theme.backgroundBlur,
-                                      onCommit: { theme.setBackgroundBlur($0) })
-                        .padding(.top, Spacing.xs)
-                }
-            }
+            backgroundSection
 
             Spacer(minLength: 0)
 
-            HStack(spacing: 10) {
-                ShareLink(item: theme.export,
-                          preview: SharePreview(Text(verbatim: ThemeFile.fileName(for: theme.theme)))) {
-                    SettingsOutlineLabel(title: "Exportar tema", systemImage: "square.and.arrow.up")
-                }
-                .buttonStyle(.plain)
-
-                Menu {
-                    Button {
-                        isPickingFile = true
-                    } label: {
-                        Label("Elegir un archivo", systemImage: "folder")
-                    }
-                    Button {
-                        importer.importFromClipboard()
-                    } label: {
-                        Label("Pegar desde el portapapeles", systemImage: "doc.on.clipboard")
-                    }
-                } label: {
-                    SettingsOutlineLabel(title: "Importar tema", systemImage: "square.and.arrow.down")
-                }
-                .buttonStyle(.plain)
-            }
+            themeFileButtons
+                .fadesDuringBackgroundPreview()
         }
         .fileImporter(isPresented: $isPickingFile,
                       allowedContentTypes: [.nowdeckTheme, .json]) { result in
             importer.importFile(result)
+        }
+    }
+
+    private var themeSection: some View {
+        SettingsSection(title: "TEMA") {
+            FlowLayout(spacing: Spacing.xs) {
+                ForEach(theme.presets) { preset in
+                    ThemeChip(name: Text(verbatim: preset.theme.name),
+                              accent: RGBColor(hex: preset.theme.colors?.accent ?? "") ?? .white,
+                              background: RGBColor(hex: preset.theme.colors?.background ?? "") ?? .black,
+                              isSelected: theme.selectedPreset?.id == preset.id) {
+                        theme.selectPreset(preset)
+                    }
+                }
+                customChip
+            }
+        }
+    }
+
+    private var accentSection: some View {
+        SettingsSection(title: "COLOR DE RESALTADO") {
+            HStack(spacing: Spacing.xxs) {
+                ForEach(AccentChoice.all) { choice in
+                    AccentSwatch(choice: choice, isSelected: choice.color == theme.accent) {
+                        theme.setAccent(choice.color)
+                    }
+                }
+            }
+            // The 44 pt tap areas are wider than the 32 pt circles: align the first circle
+            // with the label, as in the mockup.
+            .padding(.leading, -6)
+        }
+    }
+
+    /// While a slider is under the finger, only that slider stays (`BackgroundPreviewModel`).
+    private var backgroundSection: some View {
+        SettingsSection(title: "FONDO DEL REPRODUCTOR") {
+            // Four options do not fit the iPhone 8 Plus column (400 pt) with the full
+            // names: there the shorter ones are used.
+            ViewThatFits(in: .horizontal) {
+                backgroundControl(short: false)
+                backgroundControl(short: true)
+            }
+            .fadesDuringBackgroundPreview()
+
+            if theme.backgroundOption == .artistPhoto {
+                ArtistPhotoSliders()
+                    .padding(.top, Spacing.xs)
+            }
+        }
+    }
+
+    private var themeFileButtons: some View {
+        HStack(spacing: 10) {
+            ShareLink(item: theme.export,
+                      preview: SharePreview(Text(verbatim: ThemeFile.fileName(for: theme.theme)))) {
+                SettingsOutlineLabel(title: "Exportar tema", systemImage: "square.and.arrow.up")
+            }
+            .buttonStyle(.plain)
+
+            Menu {
+                Button {
+                    isPickingFile = true
+                } label: {
+                    Label("Elegir un archivo", systemImage: "folder")
+                }
+                Button {
+                    importer.importFromClipboard()
+                } label: {
+                    Label("Pegar desde el portapapeles", systemImage: "doc.on.clipboard")
+                }
+            } label: {
+                SettingsOutlineLabel(title: "Importar tema", systemImage: "square.and.arrow.down")
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -239,46 +295,78 @@ struct AppearanceSettingsView: View {
     }
 }
 
-/// "Desenfoque" of the artist's photo, shown only with "Foto del artista". The theme is saved
-/// when the finger lifts, not on every step of the drag.
-struct BackgroundBlurRow: View {
+/// "Desenfoque" and "Oscurecer" of the artist's photo, shown only with "Foto del artista".
+struct ArtistPhotoSliders: View {
+    @EnvironmentObject private var theme: ThemeStore
+    @Environment(\.backgroundPreview) private var preview
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xxs) {
+            BackgroundSliderRow(control: .blur, title: "Desenfoque", value: theme.backgroundBlur,
+                                onCommit: { theme.setBackgroundBlur($0) })
+            BackgroundSliderRow(control: .dim, title: "Oscurecer", value: theme.backgroundDim,
+                                onCommit: { theme.setBackgroundDim($0) })
+            Text("Suavizan y oscurecen la foto del artista para que el título se lea mejor. Mientras movés uno, ves cómo queda.")
+                .textStyle(.helper)
+                .foregroundStyle(theme.palette.bodyText.color)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, Spacing.xxs)
+                .fadesDuringBackgroundPreview()
+        }
+        // The sample photo starts loading now, so it is usually there before the finger is.
+        .onAppear { preview?.prepare() }
+    }
+}
+
+/// One background slider, 0 to 100 % in steps of 5. The theme is saved when the finger lifts,
+/// not on every step of the drag. While the finger is on it, the rest of Ajustes fades out
+/// and the preview shows the value being chosen (`BackgroundPreviewModel`).
+struct BackgroundSliderRow: View {
+    var control: BackgroundPreviewModel.Control
+    var title: LocalizedStringKey
     var value: Int
     var onCommit: (Int) -> Void
 
     @State private var draft: Double?
     @EnvironmentObject private var theme: ThemeStore
+    @Environment(\.backgroundPreview) private var preview
 
     private var shown: Int { draft.map { Int($0) } ?? value }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xxs) {
-            HStack(spacing: Spacing.l) {
-                Text("Desenfoque")
-                    .textStyle(.settingsOptionTitle)
-                Slider(
-                    value: Binding(get: { draft ?? Double(value) }, set: { draft = $0 }),
-                    in: Double(Theme.backgroundBlurRange.lowerBound)...Double(Theme.backgroundBlurRange.upperBound),
-                    step: 5
-                ) { editing in
-                    guard !editing, let draft else { return }
-                    onCommit(Int(draft))
-                    self.draft = nil
+        HStack(spacing: Spacing.l) {
+            Text(title)
+                .textStyle(.settingsOptionTitle)
+                .frame(minWidth: 100, alignment: .leading)
+            Slider(
+                value: Binding(get: { draft ?? Double(value) }, set: { newValue in
+                    draft = newValue
+                    preview?.update(control, to: Int(newValue))
+                }),
+                in: 0...100,
+                step: 5
+            ) { editing in
+                if editing {
+                    preview?.begin(control, blur: theme.backgroundBlur, dim: theme.backgroundDim)
+                    preview?.update(control, to: shown)
+                    return
                 }
-                .tint(theme.palette.accent.color)
-                .accessibilityLabel(Text("Desenfoque"))
-                .accessibilityValue(Text(verbatim: "\(shown) %"))
-                Text(verbatim: "\(shown) %")
-                    .textStyle(.settingsOptionTitle)
-                    .monospacedDigit()
-                    .frame(minWidth: 52, alignment: .trailing)
-                    .accessibilityHidden(true)
+                preview?.end()
+                guard let draft else { return }
+                onCommit(Int(draft))
+                self.draft = nil
             }
-            Text("Suaviza la foto del artista para que el título se lea mejor.")
-                .textStyle(.helper)
-                .foregroundStyle(theme.palette.bodyText.color)
-                .fixedSize(horizontal: false, vertical: true)
+            .tint(theme.palette.accent.color)
+            .accessibilityLabel(Text(title))
+            .accessibilityValue(Text(verbatim: "\(shown) %"))
+            Text(verbatim: "\(shown) %")
+                .textStyle(.settingsOptionTitle)
+                .monospacedDigit()
+                .frame(minWidth: 52, alignment: .trailing)
+                .accessibilityHidden(true)
         }
         .padding(.horizontal, Spacing.xxs)
+        .fadesDuringBackgroundPreview(keeps: control)
     }
 }
 

@@ -43,7 +43,7 @@ struct LibraryScreen: View {
             .persistentSystemOverlays(.hidden)
             .task { await model.open() }
             .fullScreenCover(isPresented: $showsSettings) {
-                SettingsView()
+                SettingsView(player: player)
                     // Passed explicitly: a cover is a new view hierarchy.
                     .environmentObject(theme)
                     .environmentObject(preferences)

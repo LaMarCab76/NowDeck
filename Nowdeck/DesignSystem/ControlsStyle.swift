@@ -5,13 +5,18 @@ import SwiftUI
 // disabled state. In their own file so the shared design system files stay untouched.
 
 extension Metrics {
-    /// Floating volume panel: `width 520, height 64, top 16, padding 8, gap 12,
-    /// border-radius 32`.
+    /// Volume panel: `width 520, height 64, padding 8, gap 12, border-radius 32`. The mockup
+    /// floats it 16 from the top; since 2026-11-18 it sits 16 from the bottom (owner's
+    /// request).
     enum VolumePanel {
         static let width: CGFloat = 520
         static let height: CGFloat = 64
-        /// Distance from the top of the screen.
-        static let top: CGFloat = 16
+        /// Distance from the bottom of the screen.
+        static let bottom: CGFloat = 16
+        /// The rest of the player while the panel is open, scaled toward the top: on the
+        /// 414 pt screen it leaves 92 pt below it, the panel's 64 + 16 plus a 12 pt gap
+        /// (`(414 − 92) / 414 ≈ 0.78`).
+        static let playerScale: CGFloat = 0.78
         static let padding: CGFloat = 8
         static let gap: CGFloat = 12
         /// − and + buttons.
@@ -22,8 +27,8 @@ extension Metrics {
         static let barHeight: CGFloat = 8
         /// The number at the right of the bar (`width: 30px; text-align: right`).
         static let valueWidth: CGFloat = 30
-        /// Hidden position: `translateY(-112px)`.
-        static let hiddenOffset: CGFloat = -112
+        /// Hidden position: 112 below its place (the mockup's `translateY(-112px)`, flipped).
+        static let hiddenOffset: CGFloat = 112
         /// `box-shadow: 0 10px 32px` → SwiftUI's radius is about half the CSS blur.
         static let shadowRadius: CGFloat = 16
         static let shadowY: CGFloat = 10

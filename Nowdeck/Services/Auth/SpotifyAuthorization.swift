@@ -18,6 +18,10 @@ enum SpotifyAuthorization {
         "playlist-read-collaborative",
         "user-library-read",
         "user-read-playback-position",
+        // Since 2026-11-18: the last track heard, for the sample photo of Ajustes' background
+        // preview. Sessions from before must log in again to grant it; until then the
+        // preview uses what the app saw playing.
+        "user-read-recently-played",
     ]
 
     /// The URL that opens Spotify's login and consent page.

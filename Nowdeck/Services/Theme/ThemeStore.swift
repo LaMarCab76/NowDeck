@@ -66,6 +66,11 @@ final class ThemeStore: ObservableObject {
         theme.backgroundBlur ?? 0
     }
 
+    /// "Oscurecer" of the artist's photo, 0 to 100.
+    var backgroundDim: Int {
+        theme.backgroundDim ?? Theme.defaultBackgroundDim
+    }
+
     /// The optional controls, in the theme's order.
     var playerControls: [Theme.PlayerControl] {
         theme.player?.controls ?? Theme.PlayerControl.allCases
@@ -116,6 +121,7 @@ final class ThemeStore: ObservableObject {
         next.colors = preset.theme.colors
         next.playerBackground = preset.theme.playerBackground
         next.backgroundBlur = preset.theme.backgroundBlur
+        next.backgroundDim = preset.theme.backgroundDim
         commit(next)
     }
 
@@ -128,6 +134,7 @@ final class ThemeStore: ObservableObject {
         next.colors = customTheme.colors
         next.playerBackground = customTheme.playerBackground
         next.backgroundBlur = customTheme.backgroundBlur
+        next.backgroundDim = customTheme.backgroundDim
         commit(next)
     }
 
@@ -157,6 +164,12 @@ final class ThemeStore: ObservableObject {
     func setBackgroundBlur(_ value: Int) {
         var next = theme
         next.backgroundBlur = value
+        commitEdit(next)
+    }
+
+    func setBackgroundDim(_ value: Int) {
+        var next = theme
+        next.backgroundDim = value
         commitEdit(next)
     }
 

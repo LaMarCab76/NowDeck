@@ -68,6 +68,7 @@ solo estos permisos:
 | `playlist-read-collaborative` | Listar tus playlists colaborativas |
 | `user-library-read` | Listar tus álbumes, podcasts y audiolibros guardados |
 | `user-read-playback-position` | Saber por dónde vas en un episodio de podcast |
+| `user-read-recently-played` | Saber qué escuchaste último, para la vista previa del fondo en Ajustes |
 
 Si después de conectar aparece "Spotify no deja usar tu app", revisá que tu cuenta esté en
 **User Management** y que la cuenta dueña de la app tenga Premium.

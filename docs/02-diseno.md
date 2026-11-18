@@ -98,14 +98,20 @@ inicio, sí.
 
 Cambia lo anterior en estos puntos (no está en los mockups):
 
-- **Fila superior a todo el ancho** (44), arriba de la carátula: el ícono de Spotify y "Desde
-  la playlist **Nombre**" en la esquina superior izquierda; las píldoras **Cola** y
-  **Biblioteca** a la derecha (Cola primero, separadas 12; ver "Cola"). El origen va en una píldora del mismo alto que Biblioteca (44, 16 a los costados,
-  blanco al 8 %), con el ícono afuera para respetar su espacio libre. Margen de arriba 16 (era
-  24), y 4 entre la fila y la carátula. Con todo el ancho, el origen tiene lugar visible para
-  más de 25 caracteres.
-- **Carátula de 216** (era 256) y alto del bloque de la carátula 216. El modo letras ocupa
-  la fila y el bloque juntos (264). Cuenta vertical: 16 + 264 + 20 + 94 + 20 = 414.
+- **Fila superior a todo el ancho** (44), arriba de la carátula: el ícono de Spotify y el
+  origen en la esquina superior izquierda; **Cola** y **Biblioteca** a la derecha (Cola
+  primero; ver "Cola"). Con todo el ancho, el origen tiene lugar visible para más de 25
+  caracteres.
+  - Desde el 2026-11-18 (pedido del dueño) nada de esta fila lleva píldora: el origen va en
+    dos líneas, "Desde la playlist" en 12 medium `textoSecundario` arriba y el nombre en 15
+    bold `texto` abajo (igual que en el modo letras), a 12 del ícono, que queda afuera del
+    botón para respetar su espacio libre. Cola y Biblioteca son ícono y texto (15 semibold)
+    sin fondo, separados 24; la zona de toque sigue siendo de 44 de alto.
+  - Margen de arriba 12 (era 24 en el mockup y 16 antes del 2026-11-18) y 14 entre la fila y
+    la carátula (era 4), así que entre el texto del origen y la carátula quedan unos 18.
+- **Carátula de 210** (era 256, y 216 antes del 2026-11-18) y alto del bloque de la carátula
+  210. El modo letras ocupa la fila y el bloque juntos (268). Cuenta vertical:
+  12 + 44 + 14 + 210 + 20 + 94 + 20 = 414.
 - **Ajustes** ya no está en el reproductor: se abre desde la cabecera de Biblioteca (ícono a
   la izquierda del logo de Spotify, con 20 de separación).
 - **Controles en una sola fila centrada**, con 36 entre todos los botones. Los opcionales
@@ -137,13 +143,17 @@ Cambia lo anterior en estos puntos (no está en los mockups):
     dispositivo), nunca las letras. Esa fila se mueve igual y entra la del otro ítem.
 - **Fondo "Foto del artista"** (estilo app de TV de Spotify): cuarta opción de FONDO DEL
   REPRODUCTOR (`fondoReproductor: "artista"`). Usa la foto más grande de `GET /artists/{id}`
-  del primer artista, a pantalla completa (`fill`), al 45 % sobre el color de la carátula.
-  - Es invisible del lado de la carátula y plena desde el 60 % del ancho. La mitad de abajo
-    vuelve al color (85 %) detrás del progreso y los controles.
+  del primer artista, a pantalla completa (`fill`).
+  - Desde el 2026-11-18 (pedido del dueño) la foto va sola y entera: sin fundido hacia la
+    carátula ni el color de la carátula abajo. El color de la carátula solo se ve mientras la
+    foto carga o si el artista no tiene foto.
+  - Encima, una capa negra la oscurece un poco (**Oscurecer**, `oscurecerFondo`, 30 % por
+    defecto). El 100 % es negro al 80 %: la foto nunca desaparece del todo.
   - Zoom lento de 1 a 1,06 en 30 s, ida y vuelta (sin zoom con *Reducir movimiento*), y
     fundido de 0,8 s al cambiar de artista.
-  - Con esta opción aparece el deslizador **Desenfoque** (0 a 100 %, de a 5; `desenfoqueFondo`
-    del tema). El 100 % es un radio de 30. Se guarda al soltar.
+  - Con esta opción aparecen los deslizadores **Desenfoque** y **Oscurecer** (0 a 100 %, de
+    a 5; `desenfoqueFondo` y `oscurecerFondo` del tema). El 100 % de desenfoque es un radio de
+    30. Se guardan al soltar. Ver "Ajustes" para la vista previa.
   - Spotify da una sola foto por artista (en tres tamaños), así que no rota entre fotos.
   - Ver `docs/06`, "Zonas grises".
 
@@ -166,14 +176,20 @@ Reemplaza el bloque superior:
 
 ### Panel de volumen
 
-- Píldora de 520×64, centrada, a 16 del borde superior, con radio 32 y fondo
-  `rgba(8,10,14,0.94)` con sombra.
+- Píldora de 520×64, centrada, con radio 32 y fondo `rgba(8,10,14,0.94)` con sombra.
+- **Posición** (pedido del dueño, 2026-11-18; el mockup la ponía a 16 del borde superior):
+  a 16 del borde **inferior**. Mientras está abierta, el resto del reproductor se achica hacia
+  arriba (escala 0,78, anclado arriba al centro) para dejarle lugar: en 414 de alto quedan 92
+  abajo, los 64 + 16 del panel y 12 de aire. El fondo y los avisos no se achican. Al cerrarse,
+  el reproductor vuelve a su tamaño con la misma animación. Mientras está abierta no se puede
+  deslizar entre temas.
 - Contenido: [−] (48) · ícono de parlante · barra de 8 de alto (relleno en acento) · valor en
   monoespaciada de 14 · [+] (48). Cada toque cambia el volumen 5 %.
 - **Arrastre** (pedido del dueño, 2026-11-17): toda la fila de 44 alrededor de la barra toma
   el dedo; tocar o arrastrar fija el nivel al instante. Mientras se arrastra se manda como
   máximo un cambio cada 250 ms, y el valor final al soltar.
-- **Entrada**: desliza desde `y = −112` hasta 0 en 0,30 s, con curva `(0.2, 0.8, 0.2, 1)`.
+- **Entrada**: sube desde `y = +112` (debajo de la pantalla) hasta 0 en 0,30 s, con curva
+  `(0.2, 0.8, 0.2, 1)`; el reproductor se achica con la misma curva.
 - **Salida**: a los 3 s sin interacción, en 0,22 s ease-in.
 - **Se muestra** al tocar Volumen, al tocar − o +, o cuando el polling detecta otro volumen.
 - Si el dispositivo no soporta cambiar el volumen (`supports_volume: false`), el panel lo
@@ -284,8 +300,8 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
   vuelve a empezar, por ejemplo porque estaba dos veces seguidas en la cola) y al deslizar
   hacia abajo la lista (también con la cola vacía). No hace polling propio: usa el del
   reproductor, que sigue andando mientras la hoja está abierta.
-- **Botón**: una píldora "Cola" en la fila superior, a la izquierda de Biblioteca y con su
-  mismo estilo (44 de alto, ícono y texto 15 semibold sobre blanco al 8 %). Siempre está; no
+- **Botón**: "Cola" en la fila superior, a la izquierda de Biblioteca y con su mismo estilo
+  (44 de alto, ícono y texto 15 semibold; sin píldora desde el 2026-11-18). Siempre está; no
   aparece en modo letras, que no tiene esa fila.
 - Diferencias con el mockup (decisión del dueño, 2026-11-17):
   - El mockup pone el botón en el grupo derecho de controles. Desde el rediseño los
@@ -305,8 +321,19 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
   - **COLOR DE RESALTADO**: 6 círculos de 32 en zonas de 44; el seleccionado lleva un anillo
     `texto`. Colores: Verde `#2FD566`, Ámbar `#FFB23E`, Celeste `#7CC4FF`, Coral `#FF7A7A`,
     Lavanda `#C9A2FF`, Blanco `#F2EEE8`.
-  - **FONDO DEL REPRODUCTOR**: segmentado con Negro, Gris oscuro y **Según la carátula** (por
-    defecto).
+  - **FONDO DEL REPRODUCTOR**: segmentado con Negro, Gris oscuro, **Según la carátula** (por
+    defecto) y Foto del artista. Con Foto del artista aparecen **Desenfoque** y **Oscurecer**,
+    con una sola nota debajo.
+  - **Vista previa del fondo** (pedido del dueño, 2026-11-18): al tocar uno de esos dos
+    deslizadores, el resto de Ajustes (columna izquierda, secciones, nota y el otro
+    deslizador) se desvanece en 0,25 s y detrás aparece el fondo del reproductor con la foto
+    de ejemplo y los valores que se están eligiendo, en vivo. Solo queda el deslizador que se
+    está moviendo. Al soltar, Ajustes vuelve con la misma animación y el valor se guarda.
+    - Foto de ejemplo: la del artista de lo que suena. Si no suena nada (o suena un episodio),
+      la del último tema escuchado en Spotify (`GET /me/player/recently-played`); si eso no
+      está disponible (sesiones sin el permiso nuevo), la del último tema que la app vio
+      sonar. Sin ninguna, se ve el color de fondo del tema.
+    - Se busca al aparecer los deslizadores, una vez por apertura de Ajustes.
   - **Exportar tema** e **Importar tema**: botones contorneados de 48.
 - **Reproductor**:
   - interruptor **Mostrar letras** (pista de 56×32, perilla de 26, encendido en acento);
