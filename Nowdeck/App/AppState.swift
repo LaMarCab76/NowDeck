@@ -108,6 +108,16 @@ final class AppState: ObservableObject {
     /// logged in. That is intended: if those credentials no longer work, the first refresh
     /// fails and `sessionWasRejected` sends the user back to the setup.
     convenience init() {
+        #if DEBUG
+        // Screenshots: made-up data, no network, Keychain untouched (`DemoMode`).
+        if DemoMode.isEnabled {
+            DemoMode.start()
+            self.init(credentials: DemoMode.credentials(),
+                      webAuthenticator: WebAuthenticationSession(),
+                      preferences: DemoMode.preferences())
+            return
+        }
+        #endif
         self.init(credentials: CredentialStore(store: KeychainStore()),
                   webAuthenticator: WebAuthenticationSession())
     }

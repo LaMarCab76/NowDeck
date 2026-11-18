@@ -382,6 +382,30 @@ struct CardArtwork: View {
     var side: CGFloat
 
     var body: some View {
+        artwork
+            .frame(width: side, height: side)
+            .clipShape(RoundedRectangle(cornerRadius: Radius.artwork, style: .continuous))
+            .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private var artwork: some View {
+        #if DEBUG
+        // `AsyncImage` does not go through `URLSession.shared`, so the demo's covers are
+        // drawn here instead (`DemoMode`).
+        if let demoImage = DemoArtwork.image(for: url) {
+            Image(uiImage: demoImage)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+        } else {
+            remoteArtwork
+        }
+        #else
+        remoteArtwork
+        #endif
+    }
+
+    private var remoteArtwork: some View {
         AsyncImage(url: url) { phase in
             if let image = phase.image {
                 image
@@ -391,9 +415,6 @@ struct CardArtwork: View {
                 Palette.subtleSurface
             }
         }
-        .frame(width: side, height: side)
-        .clipShape(RoundedRectangle(cornerRadius: Radius.artwork, style: .continuous))
-        .accessibilityHidden(true)
     }
 }
 
