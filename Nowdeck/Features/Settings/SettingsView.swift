@@ -58,6 +58,8 @@ struct SettingsView: View {
         .environment(\.backgroundPreview, preview)
         .environment(\.backgroundPreviewEditing, preview.editing)
         .background(background.ignoresSafeArea())
+        .overlay(alignment: .topLeading) { previewAttribution }
+        .onDisappear { preview.cancel() }
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
         .themeImportPresenter()
@@ -76,6 +78,24 @@ struct SettingsView: View {
             }
         }
         .animation(Motion.backgroundPreview, value: preview.editing != nil)
+    }
+
+    /// The artist's photo is Spotify content: while it shows, the Spotify icon sits where the
+    /// player has it, top left, and links back to Spotify (docs/06).
+    @ViewBuilder
+    private var previewAttribution: some View {
+        if preview.editing != nil {
+            GeometryReader { proxy in
+                let insets = margins.insets(for: proxy.safeAreaInsets)
+                // Measured from the physical edges, like the player's top row.
+                SpotifyLogoLink(url: nil, variant: .icon)
+                    .padding(.leading, insets.leading)
+                    .padding(.top, Spacing.Player.top)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .ignoresSafeArea()
+            }
+            .transition(.opacity)
+        }
     }
 
     private var sidebar: some View {

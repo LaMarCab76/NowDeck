@@ -89,6 +89,56 @@ final class BackgroundPreviewTests: XCTestCase {
         XCTAssertNil(image)
     }
 
+    /// A player whose `GET /me/player` answers `playing` (track of artist 08td…) or `204`.
+    private func makePlayer(playing: StubBox<Bool>) throws -> PlayerModel {
+        let playback = try PlaybackJSON().data()
+        let (session, _) = StubURLProtocol.session { request in
+            let path = request.url?.path ?? ""
+            if path.hasPrefix("/v1/artists") { return (.stub(200), Self.artistJSON) }
+            if request.url?.host == "i.scdn.co" { return (.stub(200), Self.png) }
+            if path == "/v1/me/player" { return playing.value ? (.stub(200), playback) : (.stub(204), Data()) }
+            return (.stub(404), Data())
+        }
+        let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session,
+                             sleep: { _ in }, jitter: { 0 })
+        return PlayerModel(api: api, artworkLoader: ArtworkLoader(session: session))
+    }
+
+    private func waitUntil(_ condition: () -> Bool) async throws {
+        let deadline = Date().addingTimeInterval(2)
+        while !condition() {
+            guard Date() < deadline else { return XCTFail("Timed out") }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+    }
+
+    func testTheLastHeardArtistStaysWhenPlaybackStops() async throws {
+        let playing = StubBox(true)
+        let player = try makePlayer(playing: playing)
+        XCTAssertNil(player.lastHeardArtistID)
+        _ = await player.poll()
+        XCTAssertEqual(player.lastHeardArtistID, "08td7MxkoHQkXnWAYD8d6Q")
+        XCTAssertNil(player.previousTrack, "One track only: the swipe history is still empty")
+        playing.value = false
+        _ = await player.poll()
+        XCTAssertNil(player.nowPlaying)
+        XCTAssertEqual(player.lastHeardArtistID, "08td7MxkoHQkXnWAYD8d6Q",
+                       "Kept for the preview's fallback")
+    }
+
+    func testThePreviewKeepsThePlayersPhotoWhenPlaybackStops() async throws {
+        let playing = StubBox(true)
+        let player = try makePlayer(playing: playing)
+        let preview = BackgroundPreviewModel(player: player)
+        _ = await player.poll()
+        try await waitUntil { preview.image != nil }
+        let photo = preview.image
+        playing.value = false
+        _ = await player.poll()
+        XCTAssertNil(player.artistImage)
+        XCTAssertTrue(preview.image === photo, "The newest photo stays, not an older lookup")
+    }
+
     func testSlidersDriveThePreview() {
         let preview = BackgroundPreviewModel(player: nil)
         XCTAssertNil(preview.editing)

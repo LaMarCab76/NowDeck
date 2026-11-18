@@ -301,8 +301,9 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
   hacia abajo la lista (también con la cola vacía). No hace polling propio: usa el del
   reproductor, que sigue andando mientras la hoja está abierta.
 - **Botón**: "Cola" en la fila superior, a la izquierda de Biblioteca y con su mismo estilo
-  (44 de alto, ícono y texto 15 semibold; sin píldora desde el 2026-11-18). Siempre está; no
-  aparece en modo letras, que no tiene esa fila.
+  (44 de alto, ícono y texto 15 semibold; sin píldora desde el 2026-11-18). Siempre está, salvo en
+  modo letras: su fila superior conserva el ícono de Spotify y el origen, pero no lleva Cola
+  ni Biblioteca.
 - Diferencias con el mockup (decisión del dueño, 2026-11-17):
   - El mockup pone el botón en el grupo derecho de controles. Desde el rediseño los
     controles van en una sola fila centrada con 36 entre botones, y uno más no entra en el
@@ -330,10 +331,16 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
     de ejemplo y los valores que se están eligiendo, en vivo. Solo queda el deslizador que se
     está moviendo. Al soltar, Ajustes vuelve con la misma animación y el valor se guarda.
     - Foto de ejemplo: la del artista de lo que suena. Si no suena nada (o suena un episodio),
-      la del último tema escuchado en Spotify (`GET /me/player/recently-played`); si eso no
-      está disponible (sesiones sin el permiso nuevo), la del último tema que la app vio
-      sonar. Sin ninguna, se ve el color de fondo del tema.
-    - Se busca al aparecer los deslizadores, una vez por apertura de Ajustes.
+      la última foto que mostró el reproductor con Ajustes abierto; si no hubo, la del último
+      tema escuchado en Spotify (`GET /me/player/recently-played`); si eso no está disponible
+      (sesiones sin el permiso nuevo), la del último tema que la app vio sonar (aunque después
+      haya parado o haya sonado un episodio). Sin ninguna, se ve el color de fondo del tema.
+    - Se busca al aparecer los deslizadores, una vez por apertura de Ajustes, y se cancela al
+      cerrar Ajustes.
+    - Mientras se ve la foto, el ícono de Spotify (con enlace a Spotify) queda arriba a la
+      izquierda, en el mismo lugar que en el reproductor (`docs/06`).
+    - Lo que se desvanece tampoco recibe toques: con un dedo en un deslizador, otro dedo no
+      puede empezar a mover el otro.
   - **Exportar tema** e **Importar tema**: botones contorneados de 48.
 - **Reproductor**:
   - interruptor **Mostrar letras** (pista de 56×32, perilla de 26, encendido en acento);

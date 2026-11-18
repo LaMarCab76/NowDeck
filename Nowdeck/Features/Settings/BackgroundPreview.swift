@@ -7,9 +7,10 @@ import SwiftUI
 /// Ajustes comes back.
 ///
 /// The sample photo is the artist of what is playing. When nothing plays (or an episode
-/// plays), it is the artist of the last track heard on Spotify (`GET
-/// /me/player/recently-played`), and if that is not available (sessions without the
-/// `user-read-recently-played` scope answer `403`) the last track the app saw playing.
+/// plays), it is the newest photo the player showed while Ajustes was open, or else the
+/// artist of the last track heard on Spotify (`GET /me/player/recently-played`), and if that
+/// is not available (sessions without the `user-read-recently-played` scope answer `403`)
+/// the last track the app saw playing.
 @MainActor
 final class BackgroundPreviewModel: ObservableObject {
     enum Control: Equatable {
@@ -31,6 +32,9 @@ final class BackgroundPreviewModel: ObservableObject {
     /// The photo found without the player's help (nothing playing, or an episode).
     private var fallbackImage: UIImage?
     private var playerImage: UIImage?
+    /// The newest photo the player showed. It is newer than anything the history lookup can
+    /// find, so it stays as the sample when playback stops.
+    private var lastPlayerImage: UIImage?
     private var fallbackTask: Task<Void, Never>?
     private var subscription: AnyCancellable?
 
@@ -42,6 +46,7 @@ final class BackgroundPreviewModel: ObservableObject {
         // With "Foto del artista" on, the player already loads the photo of what plays.
         subscription = player?.$artistImage.sink { [weak self] image in
             self?.playerImage = image
+            if let image { self?.lastPlayerImage = image }
             self?.updateImage()
         }
     }
@@ -68,10 +73,12 @@ final class BackgroundPreviewModel: ObservableObject {
     // MARK: Sample photo
 
     /// Looks for a sample photo when the sliders appear, so it is usually ready before the
-    /// finger touches one. Asks Spotify at most once per opening of Ajustes.
+    /// finger touches one, also while something plays (its artist may have no photo, or
+    /// playback may stop before the finger arrives). Asks Spotify at most once per opening
+    /// of Ajustes.
     func prepare() {
         guard fallbackTask == nil, let api, let artworkLoader else { return }
-        let seenArtistID = player?.previousTrack?.item.artistID
+        let seenArtistID = player?.lastHeardArtistID
         fallbackTask = Task { [weak self] in
             guard let image = await Self.samplePhoto(api: api, loader: artworkLoader,
                                                      seenArtistID: seenArtistID),
@@ -81,9 +88,16 @@ final class BackgroundPreviewModel: ObservableObject {
         }
     }
 
-    /// What plays wins: its photo replaces the sample as soon as the player has it.
+    /// Ajustes closed: stop looking, so no request of ours shares the player's rate limit
+    /// for nothing.
+    func cancel() {
+        fallbackTask?.cancel()
+    }
+
+    /// What plays wins: its photo replaces the sample as soon as the player has it, and stays
+    /// when playback stops.
     private func updateImage() {
-        image = playerImage ?? fallbackImage
+        image = playerImage ?? lastPlayerImage ?? fallbackImage
     }
 
     /// The photo of the last track heard on Spotify, or of `seenArtistID` when Spotify can't
@@ -92,9 +106,9 @@ final class BackgroundPreviewModel: ObservableObject {
                             seenArtistID: String?) async -> UIImage? {
         let recentArtistID = try? await api.recentlyPlayedTracks(limit: 1)
             .lazy.compactMap { NowPlaying(item: $0)?.artistID }.first
-        guard let artistID = recentArtistID ?? seenArtistID,
+        guard !Task.isCancelled, let artistID = recentArtistID ?? seenArtistID,
               let images = try? await api.artistImages(id: artistID),
-              let url = NowPlaying.bestImage(images)
+              !Task.isCancelled, let url = NowPlaying.bestImage(images)
         else { return nil }
         return try? await loader.loadImage(url)
     }
@@ -135,6 +149,9 @@ private struct BackgroundPreviewFade: ViewModifier {
         let isHidden = editing != nil && editing != keeps
         content
             .opacity(isHidden ? 0 : 1)
+            // Hidden controls take no touches: a second finger can't start the other slider
+            // while the preview shows.
+            .allowsHitTesting(!isHidden)
             .animation(Motion.backgroundPreview, value: isHidden)
     }
 }

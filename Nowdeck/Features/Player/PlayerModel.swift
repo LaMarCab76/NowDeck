@@ -58,6 +58,10 @@ final class PlayerModel: ObservableObject {
     /// The item that played before, from what this app saw (the Web API has no "previous
     /// item"). Shown when swiping right. `nil` right after opening the app.
     @Published private(set) var previousTrack: TrackPreview?
+    /// The first artist of the last track this app saw playing. Unlike `previousTrack` (the
+    /// swipe history), it is the newest one and it stays while nothing or an episode plays.
+    /// Ajustes uses it for the background preview when Spotify's history can't be read.
+    private(set) var lastHeardArtistID: String?
 
     /// Commands and the volume panel. Created on first use, so that it shares this model;
     /// it keeps only a weak reference back.
@@ -330,6 +334,7 @@ final class PlayerModel: ObservableObject {
             }
             nowPlaying = item
         }
+        if let artistID = item.artistID { lastHeardArtistID = artistID }
         status = .active
 
         let newOrigin = resolvedOrigin(for: state)
