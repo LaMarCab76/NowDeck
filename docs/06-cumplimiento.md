@@ -82,17 +82,21 @@ Romper estas reglas puede hacer que Spotify revoque el acceso a la API.
 - **Foto del artista de fondo**: decisión del dueño del 2026-11-17, para parecerse a la app de
   TV de Spotify. La referencia de *Get Artist* dice "Spotify visual content must be kept in its
   original form, e.g. you can not crop album artwork, overlay images on album artwork…". La
-  foto se muestra recortada para llenar la pantalla, más tenue y desvanecida hacia el color de
-  fondo, así que esto choca con la letra de esa frase. Las reglas de la guía de diseño
+  foto se muestra recortada para llenar la pantalla y, desde el 2026-11-18, sola y
+  oscurecida por una capa negra configurable ("Oscurecer"), así que esto choca con la letra de
+  esa frase. Las reglas de la guía de diseño
   ("Artwork must be kept in its original form… This includes applying overlays and blurring")
   están bajo "For album and podcast artwork" y no nombran las fotos de artistas. El dueño lo
   considera aceptable porque es uso personal, sin distribución. Para limitar el riesgo:
   - la **carátula** sigue intacta (sin recortar ni tapar); la foto va solo en el fondo;
   - es una opción de Ajustes → Apariencia → FONDO DEL REPRODUCTOR, no viene activada (el
     fondo por defecto sigue siendo "Según la carátula"), y con otra opción no se pide;
-  - el deslizador "Desenfoque" la difumina más (la guía nombra el *blurring* entre lo que no
-    se hace con las carátulas; acá, de nuevo, es la foto del artista, no la carátula);
-  - el contenido sigue atribuido (ícono de Spotify y enlace de vuelta en la fila superior).
+  - los deslizadores "Desenfoque" y "Oscurecer" la difuminan y oscurecen más (la guía nombra
+    el *blurring* y los *overlays* entre lo que no se hace con las carátulas; acá, de nuevo,
+    es la foto del artista, no la carátula);
+  - el contenido sigue atribuido (ícono de Spotify y enlace de vuelta en la fila superior; en
+    la vista previa de Ajustes, el ícono aparece en el mismo lugar mientras se ve la foto y
+    abre al artista de esa foto).
   El Canvas (video en loop) no está en la Web API y no se trae.
 - **Deslizar entre temas** (2026-11-17): mientras se arrastra, la carátula del tema actual y
   la del siguiente o anterior se mueven enteras, una al lado de la otra; un borde puede quedar

@@ -144,7 +144,7 @@ struct ClientIDView: View {
     private var permissions: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             OnboardingCheckList(title: "NOWDECK VA A PEDIR PERMISO PARA") {
-                OnboardingCheckItem(text: "Ver qué está sonando")
+                OnboardingCheckItem(text: "Ver qué está sonando y qué escuchaste último")
                 OnboardingCheckItem(text: "Pausar, saltar temas y cambiar el volumen")
                 OnboardingCheckItem(text: "Ver tus dispositivos y pasar la música de uno a otro")
                 OnboardingCheckItem(text: "Ver tus playlists, álbumes, podcasts y audiolibros guardados")

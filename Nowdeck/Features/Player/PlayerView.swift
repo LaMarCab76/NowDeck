@@ -248,9 +248,11 @@ private struct TrackPage<Title: View, DeviceSpace: View>: View {
 // MARK: - Top row
 
 /// Spotify icon and the origin ("Reproduciendo desde …") at the left, Cola and Biblioteca at
-/// the right.
-/// Ajustes is reached from the library (owner's request, 2026-11-17), so it is not always on
-/// screen.
+/// the right. Ajustes is reached from the library (owner's request, 2026-11-17), so it is not
+/// always on screen.
+///
+/// Since 2026-11-18 (owner's request) nothing in this row has a pill behind it: the origin
+/// and the two buttons are plain text and icons on the background.
 struct PlayerTopRow: View {
     var origin: PlaybackOrigin?
     var logoURL: URL?
@@ -263,19 +265,15 @@ struct PlayerTopRow: View {
     var body: some View {
         HStack(spacing: Layout.topRowGap) {
             HStack(spacing: Layout.iconClearSpace) {
+                // The logo stays outside the origin button, with its clear space (docs/06).
                 SpotifyLogoLink(url: origin?.url ?? logoURL, variant: .icon)
                 if let origin {
-                    // A pill as high as Biblioteca's, so the two ends of the row match
-                    // (owner's request, 2026-11-17). The logo stays outside it, with its
-                    // clear space (docs/06).
                     Button {
                         SpotifyLink.open(origin.url)
                     } label: {
                         OriginText(origin: origin)
-                            .padding(.horizontal, Layout.originPillPadding)
                             .frame(height: Metrics.minTouchTarget)
-                            .background(Capsule().fill(Palette.subtleSurface))
-                            .contentShape(Capsule())
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityHint(Text("Abre en Spotify"))
@@ -287,20 +285,21 @@ struct PlayerTopRow: View {
             // is centered with 36 between buttons, and one more button no longer fits the
             // iPhone 8 Plus (owner's choice). It is not a theme control either: themes saved
             // before it existed list their controls explicitly and would never show it.
-            TopRowPill(systemName: "list.bullet", label: "Cola", action: actions.queue)
+            TopRowButton(systemName: "list.bullet", label: "Cola", action: actions.queue)
                 .accessibilityHint(Text("Muestra lo que sigue"))
 
             if showsLibrary {
-                TopRowPill(systemName: "books.vertical", label: "Biblioteca",
-                           action: actions.library)
+                TopRowButton(systemName: "books.vertical", label: "Biblioteca",
+                             action: actions.library)
             }
         }
         .frame(height: Layout.topRowHeight)
     }
 }
 
-/// A 44 pt pill of the top row: icon and label on white at 8 % (Biblioteca, Cola).
-private struct TopRowPill: View {
+/// A button of the top row: icon and label, with no background (Biblioteca, Cola). The tap
+/// zone is the row's 44 pt.
+private struct TopRowButton: View {
     var systemName: String
     var label: LocalizedStringKey
     var action: () -> Void
@@ -319,11 +318,8 @@ private struct TopRowPill: View {
                     .textStyle(.libraryPill)
             }
             .foregroundStyle(theme.palette.text.color)
-            .padding(.leading, Layout.libraryPillLeadingPadding)
-            .padding(.trailing, Layout.libraryPillTrailingPadding)
             .frame(height: Metrics.minTouchTarget)
-            .background(Capsule().fill(Palette.subtleSurface))
-            .contentShape(Capsule())
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -383,8 +379,8 @@ struct SpotifyLogoImage: View {
 }
 
 /// "Reproduciendo desde" over the source's name, or over its type while the name is unknown
-/// ("Una playlist", "Playlist de Spotify"). Two lines, as in lyrics mode, so the name gets
-/// the whole width of the pill (owner's request, 2026-11-18).
+/// ("Una playlist", "Playlist de Spotify"). Two lines, as in lyrics mode (owner's request,
+/// 2026-11-18).
 struct OriginText: View {
     var origin: PlaybackOrigin
 

@@ -45,6 +45,12 @@ final class PlayerModel: ObservableObject {
     /// Photo of the track's first artist, shown behind the player (`PlayerBackgroundView`).
     /// `nil` for episodes, ads, artists without photos, or with the option off.
     @Published private(set) var artistImage: UIImage?
+    /// The artist of the photo being published. It is set just before each photo is
+    /// published, so it matches the value a `$artistImage` subscriber receives. Inside that
+    /// callback, `artistImage` itself still holds the previous photo (`@Published` sends
+    /// before storing): read both after the notification, as Ajustes does. `nowPlaying` is no
+    /// substitute, since the previous artist's photo stays while the next one loads.
+    private(set) var artistImageArtistID: String?
     @Published private(set) var freshness: Freshness = .live
     /// Grows each time an item starts playing: another track or episode, or the same one
     /// again from an earlier point (queued twice in a row, repeat one, or Previous going
@@ -58,6 +64,10 @@ final class PlayerModel: ObservableObject {
     /// The item that played before, from what this app saw (the Web API has no "previous
     /// item"). Shown when swiping right. `nil` right after opening the app.
     @Published private(set) var previousTrack: TrackPreview?
+    /// The first artist of the last track this app saw playing. Unlike `previousTrack` (the
+    /// swipe history), it is the newest one and it stays while nothing or an episode plays.
+    /// Ajustes uses it for the background preview when Spotify's history can't be read.
+    private(set) var lastHeardArtistID: String?
 
     /// Commands and the volume panel. Created on first use, so that it shares this model;
     /// it keeps only a weak reference back.
@@ -66,7 +76,8 @@ final class PlayerModel: ObservableObject {
     /// Shared with `controls` (playback commands) and the sheets that call the API on their
     /// own (Dispositivos, Biblioteca).
     let api: SpotifyAPI
-    private let artworkLoader: ArtworkLoader
+    /// Also used by Ajustes for the background preview's sample photo.
+    let artworkLoader: ArtworkLoader
     private let policy: PollingPolicy
     private let now: () -> Date
 
@@ -329,6 +340,8 @@ final class PlayerModel: ObservableObject {
             }
             nowPlaying = item
         }
+        // Only while it plays: a track picked while paused was not heard.
+        if state.isPlaying, let artistID = item.artistID { lastHeardArtistID = artistID }
         status = .active
 
         let newOrigin = resolvedOrigin(for: state)
@@ -585,6 +598,7 @@ final class PlayerModel: ObservableObject {
             do {
                 let image = try await artworkLoader.loadImage(photoURL)
                 guard !Task.isCancelled, self.artistImageKey == artistID else { return }
+                self.artistImageArtistID = artistID
                 self.artistImage = image
             } catch {
                 guard !Task.isCancelled, self.artistImageKey == artistID else { return }

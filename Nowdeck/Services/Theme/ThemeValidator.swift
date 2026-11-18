@@ -116,8 +116,8 @@ enum ThemeValidator {
     private static let supportedVersion = 1
 
     private static let topLevelFields: Set<String> = [
-        "formato", "nombre", "colores", "fondoReproductor", "desenfoqueFondo", "reproductor",
-        "letras",
+        "formato", "nombre", "colores", "fondoReproductor", "desenfoqueFondo", "oscurecerFondo",
+        "reproductor", "letras",
     ]
     private static let colorFields = ["fondo", "superficie", "texto", "textoSecundario",
                                       "acento", "textoSobreAcento"]
@@ -174,10 +174,17 @@ enum ThemeValidator {
         }
 
         if let value = root["desenfoqueFondo"] {
-            guard let blur = validBlur(value) else {
+            guard let blur = validPercent(value, in: Theme.backgroundBlurRange) else {
                 return .failure(.invalidValue(field: "desenfoqueFondo"))
             }
             theme.backgroundBlur = blur
+        }
+
+        if let value = root["oscurecerFondo"] {
+            guard let dim = validPercent(value, in: Theme.backgroundDimRange) else {
+                return .failure(.invalidValue(field: "oscurecerFondo"))
+            }
+            theme.backgroundDim = dim
         }
 
         if let value = root["reproductor"] {
@@ -232,15 +239,15 @@ enum ThemeValidator {
         return .success(ValidatedTheme(theme: theme, warnings: warnings, themeToApply: toApply))
     }
 
-    /// A whole number inside `Theme.backgroundBlurRange`. JSON booleans also arrive as
-    /// `NSNumber`, so they are rejected explicitly; so are fractions.
-    private static func validBlur(_ value: Any) -> Int? {
+    /// A whole number inside `range` (`desenfoqueFondo`, `oscurecerFondo`). JSON booleans
+    /// also arrive as `NSNumber`, so they are rejected explicitly; so are fractions.
+    private static func validPercent(_ value: Any, in range: ClosedRange<Int>) -> Int? {
         guard let number = value as? NSNumber,
               CFGetTypeID(number) != CFBooleanGetTypeID()
         else { return nil }
         let double = number.doubleValue
         guard double.rounded() == double,
-              Theme.backgroundBlurRange.contains(Int(exactly: double) ?? -1)
+              range.contains(Int(exactly: double) ?? -1)
         else { return nil }
         return Int(double)
     }
@@ -254,6 +261,10 @@ enum ThemeValidator {
         if let blur = merged.backgroundBlur {
             merged.backgroundBlur = min(max(blur, Theme.backgroundBlurRange.lowerBound),
                                         Theme.backgroundBlurRange.upperBound)
+        }
+        if let dim = merged.backgroundDim {
+            merged.backgroundDim = min(max(dim, Theme.backgroundDimRange.lowerBound),
+                                       Theme.backgroundDimRange.upperBound)
         }
         // After the merge every color is present; validated colors are well formed. A theme
         // built in code with a malformed color falls back to the default colors.

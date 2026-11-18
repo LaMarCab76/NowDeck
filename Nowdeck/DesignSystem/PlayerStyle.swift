@@ -11,13 +11,15 @@ extension Metrics {
         /// at the left, Biblioteca at the right (owner's request, 2026-11-17: the origin
         /// always in the top-left corner; Ajustes moved to the library).
         static let topRowHeight: CGFloat = 44
-        /// Between the top row and the artwork row. The row's 44 pt include the touch
-        /// padding around 24 pt of content, so the visible gap is about 14 pt.
-        static let topRowBottomGap: CGFloat = 4
+        /// Between the top row and the artwork row. The row's 44 pt hold the 36 pt of the
+        /// two-line origin, so the visible gap is about 18 pt (owner's request, 2026-11-18:
+        /// it was 4 under the origin pill).
+        static let topRowBottomGap: CGFloat = 14
         /// Height of the artwork row (artwork and text column). Was 256 before the top row
-        /// moved above it; the cover shrinks so everything still fits in 414 pt.
-        static let topBlockHeight: CGFloat = 216
-        static let artworkSize: CGFloat = 216
+        /// moved above it, and 216 before the wider gap above; the cover shrinks so
+        /// everything still fits in 414 pt.
+        static let topBlockHeight: CGFloat = 210
+        static let artworkSize: CGFloat = 210
         /// The whole upper area (top row and artwork row). Lyrics mode replaces all of it.
         static let upperAreaHeight: CGFloat = topRowHeight + topRowBottomGap + topBlockHeight
         /// Between the artwork and the text column.
@@ -26,7 +28,9 @@ extension Metrics {
         /// (docs/02-diseno.md, "Adaptación al iPhone 8 Plus").
         static let artworkWidthFraction: CGFloat = 0.3
 
-        static let topRowGap: CGFloat = 12
+        /// Between the origin, Cola and Biblioteca. Wider than the 12 of the old pills: without
+        /// a background, the buttons need the space to read as two.
+        static let topRowGap: CGFloat = 24
         /// Full Spotify logo (Biblioteca): 108×30 inside a 44 pt tap zone.
         static let logoSize = CGSize(width: 108, height: 30)
         /// Spotify icon next to the origin (owner's decision, 2026-11-17: the icon
@@ -42,8 +46,6 @@ extension Metrics {
         static let libraryIconSize: CGFloat = 20
         /// The symbol on the empty cover of a swipe preview (next or previous unknown).
         static let previewSymbolSize: CGFloat = 40
-        /// Side padding of the origin pill ("Reproduciendo desde …").
-        static let originPillPadding: CGFloat = 16
 
         static let titleArtistGap: CGFloat = 6
         static let titleLineLimit = 2
@@ -103,12 +105,12 @@ extension Palette {
 }
 
 extension TextStyle {
-    /// "Reproduciendo desde" over the source's name, in two lines inside the 44 pt pill. The
-    /// same sizes as the source in lyrics mode (12/16 medium, 15/20 bold), so both views
-    /// match; 36 pt in all.
+    /// "Reproduciendo desde" over the source's name, in two lines and without a pill
+    /// (2026-11-18). The same sizes as the source in lyrics mode (12/16 medium, 15/20 bold),
+    /// so both views match; 36 pt in all.
     static let originHeading = lyricsSourceLabel
     static let originName = lyricsSourceName
-    /// The "Biblioteca" pill.
+    /// "Biblioteca" and "Cola".
     static let libraryPill = TextStyle(size: 15, weight: .semibold, scalesWithDynamicType: false)
     /// "Reproduciendo en" (medium) and the device name (bold), 15 pt.
     static let devicePrefix = TextStyle(size: 15, weight: .medium, scalesWithDynamicType: false)

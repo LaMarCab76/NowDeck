@@ -12,6 +12,7 @@ struct SettingsSection<Content: View>: View {
                 .textStyle(.label)
                 .foregroundStyle(theme.palette.label.color)
                 .accessibilityAddTraits(.isHeader)
+                .fadesDuringBackgroundPreview()
             content
         }
     }

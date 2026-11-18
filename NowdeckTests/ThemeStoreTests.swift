@@ -114,6 +114,19 @@ final class ThemeStoreTests: XCTestCase {
                       || exported.contains("\"desenfoqueFondo\":35"), "Exported with the theme")
     }
 
+    func testBackgroundDimDefaultsTo30AndIsSavedInTheTheme() throws {
+        let store = ThemeStore(storage: storage)
+        XCTAssertEqual(store.backgroundDim, Theme.defaultBackgroundDim)
+        XCTAssertEqual(Theme.defaultBackgroundDim, 30)
+        store.setBackgroundOption(.artistPhoto)
+        store.setBackgroundDim(60)
+        let restarted = ThemeStore(storage: storage)
+        XCTAssertEqual(restarted.backgroundDim, 60)
+        let exported = String(decoding: try ThemeFile.encode(restarted.theme), as: UTF8.self)
+        XCTAssertTrue(exported.contains("\"oscurecerFondo\" : 60")
+                      || exported.contains("\"oscurecerFondo\":60"), "Exported with the theme")
+    }
+
     func testSolidThemeBackgroundHighlightsNoOption() throws {
         let store = ThemeStore(storage: storage)
         store.selectPreset(try preset("ambar", in: store))

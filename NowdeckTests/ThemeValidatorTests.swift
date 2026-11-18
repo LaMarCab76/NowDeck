@@ -82,6 +82,18 @@ final class ThemeValidatorTests: XCTestCase {
         XCTAssertNoThrow(try validated(minimal("'desenfoqueFondo':0")))
     }
 
+    func testDimIsReadAndMustBeAWholeNumberFrom0To100() throws {
+        let result = try validated(minimal("'fondoReproductor':'artista','oscurecerFondo':45"))
+        XCTAssertEqual(result.theme.backgroundDim, 45)
+        XCTAssertNil(try validated(minimal()).themeToApply.backgroundDim,
+                     "Not added by the merge: missing means the default")
+        for bad in ["true", "12.5", "101", "-1", "'40'", "null"] {
+            assertError(minimal("'oscurecerFondo':" + bad), .invalidValue(field: "oscurecerFondo"))
+        }
+        XCTAssertNoThrow(try validated(minimal("'oscurecerFondo':0")))
+        XCTAssertNoThrow(try validated(minimal("'oscurecerFondo':100")))
+    }
+
     func testMissingFieldsAreFilledWithTheDefaultThemeWhenApplying() throws {
         let result = try validated(minimal("'colores':{'acento':'#7CC4FF'}"))
         XCTAssertNil(result.theme.playerBackground)
