@@ -119,11 +119,12 @@ private extension Data {
 }
 
 /// JSON body of a successful token answer.
-func tokenJSON(access: String, refresh: String?, expiresIn: Int = 3600) -> Data {
+func tokenJSON(access: String, refresh: String?, expiresIn: Int = 3600,
+               scope: String = "user-read-playback-state") -> Data {
     var object: [String: Any] = [
         "access_token": access,
         "token_type": "Bearer",
-        "scope": "user-read-playback-state",
+        "scope": scope,
         "expires_in": expiresIn,
     ]
     if let refresh { object["refresh_token"] = refresh }
@@ -132,4 +133,22 @@ func tokenJSON(access: String, refresh: String?, expiresIn: Int = 3600) -> Data 
 
 func tokenErrorJSON(_ error: String) -> Data {
     try! JSONSerialization.data(withJSONObject: ["error": error, "error_description": "test"])
+}
+
+/// A bounded wait for a condition that another task makes true. Fails the test instead of
+/// hanging when it never happens.
+struct WaitTimedOut: Error, CustomStringConvertible {
+    var what: String
+    var description: String { "Timed out waiting for \(what)" }
+}
+
+/// Runs on the caller's actor (`#isolation`), so the condition can read main-actor state.
+func waitUntil(_ what: String, timeout: TimeInterval = 3,
+               isolation: isolated (any Actor)? = #isolation,
+               _ condition: () async -> Bool) async throws {
+    let deadline = Date().addingTimeInterval(timeout)
+    while !(await condition()) {
+        guard Date() < deadline else { throw WaitTimedOut(what: what) }
+        await Task.yield()
+    }
 }

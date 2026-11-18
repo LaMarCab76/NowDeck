@@ -12,11 +12,13 @@ import SwiftUI
 /// - `onShowDevices`: the devices sheet (milestone 4). Called by "Suena en …" and when
 ///   playing a card fails because there is no active device.
 /// - `onPlayPause`: play/pause (milestone 3).
+/// - `onAddToPlaylist`: Agregar a una playlist, from the mini player (2026-11-18).
 struct LibraryScreen: View {
     @StateObject private var model: LibraryModel
     @ObservedObject var player: PlayerModel
     var onPlayPause: () -> Void
     var onShowDevices: () -> Void
+    var onAddToPlaylist: () -> Void
 
     @State private var tab: LibraryContent.Tab = .library
     /// Ajustes lives here since 2026-11-17, so it is not always visible on the player.
@@ -27,18 +29,21 @@ struct LibraryScreen: View {
     @EnvironmentObject private var preferences: AppPreferences
 
     init(model: @autoclosure @escaping () -> LibraryModel, player: PlayerModel,
-         onPlayPause: @escaping () -> Void, onShowDevices: @escaping () -> Void) {
+         onPlayPause: @escaping () -> Void, onShowDevices: @escaping () -> Void,
+         onAddToPlaylist: @escaping () -> Void = {}) {
         _model = StateObject(wrappedValue: model())
         self.player = player
         self.onPlayPause = onPlayPause
         self.onShowDevices = onShowDevices
+        self.onAddToPlaylist = onAddToPlaylist
     }
 
     var body: some View {
         LibraryContent(model: model, player: player, controls: player.controls, tab: $tab,
                        onPlay: play, onOpenPlayer: { dismiss() },
                        onPlayPause: onPlayPause, onShowDevices: onShowDevices,
-                       onOpenSettings: { showsSettings = true })
+                       onOpenSettings: { showsSettings = true },
+                       onAddToPlaylist: onAddToPlaylist)
             .statusBarHidden(true)
             .persistentSystemOverlays(.hidden)
             .task { await model.open() }
@@ -94,6 +99,7 @@ struct LibraryContent: View {
     var onPlayPause: () -> Void
     var onShowDevices: () -> Void
     var onOpenSettings: () -> Void = {}
+    var onAddToPlaylist: () -> Void = {}
 
     @EnvironmentObject private var theme: ThemeStore
     private typealias Layout = Metrics.Library
@@ -152,7 +158,8 @@ struct LibraryContent: View {
                                isPlaying: player.playback?.isPlaying == true,
                                onOpenPlayer: onOpenPlayer,
                                onShowDevices: onShowDevices,
-                               onPlayPause: onPlayPause)
+                               onPlayPause: onPlayPause,
+                               onAddToPlaylist: onAddToPlaylist)
             }
             .padding(.top, max(Layout.top, insets.top))
             // The home indicator is hidden here too: the mockup's 10 pt are enough.

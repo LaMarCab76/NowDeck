@@ -25,7 +25,8 @@ struct RootView: View {
     @ViewBuilder
     private var player: some View {
         if let tokenManager = appState.tokenManager {
-            PlayerScreen(model: PlayerModel(api: SpotifyAPI(tokens: tokenManager)))
+            PlayerScreen(model: PlayerModel(api: SpotifyAPI(tokens: tokenManager)),
+                         playlistAccess: appState.playlistEditingAccess)
                 // A new login gets a new token manager, and with it a fresh player state.
                 .id(ObjectIdentifier(tokenManager))
         } else {

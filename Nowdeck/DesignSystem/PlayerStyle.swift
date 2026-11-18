@@ -68,12 +68,17 @@ extension Metrics {
         /// 2026-11-17), instead of the mockup's three groups pinned to the edges. With the
         /// default seven buttons the row is 584 pt wide: it fits the 640 pt of the 8 Plus.
         static let controlsGap: CGFloat = 36
+        /// The gap shrinks toward this on narrow screens, where Agregar a una playlist would
+        /// not fit with 36 (`PlayerControlLayout.gap(forWidth:)`).
+        static let controlsMinimumGap: CGFloat = 12
         static let sideButtonSize: CGFloat = 48
         static let sideIconSize: CGFloat = 22
         static let skipButtonSize: CGFloat = 56
         static let skipIconSize: CGFloat = 28
         static let playButtonSize: CGFloat = 64
         static let playIconSize: CGFloat = 26
+        /// previous · play/pause · next (or −15 s · play/pause · +15 s), without the gaps.
+        static let centerGroupWidth: CGFloat = skipButtonSize + playButtonSize + skipButtonSize
     }
 
     /// "Nada sonando" (`SinReproduccion.dc.html`).

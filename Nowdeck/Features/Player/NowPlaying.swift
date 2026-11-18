@@ -15,6 +15,9 @@ struct NowPlaying: Equatable {
     /// The first artist with an ID (tracks only), for the background photo
     /// (`GET /artists/{id}`).
     var artistID: String?
+    /// The Spotify URI that can be added to a playlist (`spotify:track:…` or
+    /// `spotify:episode:…`). `nil` for local files and ads, which a playlist cannot take.
+    var playlistURI: String?
     var isAd: Bool = false
 
     /// `nil` when there is nothing to show: no item, or an item type the app doesn't know.
@@ -54,6 +57,7 @@ struct NowPlaying: Equatable {
             artworkCacheKey = track.album?.id
             itemURL = Self.pageURL(externalURL: track.externalUrls?.spotify, uri: track.uri)
             artistID = track.artists.lazy.compactMap(\.id).first { !$0.isEmpty }
+            playlistURI = track.isLocal ? nil : Self.addableURI(track.uri, kind: "track")
 
         case .episode(let episode):
             title = episode.name
@@ -64,6 +68,7 @@ struct NowPlaying: Equatable {
                                                                 : episode.images)
             artworkCacheKey = nil
             itemURL = Self.pageURL(externalURL: episode.externalUrls?.spotify, uri: episode.uri)
+            playlistURI = Self.addableURI(episode.uri, kind: "episode")
 
         case .unsupported:
             return nil
@@ -78,6 +83,13 @@ struct NowPlaying: Equatable {
             return nil
         }
         return url
+    }
+
+    /// `uri` when it is a well-formed `spotify:<kind>:<id>` URI, else `nil`.
+    static func addableURI(_ uri: String?, kind: String) -> String? {
+        guard let uri, let parsed = SpotifyURI(uri), parsed.kind == kind
+        else { return nil }
+        return uri
     }
 
     static func pageURL(externalURL: String?, uri: String?) -> URL? {

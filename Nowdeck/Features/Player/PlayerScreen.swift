@@ -19,6 +19,8 @@ struct PlayerActions {
     var devices: () -> Void = {}
     /// Cola: what comes next.
     var queue: () -> Void = {}
+    /// Agregar a una playlist: the item that plays now.
+    var addToPlaylist: () -> Void = {}
 }
 
 /// The landscape player: owns the polling model and picks between the player, "Nada
@@ -33,10 +35,14 @@ struct PlayerScreen: View {
     @StateObject private var presentation = PlayerPresentation()
 
     var actions = PlayerActions()
+    /// Whether the session can edit playlists, and how to ask for it (`AppState`).
+    var playlistAccess: PlaylistEditingAccess
 
-    init(model: @autoclosure @escaping () -> PlayerModel, actions: PlayerActions = PlayerActions()) {
+    init(model: @autoclosure @escaping () -> PlayerModel, actions: PlayerActions = PlayerActions(),
+         playlistAccess: PlaylistEditingAccess = .granted) {
         _model = StateObject(wrappedValue: model())
         self.actions = actions
+        self.playlistAccess = playlistAccess
     }
 
     /// The caller's actions plus the ones the player owns: lyrics mode, the library and the
@@ -60,6 +66,8 @@ struct PlayerScreen: View {
         wired.library = { [presentation] in presentation.showsLibrary = true }
         // Playback queue (read-only).
         wired.queue = { [presentation] in presentation.showsQueue = true }
+        // Agregar a una playlist (2026-11-18).
+        wired.addToPlaylist = { [presentation] in presentation.showAddToPlaylist() }
         return wired
     }
 
@@ -81,6 +89,8 @@ struct PlayerScreen: View {
             }
             .devicesSheet(isPresented: $presentation.showsDevices, player: model)
             .queueSheet(isPresented: $presentation.showsQueue, player: model)
+            .addToPlaylistSheet(isPresented: $presentation.showsAddToPlaylist, player: model,
+                                access: playlistAccess)
             .fullScreenCover(isPresented: $presentation.showsLibrary) {
                 // While the library covers the player, the devices sheet ("Suena en …" in the
                 // mini player, a card or a command that finds no active device) is presented
@@ -92,8 +102,11 @@ struct PlayerScreen: View {
                                       ? PlaylistFolderClient(api: model.api) : nil),
                               player: model,
                               onPlayPause: wiredActions.playPause,
-                              onShowDevices: { [presentation] in presentation.showDevices() })
+                              onShowDevices: { [presentation] in presentation.showDevices() },
+                              onAddToPlaylist: wiredActions.addToPlaylist)
                     .devicesSheet(isPresented: $presentation.showsLibraryDevices, player: model)
+                    .addToPlaylistSheet(isPresented: $presentation.showsLibraryAddToPlaylist,
+                                        player: model, access: playlistAccess)
                     // Passed explicitly: a cover is a new view hierarchy, and Ajustes (opened
                     // from the library) needs it.
                     .environmentObject(preferences)

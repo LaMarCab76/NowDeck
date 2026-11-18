@@ -175,6 +175,77 @@ final class AppState: ObservableObject {
         route = .onboarding(.clientID)
     }
 
+    // MARK: Playlist editing (2026-11-18)
+
+    /// Whether the stored session was granted the playlist-editing scopes. `.unknown` when
+    /// Spotify sent no `scope` with the tokens: the sheet lets the user add, and offers the
+    /// permission only if Spotify answers `403`.
+    func playlistEditingGrant() -> PlaylistEditingAccess.Grant {
+        guard let tokens = try? credentials.tokens() else { return .missing }
+        return Self.grant(forScope: tokens.scope)
+    }
+
+    /// The playlist-editing grant of a space-separated `scope` answer.
+    static func grant(forScope scope: String) -> PlaylistEditingAccess.Grant {
+        let granted = Set(scope.split(separator: " ").map(String.init))
+        if granted.isEmpty { return .unknown }
+        return SpotifyAuthorization.playlistEditingScopes.allSatisfy(granted.contains)
+            ? .granted : .missing
+    }
+
+    /// Logs in again with the stored Client ID, asking for every scope, and keeps the user
+    /// on the player. The token manager reads the Keychain on every request, so the new
+    /// tokens apply right away without rebuilding the player. `nil` when it worked.
+    ///
+    /// The new tokens are kept only if they belong to the same account (`GET /me`): the
+    /// player and the sheet's caches belong to the account that was logged in, so a
+    /// different one is rejected instead of swapped in silently.
+    func requestPlaylistEditing() async -> PlaylistEditingAccess.Failure? {
+        guard let clientID = savedClientID, let tokenManager else { return .failed }
+        guard !isConnecting else { return .failed }
+        isConnecting = true
+        defer { isConnecting = false }
+
+        do {
+            // Before opening Spotify: there is no point in logging in if this fails.
+            let currentUserID = try await accessCheck.userID(
+                accessToken: tokenManager.validAccessToken())
+
+            let login = SpotifyLogin(webAuthenticator: webAuthenticator, accounts: accounts)
+            let tokens = try await login.logIn(clientID: clientID)
+            // Same check as the first login: a 403 means this account cannot use the app.
+            if case .forbidden = try await accessCheck.run(accessToken: tokens.accessToken) {
+                return .notAllowlisted
+            }
+            guard try await accessCheck.userID(accessToken: tokens.accessToken) == currentUserID
+            else { return .differentAccount }
+            // Spotify may grant fewer scopes than asked (RFC 6749 §3.3). Without a `scope`
+            // answer it is unknown, and a 403 on adding will tell.
+            if Self.grant(forScope: tokens.scope) == .missing { return .denied }
+            // Through the token manager: a refresh still out must not overwrite them.
+            try await tokenManager.install(tokens)
+            return nil
+        } catch AuthError.cancelled {
+            return .cancelled
+        } catch AuthError.accessDenied {
+            return .denied
+        } catch AuthError.network {
+            return .offline
+        } catch {
+            return .failed
+        }
+    }
+
+    /// What the player's Agregar a una playlist sheet needs from the session.
+    var playlistEditingAccess: PlaylistEditingAccess {
+        PlaylistEditingAccess(
+            grant: { [weak self] in self?.playlistEditingGrant() ?? .missing },
+            request: { [weak self] in
+                guard let self else { return .failed }
+                return await self.requestPlaylistEditing()
+            })
+    }
+
     /// The answer of the folders step. Then "¡Listo!".
     func answerPlaylistFolders(enabled: Bool) {
         guard route == .onboarding(.folders) else { return }
