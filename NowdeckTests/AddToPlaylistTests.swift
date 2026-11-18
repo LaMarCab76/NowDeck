@@ -284,7 +284,7 @@ final class AddToPlaylistTests: XCTestCase {
 
     func testASuccessfulRetryClearsTheEarlierError() async throws {
         let attempts = Counter()
-        let (api, _) = makeAPI { request in
+        let (api, recorder) = makeAPI { request in
             if request.httpMethod == "POST" {
                 return attempts.next() == 1 ? (.stub(503), Data())
                     : (.stub(201), Self.json(["snapshot_id": "s"]))
@@ -299,9 +299,13 @@ final class AddToPlaylistTests: XCTestCase {
         await model.add(to: playlist)
         XCTAssertEqual(model.problem, .connection)
 
+        XCTAssertEqual(model.state(of: playlist), .failed)
+
         await model.add(to: playlist)
         XCTAssertEqual(model.state(of: playlist), .added)
         XCTAssertNil(model.problem)
+        XCTAssertEqual(recorder.requests.filter { $0.httpMethod == "POST" }.count, 2,
+                       "A failed row accepts a second tap")
     }
 
     func testGrantingThePermissionReadsAListThatFailedBefore() async throws {
