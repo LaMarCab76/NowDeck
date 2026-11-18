@@ -13,6 +13,7 @@ final class AppPreferencesTests: XCTestCase {
     func testDefaultsAreNoOffsetAndNoFolders() {
         let preferences = AppPreferences(defaults: freshDefaults())
         XCTAssertEqual(preferences.lyricsOffsetMs, 0)
+        XCTAssertFalse(preferences.showsRemainingTime, "The total duration by default")
         XCTAssertFalse(preferences.usesPlaylistFolders)
         XCTAssertFalse(preferences.hasAnsweredPlaylistFolders)
     }
@@ -21,10 +22,12 @@ final class AppPreferencesTests: XCTestCase {
         let defaults = freshDefaults()
         let preferences = AppPreferences(defaults: defaults)
         preferences.lyricsOffsetMs = 400
+        preferences.showsRemainingTime = true
         preferences.answerPlaylistFolders(enabled: true)
 
         let reloaded = AppPreferences(defaults: defaults)
         XCTAssertEqual(reloaded.lyricsOffsetMs, 400)
+        XCTAssertTrue(reloaded.showsRemainingTime)
         XCTAssertTrue(reloaded.usesPlaylistFolders)
         XCTAssertTrue(reloaded.hasAnsweredPlaylistFolders)
     }

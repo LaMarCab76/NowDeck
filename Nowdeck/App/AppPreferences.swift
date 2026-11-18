@@ -19,6 +19,11 @@ final class AppPreferences: ObservableObject {
         }
     }
 
+    /// Right of the progress bar: the time left ("−2:11") instead of the total duration.
+    @Published var showsRemainingTime: Bool {
+        didSet { defaults.set(showsRemainingTime, forKey: Keys.showsRemainingTime) }
+    }
+
     /// Experimental: read playlist folders from Spotify's internal playlist service
     /// (`PlaylistFolderService`). Off unless the user turns it on after reading the warning.
     @Published var usesPlaylistFolders: Bool {
@@ -39,6 +44,7 @@ final class AppPreferences: ObservableObject {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         lyricsOffsetMs = Self.clampedOffset(defaults.integer(forKey: Keys.lyricsOffsetMs))
+        showsRemainingTime = defaults.bool(forKey: Keys.showsRemainingTime)
         usesPlaylistFolders = defaults.bool(forKey: Keys.usesPlaylistFolders)
         hasAnsweredPlaylistFolders = defaults.bool(forKey: Keys.answeredPlaylistFolders)
     }
@@ -57,6 +63,7 @@ final class AppPreferences: ObservableObject {
 
     private enum Keys {
         static let lyricsOffsetMs = "lyricsOffsetMs"
+        static let showsRemainingTime = "showsRemainingTime"
         static let usesPlaylistFolders = "usesPlaylistFolders"
         static let answeredPlaylistFolders = "answeredPlaylistFolders"
     }

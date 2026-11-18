@@ -82,8 +82,9 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
      - fondo del reproductor (Negro, Gris oscuro o Según la carátula; por defecto, Según la
        carátula);
      - Exportar e Importar tema.
-   - **Reproductor**: interruptor "Mostrar letras" y "Ancho de las letras" (Mitad, 2/3 o
-     Completo; por defecto 2/3).
+   - **Reproductor**: interruptor "Mostrar tiempo restante" (en vez de la duración, a la
+     derecha de la barra; apagado por defecto), interruptor "Mostrar letras" y "Ancho de las
+     letras" (Mitad, 2/3 o Completo; por defecto 2/3).
 11. **Importar tema**: hoja con el JSON, el resultado de la validación, advertencias, vista
     previa y los botones Aplicar y Cancelar.
 12. **Nada sonando**: estado vacío con "Elegir dispositivo" y "ABRIR SPOTIFY".

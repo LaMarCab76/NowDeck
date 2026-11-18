@@ -165,7 +165,9 @@ struct PlayerView: View {
         VStack(spacing: Layout.bottomBlockGap) {
             if let item = model.nowPlaying, let playback = model.playback {
                 ProgressRow(progressMs: playback.progressMs ?? 0, durationMs: item.durationMs,
-                            isPlaying: playback.isPlaying, fetchedAt: model.fetchedAt)
+                            isPlaying: playback.isPlaying, fetchedAt: model.fetchedAt,
+                            showsRemainingTime: preferences.showsRemainingTime,
+                            onToggleTime: { preferences.showsRemainingTime.toggle() })
             }
             PlayerControls(playback: model.playback, actions: actions,
                            controls: optionalControls,
@@ -521,12 +523,16 @@ enum DeviceSymbol {
 
 // MARK: - Progress
 
-/// Elapsed time · bar · duration. Informative only: no knob, no dragging (docs/06).
+/// Elapsed time · bar · duration (or time left, from Ajustes › Reproductor). Informative
+/// only: no knob, no dragging (docs/06). Tapping the time on the right switches between the
+/// duration and the time left, like Apple Music; it never moves the playback position.
 struct ProgressRow: View {
     var progressMs: Int
     var durationMs: Int
     var isPlaying: Bool
     var fetchedAt: Date
+    var showsRemainingTime = false
+    var onToggleTime: (() -> Void)?
 
     @EnvironmentObject private var theme: ThemeStore
     private typealias Layout = Metrics.Player
@@ -545,9 +551,14 @@ struct ProgressRow: View {
     private func content(positionMs: Int) -> some View {
         let elapsed = PlaybackProgress.formatted(ms: positionMs)
         let total = PlaybackProgress.formatted(ms: durationMs)
+        let trailing = showsRemainingTime
+            ? PlaybackProgress.remainingFormatted(positionMs: positionMs, durationMs: durationMs)
+            : total
         return HStack(spacing: Layout.progressRowGap) {
-            Text(verbatim: elapsed)
-                .frame(minWidth: Layout.progressTimeWidth, alignment: .leading)
+            // Both times reserve the width of their longest possible text, so the bar keeps
+            // its length when the time on the right is toggled and when a long episode
+            // crosses the one-hour mark (`1:00:00` → `59:59`).
+            timeSlot(elapsed, widest: total, alignment: .leading)
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Palette.progressTrack)
@@ -559,8 +570,14 @@ struct ProgressRow: View {
                 }
             }
             .frame(height: Layout.progressBarHeight)
-            Text(verbatim: total)
-                .frame(minWidth: Layout.progressTimeWidth, alignment: .trailing)
+            timeSlot(trailing,
+                     widest: PlaybackProgress.remainingFormatted(positionMs: 0,
+                                                                 durationMs: durationMs),
+                     alignment: .trailing)
+                // The 12 pt text is a small target: the tappable area grows to about 44 pt
+                // without changing the layout.
+                .contentShape(Rectangle().inset(by: -Layout.progressTimeTapOutset))
+                .onTapGesture { onToggleTime?() }
         }
         .textStyle(.playbackTime)
         .foregroundStyle(theme.palette.tertiaryText.color)
@@ -568,6 +585,28 @@ struct ProgressRow: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Progreso"))
         .accessibilityValue(Text("\(elapsed) de \(total)"))
+        .accessibilityActions {
+            // Two literals, not a ternary: a ternary would make them plain `String`s, which
+            // skip the String Catalog.
+            if let onToggleTime {
+                if showsRemainingTime {
+                    Button("Mostrar duración", action: onToggleTime)
+                } else {
+                    Button("Mostrar tiempo restante", action: onToggleTime)
+                }
+            }
+        }
+    }
+
+    /// A time label as wide as `widest` (hidden). The font is monospaced, so the text with
+    /// the most characters is the widest one.
+    private func timeSlot(_ text: String, widest: String,
+                          alignment: Alignment) -> some View {
+        ZStack(alignment: alignment) {
+            Text(verbatim: widest).hidden()
+            Text(verbatim: text)
+        }
+        .frame(minWidth: Layout.progressTimeWidth, alignment: alignment)
     }
 }
 

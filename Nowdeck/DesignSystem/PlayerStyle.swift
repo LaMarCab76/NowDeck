@@ -59,6 +59,8 @@ extension Metrics {
         static let progressRowHeight: CGFloat = 16
         static let progressRowGap: CGFloat = 14
         static let progressTimeWidth: CGFloat = 36
+        /// Extra tappable margin around the time on the right (16 pt row + 2 × 14 ≈ 44 pt).
+        static let progressTimeTapOutset: CGFloat = 14
         static let progressBarHeight: CGFloat = 4
 
         static let controlsHeight: CGFloat = 64

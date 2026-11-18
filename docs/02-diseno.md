@@ -85,7 +85,10 @@ inicio, sí.
   - **"Reproduciendo en Nombre"** en acento, 15 pt. Al tocarlo se abre Dispositivos.
 - **Bloque inferior**, a todo el ancho:
   - **Progreso**: tiempo actual · barra de 4 de alto (pista blanca al 18 %, relleno `texto`) ·
-    duración. Es **informativa**: sin perilla y sin arrastre.
+    duración. Es **informativa**: sin perilla y sin arrastre. Con "Mostrar tiempo restante"
+    (Ajustes › Reproductor, apagado por defecto) la derecha muestra cuánto falta, `−2:23`, con
+    el signo menos tipográfico (U+2212). Tocar ese tiempo alterna entre duración y restante
+    (área táctil de unos 44 pt); nunca cambia la posición.
   - **Controles** (alto 64), en tres grupos:
     - izquierda, en 200 de ancho: Aleatorio y Repetir (48);
     - centro, separados 20: Anterior (56), Play/Pausa (64, círculo `texto` con ícono oscuro)

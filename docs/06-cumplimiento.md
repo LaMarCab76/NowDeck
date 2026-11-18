@@ -219,7 +219,8 @@ Repaso punto por punto sobre la rama `hito/08-terminaciones` (hitos 1 a 7 integr
   todo queda deshabilitado en un dispositivo con `is_restricted`. Ver `docs/03`, "`actions`":
   sigue pendiente del dueño confirmar con una respuesta real que llega `disallows`.
 - ✅ Progreso informativo: barra sin perilla ni arrastre, y VoiceOver la lee como "Progreso,
-  1:25 de 3:47" sin acción de ajuste.
+  1:25 de 3:47" sin acción de ajuste. Tocar el tiempo de la derecha solo alterna entre la
+  duración y el tiempo restante (decisión del dueño del 2026-11-18): no adelanta ni atrasa.
 
 ### Podcasts
 

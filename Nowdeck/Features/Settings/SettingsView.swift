@@ -408,10 +408,35 @@ struct PlayerSettingsView: View {
 
     var body: some View {
         SettingsColumn(spacing: Spacing.m, bottomMargin: bottomMargin) {
+            Text("PROGRESO")
+                .textStyle(.label)
+                .foregroundStyle(theme.palette.label.color)
+                .accessibilityAddTraits(.isHeader)
+
+            Toggle(isOn: $preferences.showsRemainingTime) {
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
+                    Text("Mostrar tiempo restante")
+                        .textStyle(.settingsRowTitle)
+                    Text("A la derecha de la barra se ve cuánto falta, en vez de la duración del tema. También podés cambiarlo tocando ese tiempo en el reproductor.")
+                        .textStyle(.helper)
+                        .foregroundStyle(theme.palette.bodyText.color)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .toggleStyle(SettingsSwitchStyle())
+            .padding(.vertical, Spacing.m)
+            .padding(.horizontal, Spacing.l)
+            .background(
+                RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
+                    .fill(Palette.settingsCard)
+            )
+
             Text("LETRAS")
                 .textStyle(.label)
                 .foregroundStyle(theme.palette.label.color)
                 .accessibilityAddTraits(.isHeader)
+                .padding(.top, Spacing.s)
 
             Toggle(isOn: Binding(get: { theme.showsLyricsButton },
                                  set: { theme.setShowsLyricsButton($0) })) {

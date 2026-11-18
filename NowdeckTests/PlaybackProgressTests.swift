@@ -50,6 +50,15 @@ final class PlaybackProgressTests: XCTestCase {
         XCTAssertEqual(PlaybackProgress.formatted(ms: 227_000), "3:47")
         XCTAssertEqual(PlaybackProgress.formatted(ms: 3_723_000), "1:02:03")
     }
+
+    func testRemainingFormatting() {
+        XCTAssertEqual(PlaybackProgress.remainingFormatted(positionMs: 84_000, durationMs: 227_000),
+                       "\u{2212}2:23")
+        XCTAssertEqual(PlaybackProgress.remainingFormatted(positionMs: 0, durationMs: 3_723_000),
+                       "\u{2212}1:02:03")
+        XCTAssertEqual(PlaybackProgress.remainingFormatted(positionMs: 300_000, durationMs: 227_000),
+                       "\u{2212}0:00", "Never a negative time left")
+    }
 }
 
 final class PollingPolicyTests: XCTestCase {
