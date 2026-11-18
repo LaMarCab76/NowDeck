@@ -49,8 +49,12 @@ final class PlayerControlsModel: ObservableObject {
     private var batchFailed = false
     private var noticeTask: Task<Void, Never>?
     private var playbackSubscription: AnyCancellable?
-    /// Counts the seeks sent, so a failed one is only undone if no seek came after it.
-    private var seekCount = 0
+    /// How far each seek on its way moved the position, in the order they were sent. `nil`
+    /// when the position before it was unknown.
+    private var pendingSeekShifts: [Int?] = []
+    /// What the failed seeks since the last accepted one moved, not undone yet. `nil` when
+    /// one of them started from an unknown position.
+    private var failedSeekShift: Int? = 0
 
     init(player: PlayerModel,
          confirmDelay: TimeInterval = 0.6,
@@ -144,30 +148,46 @@ final class PlayerControlsModel: ObservableObject {
         let target = min(max(0, positionMs), durationMs)
         let position = player.currentPositionMs
         guard target != position else { return }
-        seekCount += 1
-        let seekNumber = seekCount
+        pendingSeekShifts.append(position.map { target - $0 })
         run(.seek(positionMs: target),
             optimistic: { $0.progressMs = target },
-            rollback: { [weak self] state in
-                // A later seek already moved the position: its own answer (or the poll that
-                // follows) decides where it is. Undoing this one would move the bar away
-                // from that newer target.
-                guard self?.seekCount == seekNumber else { return }
-                guard let position else {
-                    state.progressMs = nil
-                    return
-                }
-                // Back by what the seek moved, from the position as it is now (time kept
-                // running while the command was out).
-                state.progressMs = max(0, (state.progressMs ?? 0) - (target - position))
-            })
+            completion: { [weak self] succeeded in self?.seekFinished(succeeded: succeeded) })
+    }
+
+    /// Seeks finish in the order they were sent. A failed one is undone only once no seek
+    /// is left on its way, and then back to the last position Spotify accepted: undoing it
+    /// earlier would move the bar away from a newer target, and undoing it alone would land
+    /// on the target of an earlier seek that may have failed too.
+    private func seekFinished(succeeded: Bool) {
+        guard !pendingSeekShifts.isEmpty else { return }
+        let shift = pendingSeekShifts.removeFirst()
+        if succeeded {
+            // Spotify is now where this seek went: earlier failures no longer count.
+            failedSeekShift = 0
+            return
+        }
+        failedSeekShift = shift.flatMap { shift in failedSeekShift.map { $0 + shift } }
+        guard pendingSeekShifts.isEmpty else { return }
+        let undo = failedSeekShift
+        failedSeekShift = 0
+        player?.updatePlayback { state in
+            // Back by what the failed seeks moved, from the position as it is now (time
+            // kept running while they were out). An unknown starting point goes back to
+            // unknown.
+            guard let undo else {
+                state.progressMs = nil
+                return
+            }
+            state.progressMs = max(0, (state.progressMs ?? 0) - undo)
+        }
     }
 
     // MARK: Running a command
 
     private func run(_ command: PlaybackCommand,
                      optimistic: ((inout PlaybackState) -> Void)? = nil,
-                     rollback: ((inout PlaybackState) -> Void)? = nil) {
+                     rollback: ((inout PlaybackState) -> Void)? = nil,
+                     completion: ((_ succeeded: Bool) -> Void)? = nil) {
         guard let player else { return }
         player.holdPolling()
         if let optimistic { player.updatePlayback(optimistic) }
@@ -183,16 +203,20 @@ final class PlayerControlsModel: ObservableObject {
             } catch {
                 result = .failure(error)
             }
-            self?.finish(result, rollback: rollback)
+            self?.finish(result, rollback: rollback, completion: completion)
         }
     }
 
     private func finish(_ result: Result<Void, Error>,
-                        rollback: ((inout PlaybackState) -> Void)?) {
+                        rollback: ((inout PlaybackState) -> Void)?,
+                        completion: ((_ succeeded: Bool) -> Void)?) {
         if case .failure(let error) = result {
             batchFailed = true
             if let rollback { player?.updatePlayback(rollback) }
+            completion?(false)
             handleFailure(error)
+        } else {
+            completion?(true)
         }
         pendingCommands -= 1
         guard pendingCommands == 0 else { return }

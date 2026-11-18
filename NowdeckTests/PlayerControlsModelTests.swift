@@ -341,6 +341,44 @@ final class PlayerControlsModelTests: XCTestCase {
         try await eventually { h.commands.count == 2 }
     }
 
+    func testTwoFailedSeeksGoBackToTheLastAcceptedPosition() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal(); gate.signal() } // never leave the stub blocked
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: 84_000),
+                               commandGate: gate)
+        h.controls.seek(toMs: 30_000)
+        h.controls.seek(toMs: 120_000)
+        // Spotify stays at 84 s, so the confirmation read cannot hide a wrong rollback.
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        XCTAssertEqual(h.model.playback?.progressMs, 120_000, "The second seek is still on its way")
+
+        gate.signal()
+        try await eventually { h.commandRequests.count == 2 && h.model.playback?.progressMs != 120_000 }
+        XCTAssertEqual(h.model.playback?.progressMs, 84_000,
+                       "Not 30 s: the first seek failed too")
+    }
+
+    func testAFailedSeekAfterAnAcceptedOneGoesBackToTheAcceptedOne() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal(); gate.signal() } // never leave the stub blocked
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: 84_000),
+                               commandGate: gate)
+        h.controls.seek(toMs: 30_000)
+        h.controls.seek(toMs: 120_000)
+        gate.signal()
+        // The second request reaches the stub (and waits at the gate) once the first one
+        // has been answered.
+        try await eventually { h.commandRequests.count == 2 }
+        // Spotify took the first seek: the confirmation read agrees with the rollback.
+        h.playback.value.progressMs = 30_000
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        XCTAssertEqual(h.model.playback?.progressMs, 30_000)
+    }
+
     // MARK: Volume from polls
 
     func testPolledVolumeChangeShowsThePanel() async throws {
