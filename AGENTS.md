@@ -20,6 +20,10 @@ Leé este archivo completo antes de cada tarea. El detalle está en `docs/`:
 | `design/` | Fuentes HTML de los mockups (referencia de valores exactos) |
 | `schemas/`, `themes/` | Esquema JSON del tema y temas de ejemplo |
 
+`docs/en/` tiene la traducción al inglés de estos documentos (y `design/README.en.md`,
+`NowdeckTests/Fixtures/README.en.md`). **La versión en español es la fuente**: si cambiás un
+documento, actualizá también su traducción en el mismo commit.
+
 ## Plataforma y stack
 
 - **iOS 16.0 como mínimo** (tiene que correr en iPhone 8 Plus, que no pasa de iOS 16). Esto

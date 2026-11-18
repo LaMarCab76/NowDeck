@@ -161,17 +161,18 @@ in 2026 and because of Spotify's rules:
 
 ## Documentation
 
-The project docs are written in Spanish.
+The project docs are written in Spanish, with an English translation in [`docs/en/`](docs/en/).
+If the two differ, the Spanish version wins.
 
-| Document | Contents |
-|---|---|
-| [`docs/01-producto.md`](docs/01-producto.md) | Scope, screens and flows |
-| [`docs/02-diseno.md`](docs/02-diseno.md) | Design tokens and measurements |
-| [`docs/03-spotify-api.md`](docs/03-spotify-api.md) | Authentication, endpoints and errors |
-| [`docs/04-letras.md`](docs/04-letras.md) | Lyrics with LRCLIB |
-| [`docs/05-temas.md`](docs/05-temas.md) | Theme format |
-| [`docs/06-cumplimiento.md`](docs/06-cumplimiento.md) | Spotify's rules and review |
-| [`docs/07-plan.md`](docs/07-plan.md) | Milestone plan |
+| Document | Spanish original | Contents |
+|---|---|---|
+| [`docs/en/01-product.md`](docs/en/01-product.md) | [`01-producto.md`](docs/01-producto.md) | Scope, screens and flows |
+| [`docs/en/02-design.md`](docs/en/02-design.md) | [`02-diseno.md`](docs/02-diseno.md) | Design tokens and measurements |
+| [`docs/en/03-spotify-api.md`](docs/en/03-spotify-api.md) | [`03-spotify-api.md`](docs/03-spotify-api.md) | Authentication, endpoints and errors |
+| [`docs/en/04-lyrics.md`](docs/en/04-lyrics.md) | [`04-letras.md`](docs/04-letras.md) | Lyrics with LRCLIB |
+| [`docs/en/05-themes.md`](docs/en/05-themes.md) | [`05-temas.md`](docs/05-temas.md) | Theme format |
+| [`docs/en/06-compliance.md`](docs/en/06-compliance.md) | [`06-cumplimiento.md`](docs/06-cumplimiento.md) | Spotify's rules and review |
+| [`docs/en/07-plan.md`](docs/en/07-plan.md) | [`07-plan.md`](docs/07-plan.md) | Milestone plan |
 
 ## Credits
 
