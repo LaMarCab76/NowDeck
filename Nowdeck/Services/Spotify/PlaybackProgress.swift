@@ -31,6 +31,12 @@ enum PlaybackProgress {
         return min(1, max(0, Double(positionMs) / Double(durationMs)))
     }
 
+    /// Time left, `−m:ss` (or `−h:mm:ss`), with a real minus sign (U+2212) so it lines up
+    /// with the digits of the monospaced font. A position past the end shows `−0:00`.
+    static func remainingFormatted(positionMs: Int, durationMs: Int) -> String {
+        "\u{2212}" + formatted(ms: max(0, durationMs - positionMs))
+    }
+
     /// `m:ss`, or `h:mm:ss` from one hour (long podcast episodes).
     static func formatted(ms: Int) -> String {
         let totalSeconds = max(0, ms) / 1000

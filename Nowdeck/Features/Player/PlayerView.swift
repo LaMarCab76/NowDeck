@@ -165,7 +165,8 @@ struct PlayerView: View {
         VStack(spacing: Layout.bottomBlockGap) {
             if let item = model.nowPlaying, let playback = model.playback {
                 ProgressRow(progressMs: playback.progressMs ?? 0, durationMs: item.durationMs,
-                            isPlaying: playback.isPlaying, fetchedAt: model.fetchedAt)
+                            isPlaying: playback.isPlaying, fetchedAt: model.fetchedAt,
+                            showsRemainingTime: preferences.showsRemainingTime)
             }
             PlayerControls(playback: model.playback, actions: actions,
                            controls: optionalControls,
@@ -521,12 +522,14 @@ enum DeviceSymbol {
 
 // MARK: - Progress
 
-/// Elapsed time · bar · duration. Informative only: no knob, no dragging (docs/06).
+/// Elapsed time · bar · duration (or time left, from Ajustes › Reproductor). Informative
+/// only: no knob, no dragging (docs/06).
 struct ProgressRow: View {
     var progressMs: Int
     var durationMs: Int
     var isPlaying: Bool
     var fetchedAt: Date
+    var showsRemainingTime = false
 
     @EnvironmentObject private var theme: ThemeStore
     private typealias Layout = Metrics.Player
@@ -545,6 +548,9 @@ struct ProgressRow: View {
     private func content(positionMs: Int) -> some View {
         let elapsed = PlaybackProgress.formatted(ms: positionMs)
         let total = PlaybackProgress.formatted(ms: durationMs)
+        let trailing = showsRemainingTime
+            ? PlaybackProgress.remainingFormatted(positionMs: positionMs, durationMs: durationMs)
+            : total
         return HStack(spacing: Layout.progressRowGap) {
             Text(verbatim: elapsed)
                 .frame(minWidth: Layout.progressTimeWidth, alignment: .leading)
@@ -559,7 +565,7 @@ struct ProgressRow: View {
                 }
             }
             .frame(height: Layout.progressBarHeight)
-            Text(verbatim: total)
+            Text(verbatim: trailing)
                 .frame(minWidth: Layout.progressTimeWidth, alignment: .trailing)
         }
         .textStyle(.playbackTime)
