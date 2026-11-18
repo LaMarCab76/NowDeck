@@ -218,6 +218,9 @@ private struct LyricsStanzasView: View {
                     .animation(Motion.stanzaChange, value: frame?.primaryIndex)
                 }
                 .transition(.opacity)
+                // The whole lyrics area, also when no stanza is shown (after the last one):
+                // an empty ZStack has no size and would take no touches.
+                .frame(width: proxy.size.width, height: proxy.size.height)
                 .contentShape(Rectangle())
                 .simultaneousGesture(onSeek == nil ? nil : browseGesture(lyrics))
             }

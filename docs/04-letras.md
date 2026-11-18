@@ -109,7 +109,8 @@ desde LRCLIB como "Lyricsfile format").
 - Posición = `progress_ms` del último polling + el tiempo transcurrido, mientras `is_playing`
   sea verdadero. Actualizar la vista a ~10 fps en modo palabra y ~2 fps en modo estrofa.
 - Si el polling detecta un salto de más de 1,5 s frente a lo interpolado (alguien adelantó el
-  tema), resincronizar.
+  tema), resincronizar. En pausa no hay interpolación ni, por lo tanto, ruido: cualquier
+  posición distinta se toma en el acto (un adelanto chico, o uno fallido que vuelve atrás).
 - **Tocar una estrofa** (2026-11-18) manda `PUT /me/player/seek` al comienzo de la estrofa
   menos el desfase de "Sincronía de las letras" (nunca antes de 0), así esa estrofa queda en
   pantalla apenas llega. Las letras toman esa posición en el acto, sin esperar el polling.

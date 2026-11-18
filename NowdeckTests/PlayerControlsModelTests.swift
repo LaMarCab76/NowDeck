@@ -311,6 +311,36 @@ final class PlayerControlsModelTests: XCTestCase {
         try await eventually { h.model.playback?.progressMs == 84_000 }
     }
 
+    func testSeekToPositionWorksWithoutAKnownPosition() async throws {
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: nil))
+        XCTAssertNil(h.model.currentPositionMs)
+        h.controls.seek(toMs: 30_000)
+        XCTAssertEqual(h.model.playback?.progressMs, 30_000)
+        try await eventually { h.commands.count == 1 }
+        XCTAssertEqual(h.commandRequests.last?.queryValue("position_ms"), "30000")
+    }
+
+    func testAFailedSeekDoesNotUndoALaterOne() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal(); gate.signal() } // never leave the stub blocked
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: 84_000),
+                               commandGate: gate)
+        h.controls.seek(toMs: 30_000)
+        h.controls.seek(toMs: 120_000)
+        XCTAssertEqual(h.model.playback?.progressMs, 120_000)
+
+        // The first seek fails while the second one is still on its way.
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        XCTAssertEqual(h.model.playback?.progressMs, 120_000,
+                       "Undoing the first seek would move the bar away from the second one")
+
+        h.commandStatus.value = 204
+        gate.signal()
+        try await eventually { h.commands.count == 2 }
+    }
+
     // MARK: Volume from polls
 
     func testPolledVolumeChangeShowsThePanel() async throws {

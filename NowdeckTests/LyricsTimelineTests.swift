@@ -111,6 +111,20 @@ final class LyricsTimelineTests: XCTestCase {
         XCTAssertEqual(anchor.reconciled(with: paused), paused)
     }
 
+    func testWhilePausedAnyOtherPositionIsTakenAtOnce() {
+        let start = Date(timeIntervalSince1970: 1_000)
+        // Paused at 20 s after a seek that Spotify then rejected: the position goes back to
+        // 19 s. Nothing is interpolated while paused, so the 1 s is not jitter.
+        let anchor = LyricsPlayback(progressMs: 20_000, isPlaying: false, timestamp: start)
+        let rolledBack = LyricsPlayback(progressMs: 19_000, isPlaying: false,
+                                        timestamp: start.addingTimeInterval(0.5))
+        XCTAssertEqual(anchor.reconciled(with: rolledBack), rolledBack)
+
+        let same = LyricsPlayback(progressMs: 20_000, isPlaying: false,
+                                  timestamp: start.addingTimeInterval(3))
+        XCTAssertEqual(anchor.reconciled(with: same), anchor)
+    }
+
     // MARK: Lyrics style (Ajustes → Reproductor)
 
     func testByWordStyleKeepsTheWordHighlight() {

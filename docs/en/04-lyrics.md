@@ -111,7 +111,9 @@ from LRCLIB as "Lyricsfile format").
 - Position = `progress_ms` from the last poll + the elapsed time, while `is_playing`
   is true. Update the view at ~10 fps in word mode and ~2 fps in verse mode.
 - If polling detects a jump of more than 1.5 s compared to the interpolated position (someone
-  skipped ahead in the song), resync.
+  skipped ahead in the song), resync. While paused nothing is interpolated, so there's no
+  noise: any different position is taken right away (a small seek, or a failed one going
+  back).
 - **Tapping a verse** (2026-11-18) sends `PUT /me/player/seek` to the start of the verse minus
   the "Lyrics timing" offset (never before 0), so that verse is on screen as soon as it
   arrives. The lyrics take that position right away, without waiting for the poll. Browsing

@@ -49,6 +49,8 @@ final class PlayerControlsModel: ObservableObject {
     private var batchFailed = false
     private var noticeTask: Task<Void, Never>?
     private var playbackSubscription: AnyCancellable?
+    /// Counts the seeks sent, so a failed one is only undone if no seek came after it.
+    private var seekCount = 0
 
     init(player: PlayerModel,
          confirmDelay: TimeInterval = 0.6,
@@ -131,18 +133,34 @@ final class PlayerControlsModel: ObservableObject {
 
     /// Moves the playback to `positionMs`: dragging the progress bar, or tapping a stanza in
     /// lyrics mode. Only where Spotify allows seeking (`ControlAvailability.seek`).
+    ///
+    /// Spotify can leave `progress_ms` empty; the target and the duration are enough to seek
+    /// then, and a failure puts the empty position back.
     func seek(toMs positionMs: Int) {
         guard let player, availability.seek,
-              let position = player.currentPositionMs,
               let durationMs = player.nowPlaying?.durationMs, durationMs > 0
         else { return }
         // Past the end Spotify jumps to the next item: stop at the end instead.
         let target = min(max(0, positionMs), durationMs)
-        let applied = target - position
-        guard applied != 0 else { return }
+        let position = player.currentPositionMs
+        guard target != position else { return }
+        seekCount += 1
+        let seekNumber = seekCount
         run(.seek(positionMs: target),
-            optimistic: { $0.progressMs = ($0.progressMs ?? 0) + applied },
-            rollback: { $0.progressMs = max(0, ($0.progressMs ?? 0) - applied) })
+            optimistic: { $0.progressMs = target },
+            rollback: { [weak self] state in
+                // A later seek already moved the position: its own answer (or the poll that
+                // follows) decides where it is. Undoing this one would move the bar away
+                // from that newer target.
+                guard self?.seekCount == seekNumber else { return }
+                guard let position else {
+                    state.progressMs = nil
+                    return
+                }
+                // Back by what the seek moved, from the position as it is now (time kept
+                // running while the command was out).
+                state.progressMs = max(0, (state.progressMs ?? 0) - (target - position))
+            })
     }
 
     // MARK: Running a command

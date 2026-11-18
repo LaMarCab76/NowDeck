@@ -172,7 +172,8 @@ struct PlayerView: View {
     private var bottomBlock: some View {
         VStack(spacing: Layout.bottomBlockGap) {
             if let item = model.nowPlaying, let playback = model.playback {
-                ProgressRow(progressMs: playback.progressMs ?? 0, durationMs: item.durationMs,
+                ProgressRow(itemKey: item.transitionKey,
+                            progressMs: playback.progressMs ?? 0, durationMs: item.durationMs,
                             isPlaying: playback.isPlaying, fetchedAt: model.fetchedAt,
                             showsRemainingTime: preferences.showsRemainingTime,
                             onToggleTime: { preferences.showsRemainingTime.toggle() },
@@ -545,6 +546,9 @@ enum DeviceSymbol {
 /// device) `onSeek` is `nil` and the bar stays informative, with no hint that it moves, as
 /// Spotify's guidelines ask for restricted actions (docs/06).
 struct ProgressRow: View {
+    /// The item that plays (`NowPlaying.transitionKey`). A drag that started on another item
+    /// sends nothing: the bar now measures a different track.
+    var itemKey = ""
     var progressMs: Int
     var durationMs: Int
     var isPlaying: Bool
@@ -556,6 +560,8 @@ struct ProgressRow: View {
 
     /// Where the finger is while it drags on the bar; `nil` otherwise.
     @State private var scrubMs: Int?
+    /// The item the current drag started on.
+    @State private var scrubItemKey: String?
     /// Goes back to `false` by itself also when the system cancels the gesture, when
     /// `onEnded` is not called.
     @GestureState private var isScrubbing = false
@@ -573,8 +579,13 @@ struct ProgressRow: View {
         .frame(height: Layout.progressRowHeight)
         .onChange(of: isScrubbing) { scrubbing in
             // A cancelled drag (an alert, a call) sends nothing.
-            if !scrubbing { scrubMs = nil }
+            if !scrubbing {
+                scrubMs = nil
+                scrubItemKey = nil
+            }
         }
+        // The track changed under the finger: drop the preview of the old one.
+        .onChange(of: itemKey) { _ in scrubMs = nil }
     }
 
     private var canSeek: Bool { onSeek != nil && durationMs > 0 }
@@ -647,16 +658,22 @@ struct ProgressRow: View {
         DragGesture(minimumDistance: 0)
             .updating($isScrubbing) { _, scrubbing, _ in scrubbing = true }
             .onChanged { drag in
+                if scrubItemKey == nil { scrubItemKey = itemKey }
+                guard scrubItemKey == itemKey else { return }
                 scrubMs = PlaybackProgress.positionMs(atX: drag.location.x, width: width,
                                                       durationMs: durationMs)
             }
             .onEnded { drag in
+                defer {
+                    scrubMs = nil
+                    scrubItemKey = nil
+                }
+                guard (scrubItemKey ?? itemKey) == itemKey else { return }
                 let target = PlaybackProgress.positionMs(atX: drag.location.x, width: width,
                                                          durationMs: durationMs)
                 // The command moves the position on screen at once (optimistic), so the bar
                 // does not jump back between the release and Spotify's answer.
                 onSeek?(target)
-                scrubMs = nil
             }
     }
 
