@@ -123,7 +123,7 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
 
 ## Decisiones pendientes del dueño
 
-- Licencia del repositorio (por ejemplo MIT o GPL-3.0).
+- ✅ Licencia del repositorio: MIT (decidido el 2026-11-18, archivo `LICENSE`).
 - Usuario u organización de GitHub y Bundle ID definitivo (sugerido
   `com.lamarcab76.nowdeck`).
 - Si los temas se editan color por color dentro de la app o alcanza con presets e importación.

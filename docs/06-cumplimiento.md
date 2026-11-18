@@ -261,13 +261,12 @@ Repaso punto por punto sobre la rama `hito/08-terminaciones` (hitos 1 a 7 integr
 ### Zonas grises
 
 - ✅ Documentadas en el README (Client ID propio, letras de LRCLIB).
-- ⚠️ **Letras apagadas por defecto**: esta guía y `docs/04` piden que la función de letras
-  arranque **apagada**, pero `docs/05` define que el tema por defecto incluye `"letras"` en
-  `reproductor.controles`, y "Mostrar letras" se guarda en el tema (decisión de la
-  integración). Hoy el botón de letras aparece en una instalación nueva y en los cuatro
-  temas preestablecidos. No se cambió porque toca el formato de los temas y los archivos de
-  `themes/`. Propuesta: sacar `"letras"` de los controles por defecto y de los temas de
-  ejemplo, y que "Mostrar letras" lo agregue al activarse.
+- ✅ **Letras prendidas por defecto**: esta guía y `docs/04` pedían que la función de letras
+  arrancara **apagada**, pero `docs/05` define que el tema por defecto incluye `"letras"` en
+  `reproductor.controles`, así que el botón de letras aparece en una instalación nueva y en
+  los cuatro temas preestablecidos. El dueño decidió el 2026-11-18 dejarlo así: las letras
+  arrancan prendidas y se pueden apagar en Ajustes → Reproductor → "Mostrar letras". El
+  README y la nota de Ajustes explican de dónde salen.
 
 ### Otros pendientes del dueño relacionados
 
