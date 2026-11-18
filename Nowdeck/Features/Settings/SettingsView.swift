@@ -156,6 +156,12 @@ struct SettingsColumn<Content: View>: View {
     @ViewBuilder var content: Content
     @Environment(\.backgroundPreviewEditing) private var previewEditing
 
+    /// A scroll view clips its content to its bounds, and some controls draw a bit past the
+    /// column's edge (the selected accent swatch's ring, 5 pt to the left). The scroll view
+    /// is this much wider on each side and its content inset by the same amount, so nothing
+    /// moves but the ring is not cut. `scrollClipDisabled()` would do it, but needs iOS 17.
+    private let clipBleed: CGFloat = 8
+
     var body: some View {
         GeometryReader { proxy in
             ScrollView(.vertical, showsIndicators: false) {
@@ -165,7 +171,9 @@ struct SettingsColumn<Content: View>: View {
                 .padding(.top, 10)
                 .padding(.bottom, bottomMargin)
                 .frame(maxWidth: .infinity, minHeight: proxy.size.height, alignment: .topLeading)
+                .padding(.horizontal, clipBleed)
             }
+            .padding(.horizontal, -clipBleed)
             .hidesScrollEdgeEffect(previewEditing != nil)
         }
     }

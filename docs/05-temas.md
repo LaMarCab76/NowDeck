@@ -35,8 +35,8 @@ como archivo **`.nowdeck.json`**. Esquema: `schemas/nowdeck.tema.v1.schema.json`
 | `nombre` | texto de 1 a 40 caracteres (obligatorio) | — |
 | `colores.*` | `#RRGGBB` | los del tema "Negro y verde" |
 | `fondoReproductor` | `solido` (usa `colores.fondo`) · `caratula` · `artista` (foto del artista a pantalla completa; mientras carga, o si el artista no tiene foto, el color de la carátula) | `caratula` |
-| `desenfoqueFondo` | entero de 0 (nítida) a 100; solo se usa con `artista` | `0` |
-| `oscurecerFondo` | entero de 0 (la foto tal cual) a 100; solo se usa con `artista` | `30` |
+| `desenfoqueFondo` | entero de 0 (nítida) a 100; solo se usa con `artista` | `40` |
+| `oscurecerFondo` | entero de 0 (la foto tal cual) a 100; solo se usa con `artista` | `60` |
 | `reproductor.caratula` | `izquierda` · `derecha` | `izquierda` |
 | `reproductor.controles` | subconjunto ordenado de `aleatorio`, `repetir`, `letras`, `volumen` | los cuatro |
 | `letras.ancho` | `mitad` · `dos-tercios` · `completo` | `dos-tercios` |

@@ -18,7 +18,7 @@ struct PlayerBackgroundView: View {
     var color: Color
     var artistImage: UIImage?
     /// The theme's `desenfoqueFondo`, 0 to 100.
-    var blur: Int = 0
+    var blur: Int = Theme.defaultBackgroundBlur
     /// The theme's `oscurecerFondo`, 0 to 100.
     var dim: Int = Theme.defaultBackgroundDim
 

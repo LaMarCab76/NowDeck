@@ -154,12 +154,13 @@ Cambia lo anterior en estos puntos (no está en los mockups):
   - Al cambiar de artista, la foto anterior queda hasta que la nueva está lista y pasan de una
     a otra con el fundido de 0,8 s. El color de la carátula solo se ve cuando no hay ninguna
     foto: al empezar, antes de la primera, o si el artista no tiene foto.
-  - Encima, una capa negra la oscurece un poco (**Oscurecer**, `oscurecerFondo`, 30 % por
+  - Encima, una capa negra la oscurece un poco (**Oscurecer**, `oscurecerFondo`, 60 % por
     defecto). El 100 % es negro al 80 %: la foto nunca desaparece del todo.
   - Zoom lento de 1 a 1,06 en 30 s, ida y vuelta (sin zoom con *Reducir movimiento*), y
     fundido de 0,8 s al cambiar de artista.
   - Con esta opción aparecen los deslizadores **Desenfoque** y **Oscurecer** (0 a 100 %, de
-    a 5; `desenfoqueFondo` y `oscurecerFondo` del tema). El 100 % de desenfoque es un radio de
+    a 5; `desenfoqueFondo` y `oscurecerFondo` del tema). Por defecto, 40 % de desenfoque y
+    60 % de oscurecer (pedido del dueño, 2026-11-18). El 100 % de desenfoque es un radio de
     30. Se guardan al soltar. Ver "Ajustes" para la vista previa.
   - Spotify da una sola foto por artista (en tres tamaños), así que no rota entre fotos.
   - Ver `docs/06`, "Zonas grises".

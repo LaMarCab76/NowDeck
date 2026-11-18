@@ -18,8 +18,8 @@ struct Theme: Codable, Equatable, Sendable {
     var colors: Colors?
     var playerBackground: PlayerBackground?
     /// How blurred the artist's photo is (`fondoReproductor: "artista"`), 0 to 100. Missing
-    /// means 0; it is not filled in by the merge, so themes that never touched it (the
-    /// presets) do not grow the field.
+    /// means `defaultBackgroundBlur`; it is not filled in by the merge, so themes that never
+    /// touched it (the presets) do not grow the field.
     var backgroundBlur: Int?
     /// How much the artist's photo is darkened (`oscurecerFondo`), 0 to 100. Missing means
     /// `defaultBackgroundDim`; like the blur, the merge does not fill it in.
@@ -73,9 +73,10 @@ struct Theme: Codable, Equatable, Sendable {
     static let backgroundBlurRange = 0...100
     /// `oscurecerFondo`: 0 (the photo as is) to 100.
     static let backgroundDimRange = 0...100
-    /// "Se oscurece un toque" (owner, 2026-11-18): the photo is a bit darker unless the theme
-    /// says otherwise.
-    static let defaultBackgroundDim = 30
+    /// What "Foto del artista" starts with unless the theme says otherwise (owner,
+    /// 2026-11-18): blurred and darkened enough for the title to read well on any photo.
+    static let defaultBackgroundBlur = 40
+    static let defaultBackgroundDim = 60
 
     struct Player: Codable, Equatable, Sendable {
         var artworkPosition: ArtworkPosition?
