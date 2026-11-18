@@ -60,7 +60,7 @@ final class BackgroundPreviewTests: XCTestCase {
             return (.stub(404), Data())
         }
         let image = await BackgroundPreviewModel.samplePhoto(api: api, loader: loader,
-                                                             seenArtistID: { "seen" })
+                                                             seenArtistID: { "seen" }).sample
         XCTAssertEqual(image?.artistID, "recent")
         XCTAssertEqual(image?.artistURL?.absoluteString, "https://open.spotify.com/artist/recent")
         XCTAssertFalse(recorder.requests.contains { $0.url?.path == "/v1/artists/seen" },
@@ -78,7 +78,7 @@ final class BackgroundPreviewTests: XCTestCase {
             return (.stub(404), Data())
         }
         let image = await BackgroundPreviewModel.samplePhoto(api: api, loader: loader,
-                                                             seenArtistID: { "seen" })
+                                                             seenArtistID: { "seen" }).sample
         XCTAssertEqual(image?.artistID, "seen")
         XCTAssertTrue(recorder.requests.contains { $0.url?.path == "/v1/artists/seen" })
     }
@@ -91,16 +91,17 @@ final class BackgroundPreviewTests: XCTestCase {
             if request.url?.host == "i.scdn.co" { return (.stub(200), Self.png) }
             return (.stub(404), Data())
         }
-        let sample = await BackgroundPreviewModel.samplePhoto(api: api, loader: loader,
+        let lookup = await BackgroundPreviewModel.samplePhoto(api: api, loader: loader,
                                                               seenArtistID: { "seen" })
-        XCTAssertEqual(sample?.artistID, "seen")
-        XCTAssertEqual(sample?.isLocal, true)
+        XCTAssertEqual(lookup.sample?.artistID, "seen")
+        XCTAssertEqual(lookup.sample?.basis, "seen")
+        XCTAssertEqual(lookup.heardArtistID, "seen")
     }
 
     func testNoSamplePhotoWithoutAnyArtist() async throws {
         let (api, loader, _) = makeAPI { _ in (.stub(200), Data(#"{"items":[]}"#.utf8)) }
         let image = await BackgroundPreviewModel.samplePhoto(api: api, loader: loader,
-                                                             seenArtistID: { nil })
+                                                             seenArtistID: { nil }).sample
         XCTAssertNil(image)
     }
 
@@ -207,6 +208,39 @@ final class BackgroundPreviewTests: XCTestCase {
         XCTAssertFalse(preview.isLookingUp)
         XCTAssertEqual(recorder.requests.filter { $0.url?.path == self.recentPath }.count, 1,
                        "Polls with the same (no) artist ask nothing again")
+    }
+
+    func testANewArtistDuringADragStartsOneFollowUpLookup() async throws {
+        // No photo anywhere: Spotify's history is not readable and the artist has none.
+        let playing = StubBox(false)
+        let playback = try PlaybackJSON().data()
+        let (session, recorder) = StubURLProtocol.session { [recentPath] request in
+            let path = request.url?.path ?? ""
+            if path == recentPath { return (.stub(403), spotifyErrorJSON(status: 403, message: "Forbidden")) }
+            if path.hasPrefix("/v1/artists") { return (.stub(404), Data()) }
+            if path == "/v1/me/player" { return playing.value ? (.stub(200), playback) : (.stub(204), Data()) }
+            return (.stub(404), Data())
+        }
+        let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session,
+                             sleep: { _ in }, jitter: { 0 })
+        let player = PlayerModel(api: api, artworkLoader: ArtworkLoader(session: session))
+        let preview = BackgroundPreviewModel(player: player)
+        let historyRequests = { recorder.requests.filter { $0.url?.path == self.recentPath }.count }
+        preview.begin(.blur, blur: 0, dim: 30)
+        try await waitUntil { !preview.isLookingUp }
+        XCTAssertEqual(historyRequests(), 1)
+
+        // An artist starts under the finger: one follow-up for it, and no more after that.
+        playing.value = true
+        _ = await player.poll()
+        try await waitUntil { historyRequests() == 2 }
+        try await waitUntil { !preview.isLookingUp }
+        for _ in 0..<3 {
+            _ = await player.poll()
+            try await Task.sleep(nanoseconds: 30_000_000)
+        }
+        XCTAssertEqual(historyRequests(), 2)
+        XCTAssertTrue(recorder.requests.contains { $0.url?.path == "/v1/artists/08td7MxkoHQkXnWAYD8d6Q" })
     }
 
     func testACancelledLookupCanStartAgain() async throws {

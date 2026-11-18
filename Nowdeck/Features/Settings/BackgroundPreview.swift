@@ -33,8 +33,10 @@ final class BackgroundPreviewModel: ObservableObject {
     struct Sample {
         var image: UIImage
         var artistID: String
-        /// Found through the last track the app saw, not Spotify's history.
-        var isLocal = false
+        /// The last heard artist this sample answers for: the one when its lookup started
+        /// (Spotify's history), or its own artist (the last track the app saw, or the
+        /// player's photo). It stops serving once another artist is heard.
+        var basis: String?
 
         var artistURL: URL? { SpotifyURI("spotify:artist:\(artistID)")?.webURL }
     }
@@ -43,7 +45,7 @@ final class BackgroundPreviewModel: ObservableObject {
     private let api: SpotifyAPI?
     private let artworkLoader: ArtworkLoader?
     /// The photo found without the player's help: Spotify's history, or the last track the
-    /// app saw (`isLocal`).
+    /// app saw.
     private var fallbackSample: Sample?
     /// The player's photos during this visit, by artist. Only two are kept: the one on
     /// screen and the one of the last artist heard (they are the same while a track plays).
@@ -105,13 +107,15 @@ final class BackgroundPreviewModel: ObservableObject {
               let api, let artworkLoader else { return }
         lookupArtistID = player?.lastHeardArtistID
         fallbackTask = Task { [weak self, weak player] in
-            let sample = await Self.samplePhoto(api: api, loader: artworkLoader,
+            let lookup = await Self.samplePhoto(api: api, loader: artworkLoader,
                                                 seenArtistID: { await player?.lastHeardArtistID })
             guard let self else { return }
             // Also when cancelled, so a later `prepare()` can start again.
             self.fallbackTask = nil
             guard !Task.isCancelled else { return }
-            if let sample {
+            // The artist this lookup really accounted for, even if it found no photo.
+            self.lookupArtistID = lookup.heardArtistID
+            if let sample = lookup.sample {
                 self.fallbackSample = sample
                 self.updateImage()
             }
@@ -141,7 +145,7 @@ final class BackgroundPreviewModel: ObservableObject {
     private func playerDidChange() {
         guard let player else { return }
         if let image = player.artistImage, let artistID = player.artistImageArtistID {
-            playerSamples[artistID] = Sample(image: image, artistID: artistID)
+            playerSamples[artistID] = Sample(image: image, artistID: artistID, basis: artistID)
         }
         let kept = Set([player.artistImageArtistID, player.lastHeardArtistID].compactMap { $0 })
         playerSamples = playerSamples.filter { kept.contains($0.key) }
@@ -154,13 +158,14 @@ final class BackgroundPreviewModel: ObservableObject {
 
     /// The sample, for the last artist heard (a track picked while paused was not heard):
     /// 1. the player's photo of that artist, the newest thing the app knows;
-    /// 2. else Spotify's history;
-    /// 3. else the photo found for the last track the app saw, if that is still the one.
+    /// 2. else the lookup's photo (Spotify's history, or the last track the app saw), while
+    ///    no other artist was heard since it was looked up.
     private var selectedSample: Sample? {
         let lastHeard = player?.lastHeardArtistID
         if let lastHeard, let sample = playerSamples[lastHeard] { return sample }
-        guard let fallbackSample else { return nil }
-        if fallbackSample.isLocal, fallbackSample.artistID != lastHeard { return nil }
+        guard let fallbackSample,
+              lastHeard == fallbackSample.basis || lastHeard == fallbackSample.artistID
+        else { return nil }
         return fallbackSample
     }
 
@@ -171,33 +176,43 @@ final class BackgroundPreviewModel: ObservableObject {
         if artistURL != sample?.artistURL { artistURL = sample?.artistURL }
     }
 
+    /// What a lookup found, and the last heard artist it accounted for.
+    struct Lookup {
+        var sample: Sample?
+        var heardArtistID: String?
+    }
+
     /// The photo of the last track heard on Spotify, or of `seenArtistID` when Spotify can't
     /// say (`403` without the scope, empty history, an error) or its artist has no photo.
-    /// `seenArtistID` is read only then, so it is the newest track the app saw. `nil` when
-    /// there is no photo.
+    /// `seenArtistID` is read at the start (what a history photo answers for) and again
+    /// before the local try, so that one is the newest track the app saw.
     static func samplePhoto(api: SpotifyAPI, loader: ArtworkLoader,
-                            seenArtistID: () async -> String?) async -> Sample? {
+                            seenArtistID: () async -> String?) async -> Lookup {
+        let heardAtStart = await seenArtistID()
         let recentArtistID = try? await api.recentlyPlayedTracks(limit: 1)
             .lazy.compactMap { NowPlaying(item: $0)?.artistID }.first
         if let recentArtistID,
-           let sample = await photo(of: recentArtistID, isLocal: false, api: api, loader: loader) {
-            return sample
+           let sample = await photo(of: recentArtistID, basis: heardAtStart, api: api, loader: loader) {
+            return Lookup(sample: sample, heardArtistID: heardAtStart)
         }
-        guard !Task.isCancelled, let localArtistID = await seenArtistID(),
-              localArtistID != recentArtistID else { return nil }
-        return await photo(of: localArtistID, isLocal: true, api: api, loader: loader)
+        let localArtistID = await seenArtistID()
+        guard !Task.isCancelled, let localArtistID, localArtistID != recentArtistID else {
+            return Lookup(sample: nil, heardArtistID: localArtistID)
+        }
+        let sample = await photo(of: localArtistID, basis: localArtistID, api: api, loader: loader)
+        return Lookup(sample: sample, heardArtistID: localArtistID)
     }
 
     /// The widest photo of an artist (`GET /artists/{id}`), loaded. `nil` if there is none,
     /// on any error, or once cancelled.
-    private static func photo(of artistID: String, isLocal: Bool, api: SpotifyAPI,
+    private static func photo(of artistID: String, basis: String?, api: SpotifyAPI,
                               loader: ArtworkLoader) async -> Sample? {
         guard !Task.isCancelled,
               let images = try? await api.artistImages(id: artistID),
               !Task.isCancelled, let url = NowPlaying.bestImage(images),
               let image = try? await loader.loadImage(url)
         else { return nil }
-        return Sample(image: image, artistID: artistID, isLocal: isLocal)
+        return Sample(image: image, artistID: artistID, basis: basis)
     }
 }
 

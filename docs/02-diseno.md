@@ -339,9 +339,9 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
       cuando cambia la foto o la reproducción (pausa, reanudar, parar). Sin ninguna, se ve el
       color de fondo del tema.
     - Se busca al aparecer los deslizadores (salvo que ya haya una foto que sirva) y se
-      cancela al cerrar Ajustes. Una foto encontrada se reutiliza mientras siga sirviendo: si
-      era la del último tema que la app vio sonar y empieza a sonar otro artista, deja de
-      servir. Si no hay foto (un error, una espera por `429`, o dejó de servir), se busca de
+      cancela al cerrar Ajustes. Una foto encontrada se reutiliza mientras siga sirviendo: deja
+      de servir si después de buscarla suena otro artista (salvo que sea la de ese mismo
+      artista). Si no hay foto (un error, una espera por `429`, o dejó de servir), se busca de
       nuevo cuando los deslizadores reaparecen, al tocar uno, o si mientras se arrastra
       cambia el último artista escuchado; si ya había una búsqueda en curso, la nueva
       empieza cuando esa termina. Un sondeo que no cambia de artista no repite el pedido.
