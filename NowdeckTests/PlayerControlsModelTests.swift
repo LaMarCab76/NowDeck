@@ -476,6 +476,26 @@ final class PlayerControlsModelTests: XCTestCase {
                        "Spotify never stopped: 84 s plus the 10 s that passed")
     }
 
+    func testASeekAfterAPendingPauseStartsFromThePlayingState() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal(); gate.signal() }
+        let h = try await make(PlaybackJSON(isPlaying: true, progressMs: 84_000),
+                               commandGate: gate)
+        h.controls.playPause() // pause, still on its way when the seek is queued
+        h.controls.seek(toMs: 30_000)
+
+        // The pause lands 4 s later; the seek fails right after.
+        h.clock.advance(4)
+        gate.signal()
+        try await eventually { h.commandRequests.count == 2 }
+        h.playback.value = PlaybackJSON(isPlaying: false, progressMs: 88_000)
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        XCTAssertEqual(h.model.playback?.progressMs, 88_000,
+                       "It kept playing for the 4 s the pause took")
+    }
+
     // MARK: Volume from polls
 
     func testPolledVolumeChangeShowsThePanel() async throws {
