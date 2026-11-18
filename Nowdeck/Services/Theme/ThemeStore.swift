@@ -63,7 +63,7 @@ final class ThemeStore: ObservableObject {
 
     /// "Desenfoque" of the artist's photo, 0 to 100.
     var backgroundBlur: Int {
-        theme.backgroundBlur ?? 0
+        theme.backgroundBlur ?? Theme.defaultBackgroundBlur
     }
 
     /// "Oscurecer" of the artist's photo, 0 to 100.

@@ -21,7 +21,7 @@ final class BackgroundPreviewModel: ObservableObject {
     /// The slider under the finger; `nil` when no preview shows.
     @Published private(set) var editing: Control?
     /// The values being chosen, shown live by the preview.
-    @Published private(set) var blur = 0
+    @Published private(set) var blur = Theme.defaultBackgroundBlur
     @Published private(set) var dim = Theme.defaultBackgroundDim
     /// The sample photo, once known.
     @Published private(set) var image: UIImage?
