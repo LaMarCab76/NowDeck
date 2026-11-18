@@ -20,6 +20,10 @@ Leé este archivo completo antes de cada tarea. El detalle está en `docs/`:
 | `design/` | Fuentes HTML de los mockups (referencia de valores exactos) |
 | `schemas/`, `themes/` | Esquema JSON del tema y temas de ejemplo |
 
+`docs/en/` tiene la traducción al inglés de estos documentos (y `design/README.en.md`,
+`NowdeckTests/Fixtures/README.en.md`). **La versión en español es la fuente**: si cambiás un
+documento, actualizá también su traducción en el mismo commit.
+
 ## Plataforma y stack
 
 - **iOS 16.0 como mínimo** (tiene que correr en iPhone 8 Plus, que no pasa de iOS 16). Esto
@@ -63,9 +67,13 @@ Leé este archivo completo antes de cada tarea. El detalle está en `docs/`:
    pegarle a Spotify ni a LRCLIB en los tests.
 7. **Git**: trabajá en una rama por hito (`hito/NN-nombre`), con commits chicos y mensajes
    descriptivos en inglés. **No hagas push ni abras PRs sin que te lo pida.**
-8. **Idioma**: textos de la UI en español rioplatense (voseo), en un *String Catalog*
-   (`Localizable.xcstrings`) para poder sumar inglés después. Identificadores de código y
-   comentarios en inglés.
+8. **Idioma**: la UI está en español rioplatense (voseo, idioma fuente) y en inglés, en un
+   *String Catalog* (`Localizable.xcstrings`; los nombres de tipo de archivo del Info.plist,
+   en `InfoPlist.xcstrings`). Todo texto nuevo de la UI entra al catálogo **con su traducción
+   al inglés y con un valor `es` explícito igual a la clave** (los dos con estado
+   `translated`): Xcode no compila tabla para el idioma fuente, y sin `es.lproj` un iPhone en
+   español caería en inglés. La app sigue el idioma del iPhone; cualquier otro idioma cae en
+   inglés (`CFBundleDevelopmentRegion: en`). Identificadores de código y comentarios en inglés.
 9. El dueño del proyecto revisa el código generado: preferí código claro y explícito por sobre
    abstracciones ingeniosas. Explicá brevemente el porqué de las decisiones no obvias.
 
@@ -102,7 +110,8 @@ Nowdeck/
     Artwork/      Extracción del color de fondo desde la carátula
     Keychain/
   DesignSystem/   Colores, tipografía, espaciados, componentes reutilizables
-  Resources/      Assets (incluido el logo oficial de Spotify), Localizable.xcstrings
+  Resources/      Assets (incluido el logo oficial de Spotify), Localizable.xcstrings,
+                  InfoPlist.xcstrings
 NowdeckTests/
 project.yml
 ```

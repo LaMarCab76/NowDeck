@@ -53,7 +53,15 @@ targets:
       path: Nowdeck/Resources/Info.plist
       properties:
         CFBundleDisplayName: Nowdeck
-        CFBundleDevelopmentRegion: es
+        # iOS falls back to the development region when none of the device's languages is
+        # supported, so it is English: a French iPhone gets English, not Spanish. Spanish is
+        # still the catalogs' source language; every key also carries an explicit `es` value
+        # because Xcode never compiles a source-language table, and without es.lproj a
+        # Spanish iPhone would fall back to English too (LocalizationTests checks both).
+        CFBundleDevelopmentRegion: en
+        CFBundleLocalizations:
+          - es
+          - en
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen:
@@ -118,5 +126,10 @@ schemes:
         NowdeckTests: [test]
     test:
       gatherCoverageData: true
+      # Tests compare against the Spanish source strings and formats ("Playlist · 48 temas",
+      # "4,3:1"), so they run in Spanish whatever the simulator's language is. The English
+      # catalog is checked by LocalizationTests.
+      language: es
+      region: AR
       targets:
         - NowdeckTests
