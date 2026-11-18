@@ -45,9 +45,16 @@ final class BackgroundPreviewModel: ObservableObject {
     /// The photo found without the player's help (nothing playing, or an episode).
     private var fallbackSample: Sample?
     private var playerSample: Sample?
-    /// The newest photo the player showed. It is newer than anything the history lookup can
-    /// find, so it stays as the sample when playback stops.
-    private var lastPlayerSample: Sample?
+    /// Every photo the player showed during this visit, by artist. When playback stops, the
+    /// one of the last artist heard is the sample: it is newer than anything the history
+    /// lookup can find. A photo of a track picked while paused is kept too, but not used
+    /// unless that track then played.
+    private var playerSamples: [String: Sample] = [:]
+
+    /// The player's photo of the last artist heard, if it showed one during this visit.
+    private var retainedSample: Sample? {
+        player?.lastHeardArtistID.flatMap { playerSamples[$0] }
+    }
     private var fallbackTask: Task<Void, Never>?
     private var subscription: AnyCancellable?
 
@@ -63,7 +70,7 @@ final class BackgroundPreviewModel: ObservableObject {
             var sample: Sample?
             if let image, let artistID { sample = Sample(image: image, artistID: artistID) }
             self?.playerSample = sample
-            if let sample { self?.lastPlayerSample = sample }
+            if let sample { self?.playerSamples[sample.artistID] = sample }
             self?.updateImage()
         }
     }
@@ -99,7 +106,7 @@ final class BackgroundPreviewModel: ObservableObject {
     /// temporary failure (a `429` cooldown) does not last the whole visit. Not needed once the
     /// player showed a photo: that one wins for the rest of the visit.
     func prepare() {
-        guard fallbackTask == nil, fallbackSample == nil, lastPlayerSample == nil,
+        guard fallbackTask == nil, fallbackSample == nil, retainedSample == nil,
               let api, let artworkLoader else { return }
         fallbackTask = Task { [weak self, weak player] in
             let sample = await Self.samplePhoto(api: api, loader: artworkLoader,
@@ -128,7 +135,7 @@ final class BackgroundPreviewModel: ObservableObject {
     /// What plays wins: its photo replaces the sample as soon as the player has it, and stays
     /// when playback stops.
     private func updateImage() {
-        let sample = playerSample ?? lastPlayerSample ?? fallbackSample
+        let sample = playerSample ?? retainedSample ?? fallbackSample
         image = sample?.image
         artistURL = sample?.artistURL
     }

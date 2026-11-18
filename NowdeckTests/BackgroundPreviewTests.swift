@@ -200,6 +200,30 @@ final class BackgroundPreviewTests: XCTestCase {
         XCTAssertNil(player.lastHeardArtistID)
     }
 
+    func testAPhotoPickedWhilePausedIsNotKeptAsTheLastHeard() async throws {
+        // Paused from the start: the player shows the artist's photo, but nothing was heard.
+        let paused = try PlaybackJSON(isPlaying: false).data()
+        let state = StubBox(paused)
+        let (session, _) = StubURLProtocol.session { request in
+            let path = request.url?.path ?? ""
+            if path.hasPrefix("/v1/artists") { return (.stub(200), Self.artistJSON) }
+            if request.url?.host == "i.scdn.co" { return (.stub(200), Self.png) }
+            if path == "/v1/me/player" { return (.stub(200), state.value) }
+            return (.stub(404), Data())
+        }
+        let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session,
+                             sleep: { _ in }, jitter: { 0 })
+        let player = PlayerModel(api: api, artworkLoader: ArtworkLoader(session: session))
+        let preview = BackgroundPreviewModel(player: player)
+        _ = await player.poll()
+        try await waitUntil { preview.image != nil }
+
+        state.value = Data()
+        _ = await player.poll()
+        XCTAssertNil(player.nowPlaying)
+        XCTAssertNil(preview.image, "Never heard: not kept once playback is idle")
+    }
+
     func testNoLookupOnceThePlayerShowedAPhoto() async throws {
         let playing = StubBox(true)
         let player = try makePlayer(playing: playing)
