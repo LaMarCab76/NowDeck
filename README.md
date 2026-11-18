@@ -8,9 +8,9 @@ playing, control it, and choose which device it plays on.
 > Nowdeck is an independent open-source project. It is not affiliated with or endorsed by
 > Spotify.
 
-> The app's interface is currently in Spanish only. Its texts live in a String Catalog, so
-> English can be added later. Screen and setting names below are given as they appear in the
-> app, with a translation.
+> The app's interface is available in Spanish and English and follows the iPhone's language
+> (any other language falls back to English). Screen and setting names below are given in
+> English, with the Spanish in parentheses.
 
 ## What it does
 
@@ -60,7 +60,7 @@ Nowdeck walks you through this the first time you open it, but these are the ste
 6. If someone else will use your app, add them under **User Management** with their Spotify
    account email (up to 5). If it's just you, you can skip this.
 
-In Nowdeck, paste the Client ID, tap **Conectar con Spotify** (Connect with Spotify) and log
+In Nowdeck, paste the Client ID, tap **Connect to Spotify** (*Conectar con Spotify*) and log
 in. Nowdeck asks only for these scopes:
 
 | Scope | What for |
@@ -74,8 +74,8 @@ in. Nowdeck asks only for these scopes:
 | `user-read-playback-position` | Know where you are in a podcast episode |
 | `user-read-recently-played` | Know what you last listened to, for the background preview in Settings |
 
-If after connecting you see "Spotify no deja usar tu app" (Spotify won't let you use your
-app), check that your account is in **User Management** and that the account that owns the
+If after connecting you see "Spotify won't allow your app" (*Spotify no deja usar tu app*),
+check that your account is in **User Management** and that the account that owns the
 app has Premium.
 
 ## Build
@@ -116,8 +116,8 @@ in 2026 and because of Spotify's rules:
   active users. Spotify neither forbids nor endorses in writing that each user creates their
   own app; it's the only practical way to distribute an open app.
 - **Limited quota.** Each developer app has a request quota. When it's exceeded, Spotify
-  answers "wait" and Nowdeck polls less often for a while ("SPOTIFY PIDE ESPERAR", *Spotify
-  asks to wait*, appears).
+  answers "wait" and Nowdeck polls less often for a while ("SPOTIFY ASKS TO WAIT", *SPOTIFY
+  PIDE ESPERAR*, appears).
 - **No push updates.** The API doesn't notify changes: Nowdeck polls the state every 3 s
   while playing (10 s when paused), so a change made on another device can take a few
   seconds to show up.
@@ -127,7 +127,7 @@ in 2026 and because of Spotify's rules:
   connect; after that, Nowdeck asks you to connect again.
 - **What the API doesn't offer**: editing the queue (removing, reordering or jumping to a
   track), the names of Spotify's editorial and algorithmic playlists (the player just says
-  "Playlist de Spotify"), and playing podcasts or audiobooks from the library (those cards
+  "Spotify playlist"), and playing podcasts or audiobooks from the library (those cards
   open Spotify). Search in *Development Mode* returns at most 10 results per type; the results
   screen isn't built yet.
 - **Devices that don't show up.** In practice, the Spotify Connect list only shows devices
@@ -137,12 +137,12 @@ in 2026 and because of Spotify's rules:
   be missing or contain mistakes, and their rights belong to their authors and publishers.
   Also, Spotify's policy forbids combining content from another service with its own, and
   showing third-party lyrics alongside playback has no clear precedent. That's why lyrics can
-  be turned off in **Ajustes → Reproductor → Mostrar letras** (Settings → Player → Show
-  lyrics), and the Settings screen explains where they come from. Nowdeck never uses
+  be turned off in **Settings → Player → Show lyrics** (*Ajustes → Reproductor →
+  Mostrar letras*), and the Settings screen explains where they come from. Nowdeck never uses
   Spotify's internal access to its lyrics.
 - **Artist photo as background.** It's off by default. You can turn it on in
-  **Ajustes → Apariencia → Fondo del reproductor** (Settings → Appearance → Player
-  background). The artwork is always shown in full. To fill the background, Nowdeck crops and
+  **Settings → Appearance → Player background** (*Ajustes → Apariencia →
+  Fondo del reproductor*). The artwork is always shown in full. To fill the background, Nowdeck crops and
   dims the artist's photo, a treatment that may conflict with
   [Spotify's rules on visual content](https://developer.spotify.com/documentation/web-api/reference/get-an-artist).
 - **It's not a player.** It doesn't play anything on the iPhone; that's what the Spotify app

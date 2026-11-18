@@ -63,9 +63,11 @@ Leé este archivo completo antes de cada tarea. El detalle está en `docs/`:
    pegarle a Spotify ni a LRCLIB en los tests.
 7. **Git**: trabajá en una rama por hito (`hito/NN-nombre`), con commits chicos y mensajes
    descriptivos en inglés. **No hagas push ni abras PRs sin que te lo pida.**
-8. **Idioma**: textos de la UI en español rioplatense (voseo), en un *String Catalog*
-   (`Localizable.xcstrings`) para poder sumar inglés después. Identificadores de código y
-   comentarios en inglés.
+8. **Idioma**: la UI está en español rioplatense (voseo, idioma fuente) y en inglés, en un
+   *String Catalog* (`Localizable.xcstrings`; los nombres de tipo de archivo del Info.plist,
+   en `InfoPlist.xcstrings`). Todo texto nuevo de la UI entra al catálogo **con su traducción
+   al inglés** (estado `translated`). La app sigue el idioma del iPhone; cualquier otro idioma
+   cae en inglés. Identificadores de código y comentarios en inglés.
 9. El dueño del proyecto revisa el código generado: preferí código claro y explícito por sobre
    abstracciones ingeniosas. Explicá brevemente el porqué de las decisiones no obvias.
 
@@ -102,7 +104,8 @@ Nowdeck/
     Artwork/      Extracción del color de fondo desde la carátula
     Keychain/
   DesignSystem/   Colores, tipografía, espaciados, componentes reutilizables
-  Resources/      Assets (incluido el logo oficial de Spotify), Localizable.xcstrings
+  Resources/      Assets (incluido el logo oficial de Spotify), Localizable.xcstrings,
+                  InfoPlist.xcstrings
 NowdeckTests/
 project.yml
 ```
