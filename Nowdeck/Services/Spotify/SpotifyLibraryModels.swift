@@ -87,6 +87,9 @@ struct SimplifiedPlaylist: Decodable, Equatable, Sendable {
     /// Can be `null` or empty (playlists without a cover).
     var images: [SpotifyImage]?
     var owner: Owner?
+    /// "`true` if the owner allows other users to modify the playlist": the user can add to
+    /// it even when someone else owns it (Agregar a una playlist).
+    var collaborative: Bool?
     /// The count since February 2026 ("tracks → items").
     var items: ItemCount?
     /// The old name of `items`, still in the reference as deprecated.

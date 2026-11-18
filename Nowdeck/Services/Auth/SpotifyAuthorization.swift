@@ -22,6 +22,14 @@ enum SpotifyAuthorization {
         // preview. Sessions from before must log in again to grant it; until then the
         // preview uses what the app saw playing.
         "user-read-recently-played",
+    ] + playlistEditingScopes
+
+    /// Since 2026-11-18: adding the item that plays to the user's playlists
+    /// (`POST /playlists/{id}/items`). Sessions from before do not have them; the sheet
+    /// asks to log in again (`AppState.requestPlaylistEditing()`).
+    static let playlistEditingScopes = [
+        "playlist-modify-public",
+        "playlist-modify-private",
     ]
 
     /// The URL that opens Spotify's login and consent page.

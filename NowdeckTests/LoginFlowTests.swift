@@ -156,6 +156,65 @@ final class LoginFlowTests: XCTestCase {
         XCTAssertNotNil(appState.tokenManager)
     }
 
+    // MARK: Playlist editing (2026-11-18)
+
+    private func loggedInAppState(scope: String, web: FakeWebAuthenticator = .approving(),
+                                  playerStatus: Int = 204) throws -> (AppState, CredentialStore) {
+        let credentials = CredentialStore(store: InMemorySecureStore())
+        try credentials.setClientID(clientID)
+        try credentials.setTokens(OAuthTokens(accessToken: "old", refreshToken: "r",
+                                              expiresAt: .distantFuture, scope: scope))
+        let (appState, _, _) = makeAppState(credentials: credentials, web: web,
+                                            playerStatus: playerStatus)
+        return (appState, credentials)
+    }
+
+    func testPlaylistEditingNeedsBothModifyScopes() throws {
+        XCTAssertFalse(try loggedInAppState(scope: "user-read-playback-state").0
+            .hasPlaylistEditing())
+        XCTAssertFalse(try loggedInAppState(scope: "playlist-modify-public").0
+            .hasPlaylistEditing())
+        XCTAssertTrue(try loggedInAppState(
+            scope: "user-read-playback-state playlist-modify-public playlist-modify-private")
+            .0.hasPlaylistEditing())
+    }
+
+    func testUnknownGrantedScopesCountAsGranted() throws {
+        XCTAssertTrue(try loggedInAppState(scope: "").0.hasPlaylistEditing())
+    }
+
+    func testRequestingPlaylistEditingStoresNewTokensAndStaysOnThePlayer() async throws {
+        let (appState, credentials) = try loggedInAppState(scope: "user-read-playback-state")
+        let manager = appState.tokenManager
+
+        let failure = await appState.requestPlaylistEditing()
+
+        XCTAssertNil(failure)
+        XCTAssertEqual(try credentials.tokens()?.accessToken, "access")
+        XCTAssertEqual(appState.route, .player)
+        // Same token manager: it reads the Keychain on every request.
+        XCTAssertTrue(appState.tokenManager === manager)
+    }
+
+    func testRequestingPlaylistEditingReportsACancelledLogin() async throws {
+        let web = FakeWebAuthenticator { _ in throw AuthError.cancelled }
+        let (appState, credentials) = try loggedInAppState(scope: "x", web: web)
+
+        let failure = await appState.requestPlaylistEditing()
+
+        XCTAssertEqual(failure, .cancelled)
+        XCTAssertEqual(try credentials.tokens()?.accessToken, "old")
+    }
+
+    func testRequestingPlaylistEditingWithAnotherAccountKeepsTheOldSession() async throws {
+        let (appState, credentials) = try loggedInAppState(scope: "x", playerStatus: 403)
+
+        let failure = await appState.requestPlaylistEditing()
+
+        XCTAssertEqual(failure, .notAllowlisted)
+        XCTAssertEqual(try credentials.tokens()?.accessToken, "old")
+    }
+
     // MARK: AppState.connect
 
     func testSuccessfulConnectStoresEverythingAndAsksAboutFolders() async throws {

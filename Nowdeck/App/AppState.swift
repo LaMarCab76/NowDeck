@@ -175,6 +175,57 @@ final class AppState: ObservableObject {
         route = .onboarding(.clientID)
     }
 
+    // MARK: Playlist editing (2026-11-18)
+
+    /// Whether the stored session was granted the playlist-editing scopes. A session whose
+    /// granted scopes are unknown (Spotify sent none) counts as granted: a `403` on adding
+    /// still asks again.
+    func hasPlaylistEditing() -> Bool {
+        guard let tokens = try? credentials.tokens() else { return false }
+        let granted = Set(tokens.scope.split(separator: " ").map(String.init))
+        if granted.isEmpty { return true }
+        return SpotifyAuthorization.playlistEditingScopes.allSatisfy(granted.contains)
+    }
+
+    /// Logs in again with the stored Client ID, asking for every scope, and keeps the user
+    /// on the player. The token manager reads the Keychain on every request, so the new
+    /// tokens apply right away without rebuilding the player. `nil` when it worked.
+    func requestPlaylistEditing() async -> PlaylistEditingAccess.Failure? {
+        guard let clientID = savedClientID, tokenManager != nil else { return .failed }
+        guard !isConnecting else { return .failed }
+        isConnecting = true
+        defer { isConnecting = false }
+
+        do {
+            let login = SpotifyLogin(webAuthenticator: webAuthenticator, accounts: accounts)
+            let tokens = try await login.logIn(clientID: clientID)
+            // Same check as the first login: a 403 means this account cannot use the app.
+            if case .forbidden = try await accessCheck.run(accessToken: tokens.accessToken) {
+                return .notAllowlisted
+            }
+            try credentials.setTokens(tokens)
+            return nil
+        } catch AuthError.cancelled {
+            return .cancelled
+        } catch AuthError.accessDenied {
+            return .denied
+        } catch AuthError.network {
+            return .offline
+        } catch {
+            return .failed
+        }
+    }
+
+    /// What the player's Agregar a una playlist sheet needs from the session.
+    var playlistEditingAccess: PlaylistEditingAccess {
+        PlaylistEditingAccess(
+            isGranted: { [weak self] in self?.hasPlaylistEditing() ?? false },
+            request: { [weak self] in
+                guard let self else { return .failed }
+                return await self.requestPlaylistEditing()
+            })
+    }
+
     /// The answer of the folders step. Then "¡Listo!".
     func answerPlaylistFolders(enabled: Bool) {
         guard route == .onboarding(.folders) else { return }
