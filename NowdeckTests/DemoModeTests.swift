@@ -62,6 +62,11 @@ final class DemoModeTests: XCTestCase {
         XCTAssertEqual(answer("https://lrclib.net/api/get?track_name=Other&artist_name=x").status, 404)
     }
 
+    func testDemoThemesAreKeptApartFromTheRealOnes() {
+        XCTAssertNotEqual(DemoMode.themeStorage().directory.standardizedFileURL,
+                          ThemeStorage.applicationSupport().directory.standardizedFileURL)
+    }
+
     func testCoversAreDrawnFromTheirURL() throws {
         let url = DemoArtwork.url(from: "1b2a4a", to: "f2766b", shape: .rings)
         let answer = answer(url)

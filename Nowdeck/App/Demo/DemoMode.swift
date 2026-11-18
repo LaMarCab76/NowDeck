@@ -13,7 +13,7 @@ import Foundation
 /// device. `AsyncImage` uses its own session, so `CardArtwork` draws the demo covers itself.
 ///
 /// The session lives in an in-memory store with fake tokens: the real Keychain is neither
-/// read nor written.
+/// read nor written. Preferences and themes are kept apart from the real ones too.
 enum DemoMode {
     static let launchArgument = "-demoMode"
 
@@ -37,6 +37,16 @@ enum DemoMode {
             expiresAt: Date().addingTimeInterval(365 * 24 * 60 * 60),
             scope: SpotifyAuthorization.scopes.joined(separator: " ")))
         return credentials
+    }
+
+    /// Themes in a temporary folder, emptied on every demo launch: switching themes for a
+    /// screenshot never touches the real `active` and `custom` theme files, and each demo
+    /// session starts on the default theme.
+    static func themeStorage() -> ThemeStorage {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NowdeckDemo/Theme", isDirectory: true)
+        try? FileManager.default.removeItem(at: directory)
+        return ThemeStorage(directory: directory)
     }
 
     /// Separate settings, so the demo leaves the real ones alone.
