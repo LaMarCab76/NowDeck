@@ -417,7 +417,7 @@ struct PlayerSettingsView: View {
                 VStack(alignment: .leading, spacing: Spacing.xxs) {
                     Text("Mostrar tiempo restante")
                         .textStyle(.settingsRowTitle)
-                    Text("A la derecha de la barra se ve cuánto falta, en vez de la duración del tema.")
+                    Text("A la derecha de la barra se ve cuánto falta, en vez de la duración del tema. También podés cambiarlo tocando ese tiempo en el reproductor.")
                         .textStyle(.helper)
                         .foregroundStyle(theme.palette.bodyText.color)
                         .fixedSize(horizontal: false, vertical: true)

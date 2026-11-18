@@ -166,7 +166,8 @@ struct PlayerView: View {
             if let item = model.nowPlaying, let playback = model.playback {
                 ProgressRow(progressMs: playback.progressMs ?? 0, durationMs: item.durationMs,
                             isPlaying: playback.isPlaying, fetchedAt: model.fetchedAt,
-                            showsRemainingTime: preferences.showsRemainingTime)
+                            showsRemainingTime: preferences.showsRemainingTime,
+                            onToggleTime: { preferences.showsRemainingTime.toggle() })
             }
             PlayerControls(playback: model.playback, actions: actions,
                            controls: optionalControls,
@@ -523,13 +524,15 @@ enum DeviceSymbol {
 // MARK: - Progress
 
 /// Elapsed time · bar · duration (or time left, from Ajustes › Reproductor). Informative
-/// only: no knob, no dragging (docs/06).
+/// only: no knob, no dragging (docs/06). Tapping the time on the right switches between the
+/// duration and the time left, like Apple Music; it never moves the playback position.
 struct ProgressRow: View {
     var progressMs: Int
     var durationMs: Int
     var isPlaying: Bool
     var fetchedAt: Date
     var showsRemainingTime = false
+    var onToggleTime: (() -> Void)?
 
     @EnvironmentObject private var theme: ThemeStore
     private typealias Layout = Metrics.Player
@@ -567,6 +570,10 @@ struct ProgressRow: View {
             .frame(height: Layout.progressBarHeight)
             Text(verbatim: trailing)
                 .frame(minWidth: Layout.progressTimeWidth, alignment: .trailing)
+                // The 12 pt text is a small target: the tappable area grows to about 44 pt
+                // without changing the layout.
+                .contentShape(Rectangle().inset(by: -Layout.progressTimeTapOutset))
+                .onTapGesture { onToggleTime?() }
         }
         .textStyle(.playbackTime)
         .foregroundStyle(theme.palette.tertiaryText.color)
@@ -574,6 +581,17 @@ struct ProgressRow: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Progreso"))
         .accessibilityValue(Text("\(elapsed) de \(total)"))
+        .accessibilityActions {
+            // Two literals, not a ternary: a ternary would make them plain `String`s, which
+            // skip the String Catalog.
+            if let onToggleTime {
+                if showsRemainingTime {
+                    Button("Mostrar duración", action: onToggleTime)
+                } else {
+                    Button("Mostrar tiempo restante", action: onToggleTime)
+                }
+            }
+        }
     }
 }
 
