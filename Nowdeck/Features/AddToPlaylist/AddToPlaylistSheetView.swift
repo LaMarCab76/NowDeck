@@ -240,16 +240,18 @@ private struct PlaylistRow: View {
                 CardArtwork(url: playlist.imageURL, side: Layout.rowArtworkSize)
 
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(verbatim: playlist.name)
+                    // Long names scroll instead of staying cut (docs/06, "Metadatos"): a tap
+                    // adds right away, so the full name must be readable first.
+                    MarqueeText(verbatim: playlist.name)
                         .textStyle(.trackRowTitle)
                         .foregroundStyle(theme.palette.text.color)
                     if let details {
                         Text(details)
                             .textStyle(.cardSubtitle)
                             .foregroundStyle(theme.palette.bodyText.color)
+                            .lineLimit(1)
                     }
                 }
-                .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 stateIcon

@@ -247,6 +247,28 @@ final class AddToPlaylistTests: XCTestCase {
         XCTAssertEqual(model.problem, .addNotFound)
     }
 
+    func testASuccessfulRetryClearsTheEarlierError() async throws {
+        let attempts = Counter()
+        let (api, _) = makeAPI { request in
+            if request.httpMethod == "POST" {
+                return attempts.next() == 1 ? (.stub(503), Data())
+                    : (.stub(201), Self.json(["snapshot_id": "s"]))
+            }
+            return try Self.routes(playlists: [Self.playlist("mine", owner: "me")])(request)
+        }
+        let model = AddToPlaylistModel(api: api)
+        model.open(for: trackURI, access: .granted)
+        await model.load()
+        let playlist = try XCTUnwrap(model.playlists?.first)
+
+        await model.add(to: playlist)
+        XCTAssertEqual(model.problem, .connection)
+
+        await model.add(to: playlist)
+        XCTAssertEqual(model.state(of: playlist), .added)
+        XCTAssertNil(model.problem)
+    }
+
     func testMissingPermissionBlocksAddingUntilGranted() async throws {
         let (api, recorder) = makeAPI(handler: Self.routes(playlists: [Self.playlist("mine", owner: "me")]))
         let model = AddToPlaylistModel(api: api)
@@ -400,4 +422,11 @@ private final class AsyncGate: @unchecked Sendable {
     func open() {
         semaphore.signal()
     }
+}
+
+private final class Counter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+
+    func next() -> Int { lock.withLock { count += 1; return count } }
 }

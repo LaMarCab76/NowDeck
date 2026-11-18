@@ -249,7 +249,8 @@ final class AddToPlaylistModel: ObservableObject {
             added.insert(key)
             pending[key] = nil
             bumpCount(of: playlist.id)
-            if Self.isAddProblem(problem) { problem = nil }
+            // Whatever failed before (this row or another), the last action worked.
+            problem = nil
             UIAccessibility.post(notification: .announcement,
                                  argument: String(localized: "Agregado a \(playlist.name)"))
         } catch is CancellationError {

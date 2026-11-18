@@ -113,6 +113,52 @@ final class TokenManagerTests: XCTestCase {
         XCTAssertNil(try credentials.tokens())
     }
 
+    // MARK: install(_:) (Agregar a una playlist, 2026-11-18)
+
+    /// Starts a refresh whose answer waits for `release`, then installs new tokens while it is
+    /// out.
+    private func refreshRacingInstall(answer: @escaping @Sendable () -> (HTTPURLResponse, Data))
+        async throws -> (CredentialStore, Result<String, Error>, Bool) {
+        let release = DispatchSemaphore(value: 0)
+        let rejected = RejectionFlag()
+        let (manager, credentials, recorder) = try makeManager(
+            tokens: tokens(expiresIn: -10),
+            onSessionRejected: { _ in rejected.set() }
+        ) { _ in
+            _ = release.wait(timeout: .now() + 5)
+            return answer()
+        }
+
+        let refresh = Task { try await manager.validAccessToken() }
+        while recorder.requests.isEmpty { await Task.yield() }
+        try await manager.install(OAuthTokens(accessToken: "upgraded", refreshToken: "r2",
+                                              expiresAt: now.addingTimeInterval(3600),
+                                              scope: "playlist-modify-private"))
+        release.signal()
+        let result = await refresh.result
+        return (credentials, result, rejected.value)
+    }
+
+    func testARefreshThatStartedBeforeInstallDoesNotOverwriteTheNewTokens() async throws {
+        let (credentials, result, rejected) = try await refreshRacingInstall {
+            (.stub(200), tokenJSON(access: "refreshed-old", refresh: "old-refresh"))
+        }
+
+        XCTAssertEqual(try credentials.tokens()?.accessToken, "upgraded")
+        XCTAssertEqual(try result.get(), "upgraded")
+        XCTAssertFalse(rejected)
+    }
+
+    func testAStaleRefreshRejectionDoesNotDeleteTheNewTokens() async throws {
+        let (credentials, result, rejected) = try await refreshRacingInstall {
+            (.stub(400), tokenErrorJSON("invalid_grant"))
+        }
+
+        XCTAssertEqual(try credentials.tokens()?.accessToken, "upgraded")
+        XCTAssertEqual(try result.get(), "upgraded")
+        XCTAssertFalse(rejected, "The session that was rejected is no longer in use")
+    }
+
     func testNetworkFailureKeepsTokens() async throws {
         let (manager, credentials, _) = try makeManager(tokens: tokens(expiresIn: -10)) { _ in
             throw URLError(.timedOut)
@@ -135,4 +181,13 @@ final class TokenManagerTests: XCTestCase {
             XCTAssertEqual(error as? AuthError, .notLoggedIn)
         }
     }
+}
+
+private final class RejectionFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var isSet = false
+
+    var value: Bool { lock.withLock { isSet } }
+
+    func set() { lock.withLock { isSet = true } }
 }

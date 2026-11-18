@@ -214,7 +214,8 @@ final class AppState: ObservableObject {
             }
             guard try await accessCheck.userID(accessToken: tokens.accessToken) == currentUserID
             else { return .differentAccount }
-            try credentials.setTokens(tokens)
+            // Through the token manager: a refresh still out must not overwrite them.
+            try await tokenManager.install(tokens)
             return nil
         } catch AuthError.cancelled {
             return .cancelled

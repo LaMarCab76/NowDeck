@@ -17,6 +17,9 @@ actor TokenManager {
     private let onSessionRejected: @Sendable (AuthError) async -> Void
 
     private var refreshTask: Task<OAuthTokens, Error>?
+    /// Goes up when `install(_:)` replaces the session. A refresh that started before keeps
+    /// its hands off the stored tokens: they belong to the new login.
+    private var generation = 0
 
     init(
         clientID: String,
@@ -57,26 +60,48 @@ actor TokenManager {
         return try await refresh(from: tokens).accessToken
     }
 
+    /// Stores the tokens of a new login of the same session (Agregar a una playlist asks for
+    /// more scopes). Goes through the actor so a refresh that is still out can neither
+    /// overwrite them with the old scopes nor delete them if the old refresh token fails.
+    func install(_ tokens: OAuthTokens) throws {
+        generation += 1
+        refreshTask = nil
+        try credentials.setTokens(tokens)
+    }
+
     private func refresh(from tokens: OAuthTokens) async throws -> OAuthTokens {
         // No `await` between checking `refreshTask` (in the callers) and setting it here, so
         // no other call can slip in and start a second refresh.
-        let task = Task { [clientID, credentials, accounts, now] in
+        let startedIn = generation
+        let task = Task { [clientID, accounts, now] in
             let response = try await accounts.refresh(refreshToken: tokens.refreshToken,
                                                       clientID: clientID)
-            let newTokens = try response.tokens(receivedAt: now(), previous: tokens)
-            try credentials.setTokens(newTokens)
-            return newTokens
+            return try response.tokens(receivedAt: now(), previous: tokens)
         }
         refreshTask = task
-        defer { refreshTask = nil }
+        // After `install(_:)` another refresh may already be running: leave it alone.
+        defer { if generation == startedIn { refreshTask = nil } }
 
         do {
-            return try await task.value
+            let newTokens = try await task.value
+            guard generation == startedIn else { return try installedTokens(newTokens) }
+            try credentials.setTokens(newTokens)
+            return newTokens
         } catch let error as AuthError where error == .invalidGrant || error == .invalidClient {
+            // The old refresh token was rejected, but a new login already replaced it.
+            guard generation == startedIn else { return try installedTokens(nil) }
             // Retrying cannot fix these: the user has to configure the app again.
             try? credentials.removeTokens()
             await onSessionRejected(error)
             throw error
         }
+    }
+
+    /// What a refresh that lost the race to `install(_:)` returns: the installed tokens,
+    /// never its own.
+    private func installedTokens(_ fallback: OAuthTokens?) throws -> OAuthTokens {
+        if let installed = try credentials.tokens() { return installed }
+        if let fallback { return fallback }
+        throw AuthError.notLoggedIn
     }
 }
