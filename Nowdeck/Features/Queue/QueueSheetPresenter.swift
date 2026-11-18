@@ -45,8 +45,14 @@ private struct QueueSheetHost: View {
         QueueSheetView(model: model, nowPlaying: player.nowPlaying, artwork: player.artwork,
                        context: player.playback?.context,
                        // Same delay as a library card: Spotify needs a moment before the
-                       // state shows the new track.
-                       onPlayed: { player.refresh(after: 0.6) },
+                       // state shows the new track. Not when the app left the foreground
+                       // while the request ran: `refresh(after:)` would restart the polling
+                       // that `stop()` ended. The next `start()` reads the state anyway.
+                       onPlayed: {
+                           if UIApplication.shared.applicationState == .active {
+                               player.refresh(after: 0.6)
+                           }
+                       },
                        dismiss: dismiss)
             .task { await model.reload() }
             // `itemStarts`, not `transitionKey`: the same track queued twice in a row also
