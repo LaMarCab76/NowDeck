@@ -86,7 +86,10 @@ final class PlayerControlsModel: ObservableObject {
         let resume = !playback.isPlaying
         run(resume ? .play : .pause,
             optimistic: { $0.isPlaying = resume },
-            rollback: { if $0.isPlaying == resume { $0.isPlaying = !resume } })
+            rollback: { if $0.isPlaying == resume { $0.isPlaying = !resume } },
+            completion: { [weak self] succeeded in
+                if succeeded { self?.playStateChanged(isPlaying: resume) }
+            })
     }
 
     func next() {
@@ -159,6 +162,15 @@ final class PlayerControlsModel: ObservableObject {
             completion: { [weak self] succeeded in
                 self?.seekFinished(target: target, succeeded: succeeded)
             })
+    }
+
+    /// Play or pause accepted while seeks are on their way: from now on the baseline they
+    /// would go back to runs, or stops, with the playback.
+    private func playStateChanged(isPlaying: Bool) {
+        guard pendingSeeks > 0, let player, let baseline = seekBaseline else { return }
+        let date = player.now()
+        seekBaseline = SeekBaseline(positionMs: baseline.position(at: date),
+                                    isPlaying: isPlaying, date: date)
     }
 
     /// Seeks finish in the order they were sent. A failed one is undone only once no seek

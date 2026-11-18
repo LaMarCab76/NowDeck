@@ -398,6 +398,34 @@ final class PlayerControlsModelTests: XCTestCase {
                        "Back to where the track is now, not where it was ten seconds ago")
     }
 
+    func testAPauseBetweenFailedSeeksStopsTheBaseline() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal(); gate.signal(); gate.signal() }
+        let h = try await make(PlaybackJSON(isPlaying: true, progressMs: 84_000),
+                               commandGate: gate)
+        h.controls.seek(toMs: 30_000)
+        h.controls.playPause()
+        h.controls.seek(toMs: 120_000)
+
+        // The first seek fails 2 s later, the pause goes through 2 s after that, and the
+        // last seek fails 10 s after the pause.
+        h.clock.advance(2)
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        h.clock.advance(2)
+        h.commandStatus.value = 204
+        gate.signal()
+        try await eventually { h.commandRequests.count == 3 }
+        h.clock.advance(10)
+        h.playback.value = PlaybackJSON(isPlaying: false, progressMs: 88_000)
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.model.playback?.progressMs != 120_000 }
+        XCTAssertEqual(h.model.playback?.progressMs, 88_000,
+                       "84 s plus the 4 s it played before the pause, not the 10 s after it")
+    }
+
     // MARK: Volume from polls
 
     func testPolledVolumeChangeShowsThePanel() async throws {
