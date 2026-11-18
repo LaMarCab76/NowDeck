@@ -411,8 +411,17 @@ follows the Queue design:
 - "UP NEXT" (*A CONTINUACIÓN*) (12 mono, `etiqueta`) and rows of 56 with separators of white
   at 10%: number (12 mono), 40 artwork (uncropped, radius 4), title 16 semibold with the
   explicit mark, artists 13 `textoCuerpo` and duration (12 mono). Up to **20** songs.
-- The rows **are not buttons**: long-pressing them shows the full name and "Open in Spotify"
-  (*Abrir en Spotify*), as in the detail. At the bottom, a 40 gradient toward the surface.
+- **Tapping a song** (since 2026-11-18, owner's request; not in the mockup) opens the system
+  alert "Play this song?" (*¿Reproducir este tema?*), with "“Title” by Artists starts
+  playing now." (*«Título» de Artistas empieza a sonar ahora.*) and the buttons "Play"
+  (*Reproducir*) and "Cancel" (*Cancelar*). While pressed, the row dims to 70%. While it
+  starts, a spinner replaces the duration and the other rows don't respond; if it fails,
+  the notice line shows above the list ("No active device. Choose one to listen on."
+  (*No hay un dispositivo activo. Elegí uno para escuchar.*), "Couldn't play it. Try
+  again." (*No pudimos reproducirlo. Probá de nuevo.*), etc.). The sheet stays open and
+  updates on its own when the song starts. Episodes and local files are not buttons.
+- Long-pressing a song shows the full name and "Open in Spotify" (*Abrir en Spotify*), as in
+  the detail. At the bottom, a 40 gradient toward the surface.
 - At the end of the list: "To remove or reorder songs, use Spotify." (*Para quitar o
   reordenar temas, usá Spotify.*) (14, `textoCuerpo`) and "OPEN SPOTIFY ↗" (*ABRIR SPOTIFY
   ↗*).

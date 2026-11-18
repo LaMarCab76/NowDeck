@@ -67,7 +67,7 @@ struct PlayerScreen: View {
         wired.devices = { [presentation] in presentation.showDevices() }
         // Milestone 5: library.
         wired.library = { [presentation] in presentation.showsLibrary = true }
-        // Playback queue (read-only).
+        // Playback queue: tapping a track asks to play it.
         wired.queue = { [presentation] in presentation.showsQueue = true }
         // Agregar a una playlist (2026-11-18).
         wired.addToPlaylist = { [presentation] in presentation.showAddToPlaylist() }

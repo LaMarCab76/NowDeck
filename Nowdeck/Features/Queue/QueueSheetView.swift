@@ -3,19 +3,26 @@ import SwiftUI
 /// Cola (Cola.html): what plays now and what comes next, in the same 640×398 sheet as
 /// Dispositivos.
 ///
-/// Read-only on purpose: the Web API cannot remove, reorder or jump to a queued item
-/// (docs/03, "Cola"). Rows are not buttons, so they do not suggest that a tap plays them;
-/// a long press shows the full name and "Abrir en Spotify", like in the playlist detail.
-/// The list ends with "ABRIR SPOTIFY", as the guidelines ask for content rows (docs/06).
+/// The Web API cannot remove, reorder or jump to a queued item (docs/03, "Cola"). Tapping a
+/// track asks "¿Reproducir este tema?" and, on "Reproducir", plays it now
+/// (`SpotifyAPI.playFromQueue`). A long press shows the full name and "Abrir en Spotify",
+/// like in the playlist detail. The list ends with "ABRIR SPOTIFY", as the guidelines ask
+/// for content rows (docs/06).
 struct QueueSheetView: View {
     @ObservedObject var model: QueueModel
     /// The player's current item and cover, for the header.
     var nowPlaying: NowPlaying?
     var artwork: UIImage?
+    /// What the player plays from, so a tapped track can start inside its playlist or album.
+    var context: PlaybackContext?
+    /// Called after Spotify accepted a tapped track, so the player reads the new state.
+    var onPlayed: () -> Void = {}
     var dismiss: () -> Void
 
     @EnvironmentObject private var theme: ThemeStore
     @State private var dragOffset: CGFloat = 0
+    /// The tapped row waiting for the confirmation.
+    @State private var pendingEntry: QueueEntry?
 
     private typealias Sheet = Metrics.Devices
     private typealias Layout = Metrics.Queue
@@ -38,6 +45,32 @@ struct QueueSheetView: View {
         .foregroundStyle(theme.palette.text.color)
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
+        .alert("¿Reproducir este tema?", isPresented: isConfirming, presenting: pendingEntry) { entry in
+            Button("Reproducir") { play(entry) }
+            Button("Cancelar", role: .cancel) {}
+        } message: { entry in
+            Text(confirmationMessage(for: entry.track))
+        }
+    }
+
+    private var isConfirming: Binding<Bool> {
+        Binding(get: { pendingEntry != nil },
+                set: { if !$0 { pendingEntry = nil } })
+    }
+
+    /// "«Título» de Artistas empieza a sonar ahora." Episodes are never tapped, so there is
+    /// always a title; the artists may be missing.
+    private func confirmationMessage(for track: CollectionTrack) -> String {
+        if track.subtitle.isEmpty {
+            return String(localized: "«\(track.title)» empieza a sonar ahora.")
+        }
+        return String(localized: "«\(track.title)» de \(track.subtitle) empieza a sonar ahora.")
+    }
+
+    private func play(_ entry: QueueEntry) {
+        Task {
+            if await model.play(entry, context: context) { onPlayed() }
+        }
     }
 
     private var sheet: some View {
@@ -101,7 +134,10 @@ struct QueueSheetView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(spacing: 0) {
                     ForEach(entries) { entry in
-                        QueueRow(entry: entry)
+                        QueueRow(entry: entry, isStarting: model.startingID == entry.id) {
+                            pendingEntry = entry
+                        }
+                        .disabled(model.startingID != nil)
                     }
                     QueueFooter()
                 }
@@ -225,9 +261,14 @@ private struct QueueHeader: View {
 
 // MARK: - Rows
 
-/// A 56 pt row: number, cover, title (with the explicit mark), artists and duration.
+/// A 56 pt row: number, cover, title (with the explicit mark), artists and duration. A
+/// playable row is a button that asks to play it (`onTap`); local files and episodes are
+/// not.
 private struct QueueRow: View {
     var entry: QueueEntry
+    /// Its track is starting: a spinner takes the duration's place.
+    var isStarting = false
+    var onTap: () -> Void
 
     @EnvironmentObject private var theme: ThemeStore
     private typealias Layout = Metrics.Queue
@@ -235,6 +276,16 @@ private struct QueueRow: View {
     private var track: CollectionTrack { entry.track }
 
     var body: some View {
+        if entry.playURI != nil {
+            Button(action: onTap) { row }
+                .buttonStyle(QueueRowButtonStyle())
+                .accessibilityHint(Text("Pregunta antes de reproducirlo"))
+        } else {
+            row
+        }
+    }
+
+    private var row: some View {
         HStack(spacing: Layout.rowGap) {
             Text(verbatim: "\(track.number)")
                 .textStyle(.trackRowNumber)
@@ -266,7 +317,11 @@ private struct QueueRow: View {
             .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            if let duration = track.durationMs, duration > 0 {
+            if isStarting {
+                ProgressView()
+                    .tint(theme.palette.tertiaryText.color)
+                    .accessibilityHidden(true)
+            } else if let duration = track.durationMs, duration > 0 {
                 Text(verbatim: PlaybackProgress.formatted(ms: duration))
                     .textStyle(.trackRowNumber)
                     .foregroundStyle(theme.palette.tertiaryText.color)
@@ -316,6 +371,14 @@ private struct QueueFooter: View {
         .padding(.top, Layout.footerTopPadding)
         .padding(.bottom, Layout.footerBottomPadding)
         .overlay(alignment: .top) { QueueSeparator() }
+    }
+}
+
+/// Pressed rows dim a little, like the library cards; no other change of look.
+private struct QueueRowButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.7 : 1)
     }
 }
 
