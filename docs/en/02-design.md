@@ -201,27 +201,40 @@ Replaces the top block:
   right, the device in accent.
 - Library and Settings are not shown.
 
-### Volume panel
+### Volume bar
 
-- 520×64 pill, centered, with radius 32 and background `rgba(8,10,14,0.94)` with a shadow.
-- **Position** (owner's request, 2026-11-18; the mockup placed it 16 from the top edge):
-  16 from the **bottom** edge. While it's open, the rest of the player shrinks upward (scale
-  0.78, anchored at the top center) to make room for it: at 414 tall, that leaves 92 at the
-  bottom, the panel's 64 + 16 and 12 of breathing room. The background and the toasts don't
-  shrink. When it closes, the player returns to its size with the same animation. While it's
-  open you can't swipe between songs.
-- Content: [−] (48) · speaker icon · bar 8 tall (fill in accent) · value in monospaced 14 ·
-  [+] (48). Each tap changes the volume by 5%.
+Owner's request (2026-11-18), approved on the mock `design/mockups/VolumenLateral.html`. It
+replaces the floating pill of `Volumen.dc.html`, which stays as a historical reference.
+
+- **Opens sideways, from the Volume button**: the whole controls row moves left until Previous
+  (or −15 s) sits on the left edge, and the bar unrolls from the speaker's right edge to the
+  end of the row. When it closes, the bar rolls back into the speaker and the row returns to
+  its place.
+- While it's open, Add to a playlist, the left group and the right-group controls after the
+  speaker (they would sit under the bar) fade out. Previous, Play/Pause, Next and the
+  right-group controls before the speaker (Lyrics, with the default order) stay visible and
+  tappable.
+- The open speaker shows as active (accent on accent at 16%); tapping it again closes the bar.
+- If the theme has no Volume in the right group (it's on the left or missing) and the bar
+  opens (for example, because the volume changed from another device), a speaker of its own
+  comes in with the bar, after the right group.
+- **No background**: no panel, no shadow, no − and + buttons. The bar sits right on the player
+  background, which no longer shrinks: you can swipe between songs with the bar open.
+- Content: 12 of breathing room · bar 8 tall (track white at 14%, fill in accent) · 12 · value
+  in monospaced 14 (30 wide, right-aligned). With the default controls, the room for bar and
+  value is 384 on the 11 Pro Max and 280 on the 8 Plus.
 - **Drag** (owner's request, 2026-11-17): the whole 44 row around the bar takes the finger;
   tapping or dragging sets the level instantly. While dragging, at most one change is sent
-  every 250 ms, plus the final value on release.
-- **Entrance**: rises from `y = +112` (below the screen) to 0 in 0.30 s, with curve
-  `(0.2, 0.8, 0.2, 1)`; the player shrinks with the same curve.
-- **Exit**: after 3 s without interaction, in 0.22 s ease-in.
-- **Shown** when tapping Volume, when tapping − or +, or when polling detects a different
-  volume.
-- If the device doesn't support changing the volume (`supports_volume: false`), the panel
-  says so and disables − and +.
+  every 250 ms, plus the final value on release. With VoiceOver, each swipe on the bar changes
+  the volume by 5%.
+- **Opening**: the row moves and the bar unrolls in 0.30 s, with curve `(0.2, 0.8, 0.2, 1)`.
+  What leaves fades out in 0.12 s; the bar's content appears in 0.2 s, 0.06 s later.
+- **Closing**: after 3 s without interaction (never with the finger on the bar), or when
+  tapping the speaker, in 0.22 s ease-in. The controls come back in 0.2 s.
+- **Opens** when tapping Volume or when polling detects a different volume.
+- If the device doesn't support changing the volume (`supports_volume: false`), the bar's place
+  reads "This device doesn't allow changing the volume" (*Este dispositivo no permite cambiar
+  el volumen*, up to two lines).
 
 ### Notice (toast)
 

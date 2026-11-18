@@ -1,19 +1,17 @@
 import SwiftUI
 
-/// The volume pill (`Main.dc.html`, shown in `Volumen.dc.html`):
-/// [−] · speaker · bar · value · [+].
+/// The volume bar: bar · value, or why the volume can't change.
 ///
-/// Since 2026-11-18 (owner's request) it comes up from the bottom of the screen instead of
-/// down from the top, while the rest of the player shrinks to make room (`PlayerContent`).
-/// It is always in the hierarchy and slides between `y = +112` (hidden, below the screen)
-/// and its place 16 pt from the bottom, with the mockup's timing. While hidden it takes no
-/// touches and VoiceOver skips it. The caller pins it to the bottom of the screen.
+/// Since 2026-11-18 (owner's request, mockup `VolumenLateral.html`) it opens sideways inside
+/// the controls row, out of the speaker button (`PlayerControls`), with no panel behind it
+/// and without − and +: the bar takes a tap or a drag anywhere, and VoiceOver still moves it
+/// 5 % per swipe. `PlayerControls` places it, sizes it and animates it; this view only draws
+/// the content. While hidden it takes no touches and VoiceOver skips it.
 struct VolumePanelView: View {
     @ObservedObject var volume: VolumeController
 
     @EnvironmentObject private var theme: ThemeStore
-    /// Waits before announcing, so a burst of taps on − or + is read once, with the final
-    /// level.
+    /// Waits before announcing, so a burst of changes is read once, with the final level.
     @State private var announcementTask: Task<Void, Never>?
     /// Last time VoiceOver changed the level by swiping on the bar. VoiceOver reads the new
     /// value itself in that case, so no announcement follows.
@@ -24,19 +22,11 @@ struct VolumePanelView: View {
     @GestureState private var isDragging = false
     private typealias Layout = Metrics.VolumePanel
 
-    /// How long the announcement waits for the taps to settle.
+    /// How long the announcement waits for the changes to settle.
     static let announcementDelay: TimeInterval = 0.5
 
     var body: some View {
         HStack(spacing: Layout.gap) {
-            stepButton(systemName: "minus", label: "Bajar volumen", action: volume.decrease)
-
-            Image(systemName: "speaker.wave.2")
-                .font(.system(size: Layout.speakerIconSize - 3, weight: .medium))
-                .foregroundStyle(theme.palette.tertiaryText.color)
-                .frame(width: Layout.speakerIconSize, height: Layout.speakerIconSize)
-                .accessibilityHidden(true)
-
             if volume.isAdjustable, let level = volume.level {
                 levelBar(level)
                 Text(verbatim: String(level))
@@ -45,24 +35,16 @@ struct VolumePanelView: View {
                     .frame(width: Layout.valueWidth, alignment: .trailing)
                     .accessibilityHidden(true)
             } else {
+                // Two lines if needed: on the iPhone 8 Plus the room is about 270 pt.
                 Text(unavailableMessage)
                     .textStyle(.volumeUnavailable)
                     .foregroundStyle(theme.palette.tertiaryText.color)
-                    .lineLimit(1)
+                    .lineLimit(2)
                     .minimumScaleFactor(0.8)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-
-            stepButton(systemName: "plus", label: "Subir volumen", action: volume.increase)
         }
-        .padding(Layout.padding)
-        .frame(width: Layout.width, height: Layout.height)
-        .background(Capsule().fill(Palette.volumePanelBackground))
-        .shadow(color: Palette.volumePanelShadow, radius: Layout.shadowRadius, y: Layout.shadowY)
-        .padding(.bottom, Layout.bottom)
-        .offset(y: volume.isPanelVisible ? 0 : Layout.hiddenOffset)
-        .animation(volume.isPanelVisible ? VolumePanelMotion.entry : VolumePanelMotion.exit,
-                   value: volume.isPanelVisible)
+        .padding(.leading, Layout.leadingGap)
         .allowsHitTesting(volume.isPanelVisible)
         .accessibilityHidden(!volume.isPanelVisible)
         .onChange(of: volume.announcement) { announce($0) }
@@ -134,21 +116,5 @@ struct VolumePanelView: View {
     static func level(atX x: CGFloat, width: CGFloat) -> Int {
         guard width > 0 else { return 0 }
         return Int((min(max(x / width, 0), 1) * 100).rounded())
-    }
-
-    private func stepButton(systemName: String, label: LocalizedStringKey,
-                            action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: Layout.buttonIconSize, weight: .semibold))
-                .foregroundStyle(theme.palette.text.color)
-                .frame(width: Layout.buttonSize, height: Layout.buttonSize)
-                .background(Circle().fill(Palette.volumeButtonBackground))
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .disabled(!volume.isAdjustable)
-        .opacity(volume.isAdjustable ? 1 : Palette.disabledControlOpacity)
-        .accessibilityLabel(Text(label))
     }
 }

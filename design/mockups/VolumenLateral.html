@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Volumen lateral</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column — short intro, toggles, the phone at real size (scaled down to fit), then notes and measures. */
+:root {
+  --bg: #F3F4F6;
+  --surface: #FFFFFF;
+  --fg: #15181D;
+  --muted: #5B6470;
+  --line: #DCE0E6;
+  --chip: #E8EBEF;
+  --chip-on: #15181D;
+  --chip-on-fg: #FFFFFF;
+  --accent: #1E9E4A;
+  --font-display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-body: Inter, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  /* The app's own look (theme "Negro y verde"), the same in both page themes. */
+  --app-text: #F2EEE8;
+  --app-text2: #D5DCE4;
+  --app-text3: #A9B4C0;
+  --app-accent: #2FD566;
+  --app-bezel: #0B0C0E;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101317; --surface: #181C22; --fg: #ECEFF3; --muted: #9AA4B0; --line: #2A3038;
+    --chip: #232931; --chip-on: #ECEFF3; --chip-on-fg: #101317; --accent: #3CCB6E; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101317; --surface: #181C22; --fg: #ECEFF3; --muted: #9AA4B0; --line: #2A3038;
+  --chip: #232931; --chip-on: #ECEFF3; --chip-on-fg: #101317; --accent: #3CCB6E; color-scheme: dark;
+}
+
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.page {
+  max-width: 1040px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 56px;
+  display: flex; flex-direction: column; gap: 24px;
+}
+header { display: flex; flex-direction: column; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--font-display); font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-size: 20px; margin: 0; }
+.lede { margin: 0; max-width: 68ch; color: var(--muted); }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
+.group { display: flex; flex-direction: column; gap: 6px; }
+.group-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+.seg { display: inline-flex; background: var(--chip); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button {
+  font: inherit; font-size: 13px; font-weight: 500; border: 0; background: transparent; color: var(--fg);
+  padding: 6px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+}
+.seg button[aria-pressed="true"] { background: var(--chip-on); color: var(--chip-on-fg); }
+.seg button:focus-visible, .main-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.main-btn {
+  font: inherit; font-size: 14px; font-weight: 600; border: 0; cursor: pointer;
+  background: var(--accent); color: var(--chip-on-fg); padding: 9px 18px; border-radius: 999px; align-self: flex-end;
+}
+
+.stage-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.stage-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.stage-title { font-family: var(--font-display); font-weight: 500; font-size: 16px; }
+.status { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stage-wrap { position: relative; width: 100%; overflow: hidden; }
+.device { position: absolute; left: 0; top: 0; transform-origin: 0 0; background: var(--app-bezel); border-radius: 54px; padding: 14px; box-shadow: 0 20px 50px rgba(0,0,0,0.25); }
+.device.plus { border-radius: 40px; padding: 14px 64px; }
+
+/* ---------- The app screen (pt = px) ---------- */
+.screen {
+  position: relative; overflow: hidden; width: 896px; height: 414px; border-radius: 40px;
+  color: var(--app-text); font-family: -apple-system, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background:
+    radial-gradient(90% 120% at 78% 18%, rgba(84,128,170,0.55) 0%, rgba(20,38,58,0) 60%),
+    radial-gradient(70% 90% at 15% 90%, rgba(240,162,78,0.18) 0%, rgba(0,0,0,0) 60%),
+    linear-gradient(160deg, #1B2D42 0%, #0E1724 55%, #070B11 100%);
+}
+.device.plus .screen { border-radius: 0; }
+.notch { position: absolute; left: 0; top: 50%; width: 30px; height: 210px; margin-top: -105px; background: var(--app-bezel); border-radius: 0 22px 22px 0; z-index: 5; }
+.content { position: absolute; inset: 12px 48px 20px 48px; display: flex; flex-direction: column; }
+
+.toprow { height: 44px; display: flex; align-items: center; gap: 24px; flex: none; }
+.origin { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 12px; }
+.logo-ph { width: 24px; height: 24px; border-radius: 50%; border: 1px dashed rgba(255,255,255,0.6); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 7px; color: var(--app-text2); flex: none; }
+.origin-text { display: flex; flex-direction: column; min-width: 0; }
+.origin-text .l1 { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--app-text2); }
+.origin-text .l2 { font-size: 15px; line-height: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topbtn { display: flex; align-items: center; gap: 8px; height: 44px; font-size: 15px; font-weight: 600; flex: none; }
+
+.upper { flex: none; display: flex; gap: 32px; margin-top: 14px; height: 210px; }
+.art { position: relative; flex: none; border-radius: 4px; overflow: hidden; background: #1E3A5C; }
+.art .sun { position: absolute; border-radius: 50%; background: #F0A24E; }
+.art .band { position: absolute; left: 0; right: 0; background: #1E3A5C; }
+.art .sea { position: absolute; left: 0; right: 0; bottom: 0; background: #0F2238; }
+.info { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
+.info .titles { flex: 1 1 0; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.song { font-size: 40px; line-height: 46px; font-weight: 700; letter-spacing: -0.02em; }
+.artist { font-size: 22px; line-height: 28px; color: var(--app-text2); }
+.devrow { height: 44px; display: flex; align-items: center; gap: 10px; color: var(--app-accent); font-size: 15px; }
+
+.bottom { margin-top: auto; display: flex; flex-direction: column; gap: 14px; flex: none; }
+.progress { display: flex; align-items: center; gap: 14px; height: 16px; font-family: var(--font-mono); font-size: 12px; color: var(--app-text3); }
+.progress span { width: 36px; flex: none; }
+.progress span:last-child { text-align: right; }
+.ptrack { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.18); overflow: hidden; }
+.ptrack i { display: block; width: 37%; height: 100%; background: var(--app-text); }
+
+/* Controls row: every button absolutely placed from the app's own layout math. */
+.row { position: relative; height: 64px; }
+.track { position: absolute; inset: 0; will-change: transform; }
+.ctl {
+  position: absolute; display: flex; align-items: center; justify-content: center;
+  border: 0; padding: 0; background: transparent; border-radius: 50%; cursor: pointer; color: var(--app-text3);
+}
+.ctl:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
+.ctl.side { width: 48px; height: 48px; top: 8px; }
+.ctl.skip { width: 56px; height: 56px; top: 4px; color: var(--app-text); }
+.ctl.play { width: 64px; height: 64px; top: 0; background: var(--app-text); color: #000; }
+.ctl.on { color: var(--app-accent); background: rgba(47,213,102,0.16); }
+.ctl.leaves { transition-property: opacity; }
+
+.vol { position: absolute; top: 0; height: 64px; display: flex; align-items: center; }
+.vol .ctl.side { position: relative; top: 0; flex: none; transition: color .2s, background-color .2s; }
+.vol-extra { height: 64px; width: 0; overflow: hidden; flex: none; }
+.vol-inner { height: 64px; display: flex; align-items: center; gap: 12px; padding-left: 12px; box-sizing: border-box; }
+.step { width: 44px; height: 44px; flex: none; border: 0; padding: 0; background: transparent; color: var(--app-text); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.step:focus-visible { outline: 2px solid var(--app-accent); }
+.bar-hit { flex: 1 1 0; min-width: 0; height: 44px; display: flex; align-items: center; cursor: pointer; touch-action: none; }
+.bar-hit:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; border-radius: 6px; }
+.bar { position: relative; width: 100%; height: 8px; border-radius: 4px; background: rgba(255,255,255,0.14); overflow: hidden; }
+.bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--app-accent); transition: width .15s cubic-bezier(.25,.1,.25,1); }
+.bar.dragging i { transition: none; }
+.val { width: 30px; flex: none; text-align: right; font-family: var(--font-mono); font-size: 14px; line-height: 18px; color: var(--app-text); font-variant-numeric: tabular-nums; }
+.unavail { font-size: 14px; line-height: 18px; font-weight: 500; color: var(--app-text3); }
+
+/* ---------- Notes ---------- */
+.cols { display: grid; grid-template-columns: 1.3fr 1fr; gap: 24px; }
+@media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.card ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; }
+.card p { margin: 0; }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 12px; color: var(--muted); font-weight: 500; }
+td.num { font-family: var(--font-mono); }
+.ask { border-left: 3px solid var(--accent); padding-left: 12px; }
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <header>
+    <div class="eyebrow">Nowdeck · mock aprobado el 2026-11-18</div>
+    <h1>Volumen que se abre hacia el costado</h1>
+    <p class="lede">Tocá el parlante de la fila de controles. La barra sale del ícono hacia la derecha y empuja los controles a la izquierda; al cerrarse vuelve a meterse en el ícono. El reproductor ya no se achica y la barra no tiene recuadro negro.</p>
+  </header>
+
+  <div class="toolbar" role="group" aria-label="Opciones del mock">
+    <div class="group"><span class="group-label">iPhone</span>
+      <div class="seg" data-key="device">
+        <button type="button" id="d-max" data-val="max" aria-pressed="true">11 Pro Max · 896 pt</button>
+        <button type="button" id="d-plus" data-val="plus" aria-pressed="false">8 Plus · 736 pt</button>
+      </div>
+    </div>
+    <div class="group"><span class="group-label">Botones − y +</span>
+      <div class="seg" data-key="steppers">
+        <button type="button" id="s-no" data-val="no" aria-pressed="true">Sin</button>
+        <button type="button" id="s-si" data-val="si" aria-pressed="false">Con</button>
+      </div>
+    </div>
+    <div class="group"><span class="group-label">Dispositivo</span>
+      <div class="seg" data-key="available">
+        <button type="button" id="a-si" data-val="si" aria-pressed="true">Permite volumen</button>
+        <button type="button" id="a-no" data-val="no" aria-pressed="false">No lo permite</button>
+      </div>
+    </div>
+    <div class="group"><span class="group-label">Animación</span>
+      <div class="seg" data-key="speed">
+        <button type="button" id="v-1" data-val="1" aria-pressed="true">Normal</button>
+        <button type="button" id="v-4" data-val="4" aria-pressed="false">Lenta ×4</button>
+      </div>
+    </div>
+    <div class="group"><span class="group-label">Cierre solo</span>
+      <div class="seg" data-key="autoclose">
+        <button type="button" id="c-si" data-val="si" aria-pressed="true">A los 3 s</button>
+        <button type="button" id="c-no" data-val="no" aria-pressed="false">Nunca (para mirar)</button>
+      </div>
+    </div>
+    <button type="button" class="main-btn" id="toggle-main">Abrir volumen</button>
+  </div>
+
+  <section class="stage-card" aria-label="Pantalla del reproductor">
+    <div class="stage-head">
+      <span class="stage-title" id="stage-title">iPhone 11 Pro Max, horizontal</span>
+      <span class="status" id="status">Cerrado</span>
+    </div>
+    <div class="stage-wrap" id="stage-wrap">
+      <div class="device" id="device">
+        <div class="screen" id="screen">
+          <div class="notch" id="notch"></div>
+          <div class="content">
+            <div class="toprow">
+              <div class="origin">
+                <div class="logo-ph" aria-hidden="true">LOGO</div>
+                <div class="origin-text"><span class="l1">Desde la playlist</span><span class="l2">Para laburar</span></div>
+              </div>
+              <div class="topbtn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>Cola</div>
+              <div class="topbtn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4v16"/><path d="M10 4v16"/><path d="M15 5l4 15"/></svg>Biblioteca</div>
+            </div>
+            <div class="upper">
+              <div class="art" id="art" aria-hidden="true">
+                <div class="sun" id="sun"></div><div class="band" id="b1"></div><div class="band" id="b2"></div><div class="sea" id="sea"></div>
+              </div>
+              <div class="info">
+                <div class="titles"><div class="song">Vereda Mojada</div><div class="artist">Los Tilos del Sur</div></div>
+                <div class="devrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg><span><span style="font-weight:500">Reproduciendo en </span><b>MacBook Pro</b></span></div>
+              </div>
+            </div>
+            <div class="bottom">
+              <div class="progress"><span>1:24</span><div class="ptrack"><i></i></div><span>3:47</span></div>
+              <div class="row" id="row">
+                <div class="track" id="track">
+                  <button class="ctl side leaves" data-id="add" aria-label="Agregar a una playlist"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg></button>
+                  <button class="ctl side leaves" data-id="shuffle" aria-label="Aleatorio"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg></button>
+                  <button class="ctl side leaves" data-id="repeat" aria-label="Repetir"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></button>
+                  <button class="ctl skip" data-id="prev" aria-label="Anterior"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M19 6l-9 6 9 6V6z"/><path d="M5 6v12"/></svg></button>
+                  <button class="ctl play" data-id="play" aria-label="Pausar" id="playbtn"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" aria-hidden="true"><path d="M8 5v14"/><path d="M16 5v14"/></svg></button>
+                  <button class="ctl skip" data-id="next" aria-label="Siguiente"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M5 6l9 6-9 6V6z"/><path d="M19 6v12"/></svg></button>
+                  <button class="ctl side" data-id="lyrics" aria-label="Letras"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4V5z"/><path d="M8 9h8"/><path d="M8 12h5"/></svg></button>
+                  <div class="vol" data-id="vol" id="vol">
+                    <button class="ctl side" id="volbtn" aria-label="Volumen" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg></button>
+                    <div class="vol-extra" id="volextra">
+                      <div class="vol-inner" id="volinner"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="cols">
+    <section class="card">
+      <h2>Qué cambia</h2>
+      <ul>
+        <li>El parlante es el punto de partida: la barra se despliega desde su borde derecho y, al cerrar, se repliega hasta desaparecer dentro del ícono.</li>
+        <li>Toda la fila se corre a la izquierda hasta que <b>Anterior</b> queda en el borde. Agregar a una playlist, Aleatorio y Repetir se desvanecen mientras está abierto; Anterior, Reproducir, Siguiente y Letras siguen a mano.</li>
+        <li>Con el volumen abierto, el parlante queda marcado con el color de acento. Tocarlo de nuevo lo cierra. Si no lo tocás, se cierra solo a los 3 s, como ahora (mientras arrastrás la barra no se cierra).</li>
+        <li>Sin recuadro negro ni sombra: la barra va directo sobre el fondo, como la barra de progreso.</li>
+        <li>El reproductor ya no se achica, así que el gesto para pasar de tema sobre la carátula puede seguir activo con el volumen abierto.</li>
+        <li>Mismos tiempos que hoy: abre en 0,30 s con la curva actual y cierra en 0,22 s.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Largo de la barra</h2>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>iPhone</th><th>Sin − y +</th><th>Con − y +</th></tr></thead>
+          <tbody>
+            <tr><td>11 Pro Max</td><td class="num" id="m-max-no">—</td><td class="num" id="m-max-si">—</td></tr>
+            <tr><td>8 Plus</td><td class="num" id="m-plus-no">—</td><td class="num" id="m-plus-si">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="ask">Decidido (2026-11-18): sin − y +. Con ellos la barra del 8 Plus queda corta; la barra se toca o se arrastra en cualquier punto, y VoiceOver sigue subiendo y bajando de a 5.</p>
+      <p style="color:var(--muted);font-size:13px">El fondo azul reemplaza a la foto del artista y el círculo punteado al ícono de Spotify, como en los mockups.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var DEVICES = {
+    max: { w: 896, title: "iPhone 11 Pro Max, horizontal" },
+    plus: { w: 736, title: "iPhone 8 Plus, horizontal" }
+  };
+  var state = { device: "max", steppers: false, available: true, speed: 1, autoclose: true, open: false, level: 62 };
+  var ENTRY_EASE = "cubic-bezier(0.2, 0.8, 0.2, 1)";
+  var EXIT_EASE = "cubic-bezier(0.42, 0, 1, 1)";
+  var HIDE_AFTER = 3000;
+  var hideTimer = null;
+  var dragging = false;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var track = $("track"), volEl = $("vol"), volExtra = $("volextra"), volInner = $("volinner"), volBtn = $("volbtn");
+  var ctl = {};
+  Array.prototype.forEach.call(track.querySelectorAll("[data-id]"), function (el) { ctl[el.getAttribute("data-id")] = el; });
+
+  // The app's layout math (PlayerControlLayout.gap(forWidth:) and the HStack in PlayerControls).
+  function geometry(deviceW, steppers) {
+    var contentW = deviceW - 96;
+    var fitting = Math.floor((contentW - 168 - 2 * 3 * 48) / (2 * 2 + 4));
+    var gap = Math.max(12, Math.min(36, fitting));
+    var sideW = (contentW - 168 - 4 * gap) / 2;
+    var x = {};
+    x.add = 0;
+    x.repeat = sideW - 48;
+    x.shuffle = x.repeat - gap - 48;
+    x.prev = sideW + gap;
+    x.play = x.prev + 56 + gap;
+    x.next = x.play + 64 + gap;
+    x.lyrics = x.next + 56 + gap;
+    x.vol = x.lyrics + 48 + gap;
+    var shift = x.prev;                       // Anterior lands on the left edge.
+    var extraW = contentW - (x.vol - shift) - 48; // From the speaker to the right edge.
+    // Inside: padding 12, [−] 44, bar, value 30, [+] 44, gaps 12.
+    var fixed = steppers ? 12 + 44 + 12 + 12 + 30 + 12 + 44 : 12 + 12 + 30;
+    return { contentW: contentW, gap: gap, x: x, shift: shift, extraW: extraW, barW: extraW - fixed };
+  }
+
+  function fillMeasures() {
+    [["max", "no"], ["max", "si"], ["plus", "no"], ["plus", "si"]].forEach(function (p) {
+      var g = geometry(DEVICES[p[0]].w, p[1] === "si");
+      $("m-" + p[0] + "-" + p[1]).textContent = Math.round(g.barW) + " pt";
+    });
+  }
+
+  function minusSVG() { return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>'; }
+  function plusSVG() { return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>'; }
+
+  function buildInner(g) {
+    volInner.style.width = g.extraW + "px";
+    if (!state.available) {
+      volInner.innerHTML = '<span class="unavail">Este dispositivo no permite cambiar el volumen</span>';
+      return;
+    }
+    var html = "";
+    if (state.steppers) html += '<button type="button" class="step" id="vdown" aria-label="Bajar volumen">' + minusSVG() + "</button>";
+    html += '<div class="bar-hit" id="barhit" role="slider" tabindex="0" aria-label="Volumen" aria-valuemin="0" aria-valuemax="100"><div class="bar" id="bar"><i id="fill"></i></div></div>';
+    html += '<span class="val" id="val" aria-hidden="true"></span>';
+    if (state.steppers) html += '<button type="button" class="step" id="vup" aria-label="Subir volumen">' + plusSVG() + "</button>";
+    volInner.innerHTML = html;
+    wireBar();
+    paintLevel();
+  }
+
+  function paintLevel() {
+    var fill = $("fill"), val = $("val"), hit = $("barhit");
+    if (!fill) return;
+    fill.style.width = state.level + "%";
+    val.textContent = String(state.level);
+    hit.setAttribute("aria-valuenow", String(state.level));
+    hit.setAttribute("aria-valuetext", state.level + " de 100");
+  }
+
+  function setLevel(v) {
+    state.level = Math.max(0, Math.min(100, Math.round(v)));
+    paintLevel();
+    touch();
+  }
+
+  function wireBar() {
+    var hit = $("barhit"), bar = $("bar");
+    function levelAt(clientX) {
+      var r = bar.getBoundingClientRect();
+      return r.width > 0 ? (clientX - r.left) / r.width * 100 : 0;
+    }
+    hit.addEventListener("pointerdown", function (e) {
+      dragging = true; bar.classList.add("dragging");
+      try { hit.setPointerCapture(e.pointerId); } catch (err) {}
+      setLevel(levelAt(e.clientX));
+      clearTimeout(hideTimer);
+    });
+    hit.addEventListener("pointermove", function (e) { if (dragging) { setLevel(levelAt(e.clientX)); clearTimeout(hideTimer); } });
+    function end() { if (!dragging) return; dragging = false; bar.classList.remove("dragging"); touch(); }
+    hit.addEventListener("pointerup", end);
+    hit.addEventListener("pointercancel", end);
+    hit.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowRight" || e.key === "ArrowUp") { setLevel(state.level + 5); e.preventDefault(); }
+      if (e.key === "ArrowLeft" || e.key === "ArrowDown") { setLevel(state.level - 5); e.preventDefault(); }
+    });
+    var down = $("vdown"), up = $("vup");
+    if (down) down.addEventListener("click", function () { setLevel(state.level - 5); });
+    if (up) up.addEventListener("click", function () { setLevel(state.level + 5); });
+  }
+
+  // Restart the 3 s countdown after any interaction while open.
+  function touch() {
+    clearTimeout(hideTimer);
+    if (state.open && state.autoclose && !dragging) {
+      hideTimer = setTimeout(function () { setOpen(false); }, HIDE_AFTER);
+    }
+  }
+
+  function transitions(opening) {
+    var k = state.speed;
+    var main = opening ? (0.30 * k) + "s " + ENTRY_EASE : (0.22 * k) + "s " + EXIT_EASE;
+    track.style.transition = "transform " + main;
+    volExtra.style.transition = "width " + main;
+    volInner.style.transition = opening
+      ? "opacity " + (0.20 * k) + "s ease " + (0.06 * k) + "s"
+      : "opacity " + (0.12 * k) + "s ease";
+    ["add", "shuffle", "repeat"].forEach(function (id) {
+      ctl[id].style.transition = opening
+        ? "opacity " + (0.14 * k) + "s ease"
+        : "opacity " + (0.20 * k) + "s ease " + (0.06 * k) + "s";
+    });
+  }
+
+  function applyOpen(g) {
+    track.style.transform = state.open ? "translateX(" + (-g.shift) + "px)" : "translateX(0)";
+    volExtra.style.width = state.open ? g.extraW + "px" : "0px";
+    volInner.style.opacity = state.open ? "1" : "0";
+    ["add", "shuffle", "repeat"].forEach(function (id) {
+      // Opening with the focus on a control that is about to hide: hand it to the speaker.
+      if (state.open && ctl[id] === document.activeElement) volBtn.focus();
+      ctl[id].style.opacity = state.open ? "0" : "1";
+      ctl[id].style.pointerEvents = state.open ? "none" : "auto";
+      ctl[id].tabIndex = state.open ? -1 : 0;
+      if (state.open) ctl[id].setAttribute("aria-hidden", "true");
+      else ctl[id].removeAttribute("aria-hidden");
+    });
+    volBtn.classList.toggle("on", state.open);
+    volBtn.setAttribute("aria-expanded", String(state.open));
+    // Closing with the focus inside the bar: hand it to the speaker, so the arrow keys
+    // never move a bar that is no longer visible.
+    if (!state.open && volInner.contains(document.activeElement)) volBtn.focus();
+    volInner.setAttribute("aria-hidden", String(!state.open));
+    Array.prototype.forEach.call(volInner.querySelectorAll("button,[tabindex]"), function (el) { el.tabIndex = state.open ? 0 : -1; });
+    $("toggle-main").textContent = state.open ? "Cerrar volumen" : "Abrir volumen";
+    $("status").textContent = state.open
+      ? (state.autoclose ? "Abierto · se cierra solo 3 s después del último toque" : "Abierto")
+      : "Cerrado";
+  }
+
+  function setOpen(open) {
+    if (open === state.open) return;
+    state.open = open;
+    transitions(open);
+    applyOpen(current);
+    touch();
+  }
+
+  var current;
+  function layout() {
+    var d = DEVICES[state.device];
+    current = geometry(d.w, state.steppers);
+    var screen = $("screen"), device = $("device");
+    screen.style.width = d.w + "px";
+    device.classList.toggle("plus", state.device === "plus");
+    $("notch").hidden = state.device !== "max";
+    $("stage-title").textContent = d.title;
+    // Artwork: min(210, contentW × 0.3), drawn like the mockups' illustration.
+    var a = Math.min(210, Math.floor(current.contentW * 0.3)), s = a / 256;
+    var art = $("art"); art.style.width = a + "px"; art.style.height = a + "px";
+    var sun = $("sun"); sun.style.left = 53 * s + "px"; sun.style.top = 39 * s + "px"; sun.style.width = 150 * s + "px"; sun.style.height = 150 * s + "px";
+    var b1 = $("b1"); b1.style.top = 133 * s + "px"; b1.style.height = 9 * s + "px";
+    var b2 = $("b2"); b2.style.top = 152 * s + "px"; b2.style.height = 12 * s + "px";
+    $("sea").style.height = 82 * s + "px";
+    Object.keys(current.x).forEach(function (id) { if (ctl[id]) ctl[id].style.left = current.x[id] + "px"; });
+    buildInner(current);
+    // Change device or option without animating.
+    track.style.transition = "none"; volExtra.style.transition = "none"; volInner.style.transition = "none";
+    ["add", "shuffle", "repeat"].forEach(function (id) { ctl[id].style.transition = "none"; });
+    applyOpen(current);
+    fit();
+  }
+
+  function fit() {
+    var d = DEVICES[state.device], device = $("device"), wrap = $("stage-wrap");
+    var dw = d.w + (state.device === "plus" ? 128 : 28), dh = 414 + 28;
+    var scale = Math.min(1, wrap.clientWidth / dw);
+    device.style.transform = "scale(" + scale + ")";
+    wrap.style.height = Math.ceil(dh * scale) + "px";
+    device.style.left = Math.max(0, (wrap.clientWidth - dw * scale) / 2) + "px";
+  }
+
+  volBtn.addEventListener("click", function () { setOpen(!state.open); });
+  $("toggle-main").addEventListener("click", function () { setOpen(!state.open); });
+  $("playbtn").addEventListener("click", function () {
+    var b = $("playbtn"), playing = b.getAttribute("aria-label") === "Pausar";
+    b.setAttribute("aria-label", playing ? "Reproducir" : "Pausar");
+    b.innerHTML = playing
+      ? '<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M8 5l12 7-12 7V5z"/></svg>'
+      : '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" aria-hidden="true"><path d="M8 5v14"/><path d="M16 5v14"/></svg>';
+    if (state.open) touch();
+  });
+  ctl.lyrics.addEventListener("click", function () { ctl.lyrics.classList.toggle("on"); if (state.open) touch(); });
+
+  Array.prototype.forEach.call(document.querySelectorAll(".seg"), function (seg) {
+    var key = seg.getAttribute("data-key");
+    seg.addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      Array.prototype.forEach.call(seg.querySelectorAll("button"), function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      var v = b.getAttribute("data-val");
+      if (key === "device") state.device = v;
+      if (key === "steppers") state.steppers = v === "si";
+      if (key === "available") state.available = v === "si";
+      if (key === "speed") { state.speed = Number(v); return; }
+      if (key === "autoclose") { state.autoclose = v === "si"; applyOpen(current); touch(); return; }
+      layout();
+      touch();
+    });
+  });
+
+  if (window.ResizeObserver) new ResizeObserver(fit).observe($("stage-wrap"));
+  else window.addEventListener("resize", fit);
+  fillMeasures();
+  layout();
+})();
+</script>
+</body>
+</html>

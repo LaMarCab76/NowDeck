@@ -73,7 +73,6 @@ struct PlayerScreen: View {
 
     var body: some View {
         PlayerContent(model: model, lyrics: lyrics, controls: model.controls,
-                      volume: model.controls.volume,
                       actions: wiredActions, showsLyricsButton: theme.showsLyricsButton,
                       // With the library open, it shows the control notices itself.
                       showsNotices: presentation.visibleSurface == .player)
@@ -135,8 +134,6 @@ struct PlayerContent: View {
     @ObservedObject var model: PlayerModel
     @ObservedObject var lyrics: LyricsModeController
     @ObservedObject var controls: PlayerControlsModel
-    /// `controls.volume`, observed here because the player shrinks while it is open.
-    @ObservedObject var volume: VolumeController
     @EnvironmentObject private var theme: ThemeStore
     var actions: PlayerActions
     var showsLyricsButton: Bool
@@ -164,18 +161,6 @@ struct PlayerContent: View {
                                showsLyricsButton: showsLyricsButton, screenWidth: width,
                                swipe: swipe)
                 }
-                // The volume comes up from the bottom and the player shrinks toward the top
-                // to make room (owner's request, 2026-11-18). Only the player shrinks: the
-                // background and the notices stay as they are. Both use the panel's timing.
-                .scaleEffect(showsVolume ? Metrics.VolumePanel.playerScale : 1, anchor: .top)
-                .animation(showsVolume ? VolumePanelMotion.entry : VolumePanelMotion.exit,
-                           value: showsVolume)
-                .overlay(alignment: .bottom) {
-                    VolumePanelView(volume: volume)
-                        // Measured from the physical bottom, like the player's margins.
-                        .frame(maxHeight: .infinity, alignment: .bottom)
-                        .ignoresSafeArea()
-                }
                 .overlay(alignment: .top) {
                     // A failed command is newer news than the lyrics notice: show it instead.
                     if !showsNotices {
@@ -202,9 +187,7 @@ struct PlayerContent: View {
         // Next / previous by dragging left or right across the cover and title (in lyrics
         // mode, its bottom row): they follow the finger and the other item comes in from the
         // side.
-        // Not while the volume is open: the player is shrunk, and the band it measured
-        // before no longer matches the screen.
-        .trackSwipe(isActive: model.status == .active && !showsVolume,
+        .trackSwipe(isActive: model.status == .active,
                     band: swipeBand, onChange: swipeChanged, onEnd: swipeEnded,
                     onCancel: settleDraggingSwipe)
         .onPreferenceChange(TrackSwipeBandKey.self) { swipeBand = $0 }
@@ -225,8 +208,6 @@ struct PlayerContent: View {
             withAnimation(Motion.swipeSettle) { swipe = .idle }
         }
     }
-
-    private var showsVolume: Bool { volume.isPanelVisible }
 
     private func swipeChanged(_ trackSwipe: TrackSwipe) {
         if swipe.isLanding { return }

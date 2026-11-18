@@ -173,7 +173,8 @@ struct PlayerView: View {
             PlayerControls(playback: model.playback, actions: actions,
                            controls: optionalControls,
                            lyricsActive: lyrics.isButtonActive,
-                           canAddToPlaylist: model.nowPlaying?.playlistURI != nil)
+                           canAddToPlaylist: model.nowPlaying?.playlistURI != nil,
+                           volume: model.controls.volume)
         }
     }
 }
@@ -628,6 +629,11 @@ struct ProgressRow: View {
 ///   Like Cola, it is not a theme control: saved themes list their controls explicitly and
 ///   would never show it. On narrow screens every gap shrinks so it fits
 ///   (`PlayerControlLayout.gap(forWidth:)`).
+/// - The volume bar opens sideways out of the speaker (owner's request, 2026-11-18, mockup
+///   `VolumenLateral.html`): the row moves left until previous reaches the left edge, the
+///   controls that would be pushed out (or covered) fade, and the bar unrolls from the
+///   speaker to the end of the row. On closing it rolls back into the speaker
+///   (`PlayerControlLayout.volumeExpansion`).
 struct PlayerControls: View {
     var playback: PlaybackState?
     var actions: PlayerActions
@@ -636,18 +642,63 @@ struct PlayerControls: View {
     var lyricsActive = false
     /// A track or episode that a playlist can take (not ads nor local files).
     var canAddToPlaylist = false
+    /// Observed here because the bar opens inside this row.
+    @ObservedObject var volume: VolumeController
 
     private typealias Layout = Metrics.Player
 
     var body: some View {
         GeometryReader { proxy in
-            row(gap: PlayerControlLayout(controls: controls).gap(forWidth: proxy.size.width))
+            let layout = PlayerControlLayout(controls: controls)
+            let gap = layout.gap(forWidth: proxy.size.width)
+            let expansion = layout.volumeExpansion(forWidth: proxy.size.width, gap: gap)
+            ZStack(alignment: .topLeading) {
+                row(layout: layout, gap: gap, expansion: expansion)
+                volumeBar(expansion)
+            }
+            .offset(x: isVolumeOpen ? -expansion.shift : 0)
+            .animation(isVolumeOpen ? VolumePanelMotion.entry : VolumePanelMotion.exit,
+                       value: isVolumeOpen)
         }
         .frame(height: Layout.controlsHeight)
     }
 
-    private func row(gap: CGFloat) -> some View {
-        let layout = PlayerControlLayout(controls: controls)
+    private var isVolumeOpen: Bool { volume.isPanelVisible }
+
+    /// The bar, at the speaker's right edge. Its content keeps its full width and a frame
+    /// that grows from zero reveals it, so it unrolls out of the speaker instead of
+    /// squeezing.
+    private func volumeBar(_ expansion: VolumeExpansion) -> some View {
+        HStack(spacing: 0) {
+            if expansion.usesRowSpeaker {
+                Color.clear
+                    .frame(width: Layout.sideButtonSize)
+            } else {
+                // The theme's volume button is on the left (it fades out with that group)
+                // or not in the theme at all: a speaker comes in with the bar.
+                volumeButton
+                    .fadedOut(!isVolumeOpen)
+            }
+            VolumePanelView(volume: volume)
+                .frame(width: expansion.barAreaWidth, alignment: .leading)
+                .opacity(isVolumeOpen ? 1 : 0)
+                .animation(isVolumeOpen ? VolumePanelMotion.fadeIn : VolumePanelMotion.fadeOut,
+                           value: isVolumeOpen)
+                .frame(width: isVolumeOpen ? expansion.barAreaWidth : 0, alignment: .leading)
+                .clipped()
+        }
+        .frame(height: Layout.controlsHeight)
+        .offset(x: expansion.speakerX)
+    }
+
+    private var volumeButton: some View {
+        // Always enabled: on a device without volume control the bar explains why.
+        ToggleIconButton(systemName: "speaker.wave.2", isOn: isVolumeOpen, label: "Volumen",
+                         action: actions.volume)
+    }
+
+    private func row(layout: PlayerControlLayout, gap: CGFloat,
+                     expansion: VolumeExpansion) -> some View {
         let availability = ControlAvailability(playback: playback)
         return HStack(spacing: gap) {
             HStack(spacing: 0) {
@@ -663,6 +714,7 @@ struct PlayerControls: View {
                 }
             }
             .frame(maxWidth: .infinity)
+            .fadedOut(isVolumeOpen)
 
             if isEpisode {
                 SkipButton(systemName: "gobackward.15", label: "Retroceder 15 segundos",
@@ -684,8 +736,10 @@ struct PlayerControls: View {
             }
 
             HStack(spacing: gap) {
-                ForEach(layout.trailing, id: \.self) { control in
+                ForEach(Array(layout.trailing.enumerated()), id: \.element) { index, control in
+                    // Controls after the speaker would sit under the bar.
                     optionalButton(control, availability: availability)
+                        .fadedOut(isVolumeOpen && index > expansion.keptTrailingCount)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -715,9 +769,7 @@ struct PlayerControls: View {
             ToggleIconButton(systemName: "quote.bubble", isOn: lyricsActive,
                              label: "Letras", action: actions.lyrics)
         case .volume:
-            // Always enabled: on a device without volume control the panel explains why.
-            ToggleIconButton(systemName: "speaker.wave.2", isOn: false, label: "Volumen",
-                             action: actions.volume)
+            volumeButton
         }
     }
 
@@ -727,6 +779,17 @@ struct PlayerControls: View {
         case .context: return "Repetir: todo"
         case .track: return "Repetir: este tema"
         }
+    }
+}
+
+private extension View {
+    /// Fades a control out while the volume bar takes its place, and back in when it closes.
+    /// Hidden, it takes no touches and VoiceOver skips it.
+    func fadedOut(_ hidden: Bool) -> some View {
+        opacity(hidden ? 0 : 1)
+            .animation(hidden ? VolumePanelMotion.fadeOut : VolumePanelMotion.fadeIn, value: hidden)
+            .allowsHitTesting(!hidden)
+            .accessibilityHidden(hidden)
     }
 }
 

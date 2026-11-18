@@ -49,9 +49,9 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
    - Centro: estrofa actual y estrofa siguiente, al ancho configurado (por defecto 2/3).
    - Fila inferior: carátula chica, título, artista y dispositivo.
    - Biblioteca y Ajustes se ocultan mientras está activo.
-4. **Panel de volumen**: barra horizontal flotante que baja desde arriba al tocar el botón de
-   volumen o cuando cambia el volumen (también si cambia desde otro dispositivo). Se oculta a
-   los 3 s.
+4. **Barra de volumen**: se abre hacia el costado desde el botón de volumen, dentro de la fila
+   de controles, que se corre para dejarle lugar. Se abre al tocar el botón o cuando cambia el
+   volumen (también si cambia desde otro dispositivo). Se cierra a los 3 s.
 5. **Aviso "No encontramos la letra de este tema"**: aparece arriba 3 s y el reproductor vuelve
    a la vista normal.
 6. **Biblioteca**

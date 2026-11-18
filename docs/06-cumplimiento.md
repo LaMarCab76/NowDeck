@@ -165,11 +165,11 @@ Repaso punto por punto sobre la rama `hito/08-terminaciones` (hitos 1 a 7 integr
   playlist.
 - ✅ Corregido en este hito: mientras arranca una tarjeta se atenuaba la tarjeta entera,
   carátula incluida. Ahora se atenúan solo los textos.
-- ⚠️ **Superposiciones pasajeras**: el panel de volumen (520×64, centrado arriba, como en
-  `Volumen.dc.html`) y los avisos (píldora centrada arriba) quedan unos segundos sobre la
-  esquina superior derecha de la carátula. Es el diseño de los mockups y no tapa nada de forma
-  permanente, pero la guía dice "sin superponerle controles". Opciones: dejarlo así, o centrar
-  el panel y los avisos sobre la columna de texto en lugar de la pantalla. No se cambió.
+- ⚠️ **Superposiciones pasajeras**: los avisos (píldora centrada arriba) quedan unos segundos
+  sobre la esquina superior derecha de la carátula. Es el diseño de los mockups y no tapa nada
+  de forma permanente, pero la guía dice "sin superponerle controles". Opciones: dejarlo así, o
+  centrar los avisos sobre la columna de texto en lugar de la pantalla. No se cambió. El volumen
+  ya no se superpone: desde el 2026-11-18 se abre dentro de la fila de controles.
 
 ### Metadatos
 
