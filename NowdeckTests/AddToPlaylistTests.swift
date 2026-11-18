@@ -81,34 +81,58 @@ final class AddToPlaylistTests: XCTestCase {
 
     func testAllPlaylistsFollowsThePages() async throws {
         let (api, recorder) = makeAPI { request in
-            let offset = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?
-                .queryItems?.first { $0.name == "offset" }?.value
-            if offset == "0" {
+            switch Self.offset(of: request) {
+            case 0:
                 return (.stub(200), Self.json([
                     "items": [Self.playlist("a", owner: "me")], "limit": 50, "offset": 0,
                     "next": "https://api.spotify.com/v1/me/playlists?offset=50"]))
+            case 50:
+                return (.stub(200), Self.json([
+                    "items": [Self.playlist("b", owner: "me")], "limit": 50, "offset": 50,
+                    "next": NSNull()]))
+            default:
+                return (.stub(400), Data())
             }
-            return (.stub(200), Self.json([
-                "items": [Self.playlist("b", owner: "me")], "limit": 50, "offset": 50,
-                "next": NSNull()]))
         }
 
         let playlists = try await api.allSavedPlaylists()
 
         XCTAssertEqual(playlists.map(\.id), ["a", "b"])
-        XCTAssertEqual(recorder.requests.count, 2)
+        XCTAssertEqual(recorder.requests.map(Self.offset(of:)), [0, 50])
         XCTAssertTrue(recorder.requests[0].url!.absoluteString.contains("limit=50"))
     }
 
+    nonisolated private static func offset(of request: URLRequest) -> Int? {
+        URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?
+            .queryItems?.first { $0.name == "offset" }?.value.flatMap { Int($0) }
+    }
+
     func testAllPlaylistsStopsAfterTheMaximumPages() async throws {
-        let (api, recorder) = makeAPI { _ in
-            (.stub(200), Self.json(["items": [], "limit": 50, "offset": 0,
+        let (api, recorder) = makeAPI { request in
+            // Pages that always say there is more.
+            (.stub(200), Self.json(["items": [], "limit": 50,
+                                    "offset": Self.offset(of: request) ?? 0,
                                     "next": "https://api.spotify.com/v1/me/playlists"]))
         }
 
         _ = try await api.allSavedPlaylists(maximumPages: 3)
 
-        XCTAssertEqual(recorder.requests.count, 3)
+        XCTAssertEqual(recorder.requests.map(Self.offset(of:)), [0, 50, 100])
+    }
+
+    func testAPageThatDoesNotMoveForwardIsAnError() async {
+        let (api, recorder) = makeAPI { _ in
+            (.stub(200), Self.json(["items": [], "limit": 50, "offset": 0,
+                                    "next": "https://api.spotify.com/v1/me/playlists"]))
+        }
+
+        do {
+            _ = try await api.allSavedPlaylists()
+            XCTFail("Expected an error")
+        } catch {
+            XCTAssertEqual(error as? SpotifyAPIError, .invalidResponse)
+        }
+        XCTAssertEqual(recorder.requests.count, 2)
     }
 
     // MARK: Editable playlists
@@ -126,9 +150,20 @@ final class AddToPlaylistTests: XCTestCase {
         let editable = EditablePlaylist.editable(from: playlists, userID: "me")
 
         XCTAssertEqual(editable.map(\.id), ["mine", "shared"])
-        XCTAssertFalse(editable[0].isCollaborative)
-        XCTAssertTrue(editable[1].isCollaborative)
-        XCTAssertEqual(editable[0].itemCount, 3)
+        let mine = try XCTUnwrap(editable.first { $0.id == "mine" })
+        let shared = try XCTUnwrap(editable.first { $0.id == "shared" })
+        XCTAssertFalse(mine.isCollaborative)
+        XCTAssertTrue(shared.isCollaborative)
+        XCTAssertEqual(mine.itemCount, 3)
+        XCTAssertEqual(mine.pageURL?.absoluteString, "https://open.spotify.com/playlist/mine")
+    }
+
+    func testAnIneligibleCopyDoesNotHideALaterEditableOne() {
+        let editable = EditablePlaylist.editable(from: [
+            SimplifiedPlaylist(id: "p", name: "P"),
+            SimplifiedPlaylist(id: "p", name: "P", owner: .init(id: "me")),
+        ], userID: "me")
+        XCTAssertEqual(editable.map(\.id), ["p"])
     }
 
     func testOwnCollaborativePlaylistIsNotLabeledCollaborative() {
@@ -267,6 +302,78 @@ final class AddToPlaylistTests: XCTestCase {
         await model.add(to: playlist)
         XCTAssertEqual(model.state(of: playlist), .added)
         XCTAssertNil(model.problem)
+    }
+
+    func testGrantingThePermissionReadsAListThatFailedBefore() async throws {
+        let online = Counter()
+        let (api, _) = makeAPI { request in
+            if online.next() <= 1 { throw URLError(.notConnectedToInternet) }
+            return try Self.routes(playlists: [Self.playlist("mine", owner: "me")])(request)
+        }
+        let model = AddToPlaylistModel(api: api)
+        var grant = PlaylistEditingAccess.Grant.missing
+        model.open(for: trackURI, access: PlaylistEditingAccess(grant: { grant }, request: {
+            grant = .granted
+            return nil
+        }))
+        await model.load()
+        XCTAssertNil(model.playlists)
+
+        await model.requestPermission()
+
+        XCTAssertEqual(model.playlists?.map(\.id), ["mine"])
+        XCTAssertNil(model.problem)
+    }
+
+    func testAFailureForAnotherItemDoesNotShowInTheOpenSheet() async throws {
+        let gate = AsyncGate()
+        let (api, _) = makeAPI { request in
+            if request.httpMethod == "POST" {
+                gate.waitBlocking()
+                return (.stub(404), spotifyErrorJSON(status: 404, message: "No"))
+            }
+            return try Self.routes(playlists: [Self.playlist("mine", owner: "me")])(request)
+        }
+        let model = AddToPlaylistModel(api: api)
+        model.open(for: trackURI, access: .granted)
+        await model.load()
+        let playlist = try XCTUnwrap(model.playlists?.first)
+
+        let first = Task { await model.add(to: playlist) }
+        while model.state(of: playlist) != .adding { await Task.yield() }
+        model.open(for: "spotify:track:other1", access: .granted)
+        gate.open()
+        await first.value
+
+        XCTAssertNil(model.problem)
+        model.open(for: trackURI, access: .granted)
+        XCTAssertEqual(model.state(of: playlist), .idle, "Failures are cleared on opening")
+    }
+
+    func testACountReadWhileAnAddWasOutIsDropped() async throws {
+        let gate = AsyncGate()
+        let (api, _) = makeAPI { request in
+            if request.httpMethod == "POST" {
+                gate.waitBlocking()
+                return (.stub(201), Self.json(["snapshot_id": "s"]))
+            }
+            return try Self.routes(playlists: [Self.playlist("mine", owner: "me", count: 10)])(request)
+        }
+        let model = AddToPlaylistModel(api: api)
+        model.open(for: trackURI, access: .granted)
+        await model.load()
+        let playlist = try XCTUnwrap(model.playlists?.first)
+
+        let adding = Task { await model.add(to: playlist) }
+        while model.state(of: playlist) != .adding { await Task.yield() }
+        await model.load(force: true)
+        gate.open()
+        await adding.value
+
+        XCTAssertNil(model.playlists?.first?.itemCount,
+                     "The read may or may not include the add: no guess")
+        await model.load(force: true)
+        XCTAssertEqual(model.playlists?.first?.itemCount, 10, "A read after the add is trusted")
     }
 
     func testMissingPermissionBlocksAddingUntilGranted() async throws {

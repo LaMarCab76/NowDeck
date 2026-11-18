@@ -34,12 +34,13 @@ final class LoginFlowTests: XCTestCase {
         tokenStatus: Int = 200,
         tokenError: String = "invalid_client",
         playerStatus: Int = 204,
-        newUserID: String = "user-a"
+        newUserID: String = "user-a",
+        grantedScope: String = "user-read-playback-state"
     ) -> (URLSession, StubRecorder) {
         StubURLProtocol.session { request in
             if request.url?.host == "accounts.spotify.com" {
                 let body = tokenStatus == 200
-                    ? tokenJSON(access: "access", refresh: "refresh")
+                    ? tokenJSON(access: "access", refresh: "refresh", scope: grantedScope)
                     : tokenErrorJSON(tokenError)
                 return (.stub(tokenStatus), body)
             }
@@ -58,10 +59,12 @@ final class LoginFlowTests: XCTestCase {
         tokenStatus: Int = 200,
         tokenError: String = "invalid_client",
         playerStatus: Int = 204,
-        newUserID: String = "user-a"
+        newUserID: String = "user-a",
+        grantedScope: String = "user-read-playback-state"
     ) -> (AppState, CredentialStore, StubRecorder) {
         let (session, recorder) = session(tokenStatus: tokenStatus, tokenError: tokenError,
-                                          playerStatus: playerStatus, newUserID: newUserID)
+                                          playerStatus: playerStatus, newUserID: newUserID,
+                                          grantedScope: grantedScope)
         let appState = AppState(credentials: credentials,
                                 accounts: SpotifyAccountsClient(session: session),
                                 accessCheck: SpotifyAccessCheck(session: session),
@@ -168,13 +171,16 @@ final class LoginFlowTests: XCTestCase {
 
     private func loggedInAppState(scope: String, web: FakeWebAuthenticator = .approving(),
                                   playerStatus: Int = 204,
-                                  newUserID: String = "user-a") throws -> (AppState, CredentialStore) {
+                                  newUserID: String = "user-a",
+                                  grantedScope: String = "user-read-playback-state playlist-modify-public playlist-modify-private"
+    ) throws -> (AppState, CredentialStore) {
         let credentials = CredentialStore(store: InMemorySecureStore())
         try credentials.setClientID(clientID)
         try credentials.setTokens(OAuthTokens(accessToken: "old", refreshToken: "r",
                                               expiresAt: .distantFuture, scope: scope))
         let (appState, _, _) = makeAppState(credentials: credentials, web: web,
-                                            playerStatus: playerStatus, newUserID: newUserID)
+                                            playerStatus: playerStatus, newUserID: newUserID,
+                                            grantedScope: grantedScope)
         return (appState, credentials)
     }
 
@@ -190,6 +196,16 @@ final class LoginFlowTests: XCTestCase {
 
     func testEmptyGrantedScopesAreUnknown() throws {
         XCTAssertEqual(try loggedInAppState(scope: "").0.playlistEditingGrant(), .unknown)
+    }
+
+    func testRequestingPlaylistEditingFailsWhenSpotifyGrantsFewerScopes() async throws {
+        let (appState, credentials) = try loggedInAppState(
+            scope: "x", grantedScope: "user-read-playback-state playlist-modify-public")
+
+        let failure = await appState.requestPlaylistEditing()
+
+        XCTAssertEqual(failure, .denied)
+        XCTAssertEqual(try credentials.tokens()?.accessToken, "old")
     }
 
     func testRequestingPlaylistEditingWithADifferentAccountIsRejected() async throws {

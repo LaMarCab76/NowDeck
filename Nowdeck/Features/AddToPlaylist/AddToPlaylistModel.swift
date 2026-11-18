@@ -8,6 +8,8 @@ struct EditablePlaylist: Identifiable, Equatable, Sendable {
     var itemCount: Int?
     /// Someone else owns it, but its owner lets others edit it.
     var isCollaborative: Bool
+    /// Its page on Spotify, for the row's "Abrir en Spotify" (docs/06).
+    var pageURL: URL?
 
     /// The playlists of `GET /me/playlists` that `userID` can edit, in Spotify's order (the
     /// one the user sees in their library). Playlists without an ID or a name are skipped,
@@ -21,17 +23,20 @@ struct EditablePlaylist: Identifiable, Equatable, Sendable {
         var result: [EditablePlaylist] = []
         for playlist in playlists {
             guard let id = playlist.id, !id.isEmpty,
-                  let name = playlist.name, !name.isEmpty,
-                  seen.insert(id).inserted
+                  let name = playlist.name, !name.isEmpty
             else { continue }
             let isOwned = playlist.owner?.id == userID
             let isCollaborative = playlist.collaborative == true
-            guard isOwned || isCollaborative else { continue }
+            // Deduplicated after the check: a copy without owner data must not hide a later
+            // editable one.
+            guard isOwned || isCollaborative, seen.insert(id).inserted else { continue }
             result.append(EditablePlaylist(
                 id: id, name: name,
                 imageURL: QueueEntry.thumbnail(playlist.images ?? []),
                 itemCount: playlist.itemCount,
-                isCollaborative: isCollaborative && !isOwned))
+                isCollaborative: isCollaborative && !isOwned,
+                pageURL: NowPlaying.pageURL(externalURL: playlist.externalUrls?.spotify,
+                                            uri: playlist.uri ?? "spotify:playlist:\(id)")))
         }
         return result
     }
@@ -154,6 +159,8 @@ final class AddToPlaylistModel: ObservableObject {
     @Published private(set) var playlists: [EditablePlaylist]?
     /// The last problem, shown until the next successful action.
     @Published private(set) var problem: AddToPlaylistProblem?
+    /// `problem` came from reading the list: the sheet offers "Reintentar" next to it.
+    @Published private(set) var canRetryList = false
     @Published private(set) var isLoading = false
     /// The session lacks the playlist-editing scopes: the sheet asks for them first.
     @Published private(set) var needsPermission = false
@@ -173,6 +180,11 @@ final class AddToPlaylistModel: ObservableObject {
     private var userID: String?
     private var loadedAt: Date?
     private var loadTask: Task<Void, Never>?
+    /// Counts list reads and successful adds, in the order they finish. Used to tell whether
+    /// a playlist's count from Spotify already includes an add (`reconcile…`).
+    private var sequence = 0
+    /// The `sequence` at which each playlist last received an add.
+    private var lastAdd: [String: Int] = [:]
 
     init(api: SpotifyAPI, now: @escaping () -> Date = { Date() }) {
         self.api = api
@@ -186,6 +198,7 @@ final class AddToPlaylistModel: ObservableObject {
         // Failures are news of the last opening; adds still in flight are kept.
         pending = pending.filter { $0.value == .adding }
         problem = nil
+        canRetryList = false
         needsPermission = access.grant() == .missing
     }
 
@@ -216,6 +229,7 @@ final class AddToPlaylistModel: ObservableObject {
     private func fetch() async {
         isLoading = true
         defer { isLoading = false }
+        let startedAt = sequence
         do {
             let userID: String
             if let known = self.userID {
@@ -225,13 +239,17 @@ final class AddToPlaylistModel: ObservableObject {
                 self.userID = userID
             }
             let all = try await api.allSavedPlaylists()
-            playlists = EditablePlaylist.editable(from: all, userID: userID)
+            sequence += 1
+            playlists = reconcileCounts(EditablePlaylist.editable(from: all, userID: userID),
+                                        readStartedAt: startedAt)
             loadedAt = now()
-            if !Self.isAddProblem(problem) { problem = nil }
+            if canRetryList || !Self.isAddProblem(problem) { problem = nil }
+            canRetryList = false
         } catch is CancellationError {
             return
         } catch {
             problem = AddToPlaylistProblem(error)
+            canRetryList = true
         }
     }
 
@@ -243,49 +261,80 @@ final class AddToPlaylistModel: ObservableObject {
         guard state == .idle || state == .failed else { return }
 
         let key = Self.key(uri: uri, playlistID: playlist.id)
+        let startedAt = sequence
         pending[key] = .adding
         do {
             try await api.addToPlaylist(playlistID: playlist.id, uri: uri)
+            // Recorded even if the sheet now shows another item: it stays checked when this
+            // item comes back.
             added.insert(key)
             pending[key] = nil
-            bumpCount(of: playlist.id)
-            // Whatever failed before (this row or another), the last action worked.
-            problem = nil
+            sequence += 1
+            lastAdd[playlist.id] = sequence
+            updateCount(of: playlist.id, listReadDuringAdd: sequence - 1 != startedAt)
             UIAccessibility.post(notification: .announcement,
                                  argument: String(localized: "Agregado a \(playlist.name)"))
+            // Feedback belongs to the sheet that sent the request.
+            if targetURI == uri {
+                // Whatever failed before (this row or another), the last action worked.
+                problem = nil
+                canRetryList = false
+            }
         } catch is CancellationError {
             pending[key] = nil
         } catch {
             pending[key] = .failed
+            guard targetURI == uri else { return }
             if case SpotifyAPIError.forbidden = error, access.grant() != .granted {
                 // The session lacks the scopes, or may lack them (unknown): ask for them.
                 needsPermission = true
             }
             problem = AddToPlaylistProblem(error, whileAdding: true)
+            canRetryList = false
         }
     }
 
-    /// Opens Spotify's login to grant the playlist-editing scopes.
+    /// Opens Spotify's login to grant the playlist-editing scopes, then reads the list if it
+    /// is missing or its last read failed (that error was hidden behind the permission).
     func requestPermission() async {
         guard !isRequestingPermission else { return }
         isRequestingPermission = true
         defer { isRequestingPermission = false }
         if let failure = await access.request() {
             problem = .permission(failure)
-        } else {
-            needsPermission = false
-            problem = nil
+            return
         }
+        needsPermission = false
+        let listNeedsReading = playlists == nil || canRetryList
+        problem = nil
+        canRetryList = false
+        if listNeedsReading { await load(force: true) }
     }
 
     // MARK: Helpers
 
-    private func bumpCount(of playlistID: String) {
+    /// After an add: one more item, unless a list read finished while the request was out.
+    /// That read may or may not include the add, so the count is dropped instead of guessed
+    /// (the row then shows no count until the next read).
+    private func updateCount(of playlistID: String, listReadDuringAdd: Bool) {
         guard var list = playlists, let index = list.firstIndex(where: { $0.id == playlistID }),
               let count = list[index].itemCount
         else { return }
-        list[index].itemCount = count + 1
+        list[index].itemCount = listReadDuringAdd ? nil : count + 1
         playlists = list
+    }
+
+    /// A read that was out while an add finished may carry the count from before the add:
+    /// those counts are dropped too.
+    private func reconcileCounts(_ list: [EditablePlaylist],
+                                 readStartedAt: Int) -> [EditablePlaylist] {
+        list.map { playlist in
+            var playlist = playlist
+            if let added = lastAdd[playlist.id], added > readStartedAt {
+                playlist.itemCount = nil
+            }
+            return playlist
+        }
     }
 
     private static func key(uri: String, playlistID: String) -> String {

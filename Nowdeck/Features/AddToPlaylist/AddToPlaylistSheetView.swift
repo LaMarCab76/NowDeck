@@ -64,8 +64,19 @@ struct AddToPlaylistSheetView: View {
         } else if let playlists = model.playlists {
             VStack(alignment: .leading, spacing: 0) {
                 if let problem = model.problem {
-                    ProblemLine(problem: problem)
-                        .padding(.bottom, Spacing.xs)
+                    HStack(alignment: .center, spacing: Spacing.m) {
+                        ProblemLine(problem: problem)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        // A failed read of the list: the rows on screen are the last ones
+                        // that loaded. Failed adds are retried from their row instead.
+                        if model.canRetryList {
+                            Button("Reintentar") {
+                                Task { await model.load(force: true) }
+                            }
+                            .buttonStyle(DevicesRefreshButtonStyle())
+                        }
+                    }
+                    .padding(.bottom, Spacing.xs)
                 }
                 if playlists.isEmpty {
                     emptyList
@@ -264,11 +275,25 @@ private struct PlaylistRow: View {
         // Not `.disabled`: that would dim an added row. The model ignores taps on rows that
         // are being added or were added.
         .overlay(alignment: .top) { Separator() }
+        // The tap adds, so the link back to the playlist (docs/06) is a long press, as on
+        // the detail's tracks.
+        .contextMenu {
+            if let url = playlist.pageURL {
+                Button {
+                    SpotifyLink.open(url)
+                } label: {
+                    Label("Abrir en Spotify", systemImage: "arrow.up.right")
+                }
+            }
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityAddTraits(state == .added ? [.isButton, .isSelected] : .isButton)
         .accessibilityHint(state == .idle || state == .failed
                            ? Text("Agrega el tema a esta playlist") : Text(verbatim: ""))
+        .accessibilityAction(named: Text("Abrir en Spotify")) {
+            if let url = playlist.pageURL { SpotifyLink.open(url) }
+        }
     }
 
     @ViewBuilder

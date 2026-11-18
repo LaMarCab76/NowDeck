@@ -310,7 +310,11 @@ sigue el diseño de Cola:
   semibold, "Colaborativa · N temas" en 13 `textoCuerpo`, y a la derecha el estado en una
   zona de 44: `plus.circle` (`textoTerciario`), indicador de carga, `checkmark.circle.fill`
   en acento (agregado) o `exclamationmark.circle` en `advertencia` (falló; tocar reintenta).
-  Toda la fila es el botón y **agrega de inmediato**, sin confirmar.
+  Toda la fila es el botón y **agrega de inmediato**, sin confirmar. Los nombres largos se
+  desplazan (marquesina) para poder leerlos enteros antes de tocar. Mantener apretada la fila
+  ofrece "Abrir en Spotify" con la página de esa playlist (el enlace de vuelta de docs/06).
+- El total de temas suma uno al agregar. Si una lectura de la lista se cruza con el pedido,
+  ese total se oculta hasta la próxima lectura en lugar de adivinarlo.
 - Solo aparecen las playlists **propias y las colaborativas** (`owner.id` = usuario o
   `collaborative: true`), en el orden de Spotify. Al final: "Solo aparecen tus playlists y las
   colaborativas. Para quitar temas, usá Spotify." y "ABRIR SPOTIFY ↗".
@@ -320,7 +324,10 @@ sigue el diseño de Cola:
   candado, "Falta un permiso", la explicación y "Dar permiso" (cápsula de acento), que vuelve a
   abrir el login de Spotify sin salir del reproductor.
 - **Sin playlists editables**: ícono de lista, "No tenés playlists para editar" y cómo crear
-  una. **Error**: la línea de aviso de Dispositivos y "Reintentar".
+  una. **Error**: la línea de aviso de Dispositivos y "Reintentar". Si falla una lectura con
+  la lista ya en pantalla, la lista queda y "Reintentar" aparece al lado del aviso; un
+  agregado que falla se reintenta tocando su fila. Al volver a entrar con "Dar permiso" solo
+  se acepta la **misma cuenta** de Spotify, y solo si Spotify concede los dos permisos.
 
 ## Cola (`Cola.html`)
 

@@ -182,7 +182,12 @@ final class AppState: ObservableObject {
     /// permission only if Spotify answers `403`.
     func playlistEditingGrant() -> PlaylistEditingAccess.Grant {
         guard let tokens = try? credentials.tokens() else { return .missing }
-        let granted = Set(tokens.scope.split(separator: " ").map(String.init))
+        return Self.grant(forScope: tokens.scope)
+    }
+
+    /// The playlist-editing grant of a space-separated `scope` answer.
+    static func grant(forScope scope: String) -> PlaylistEditingAccess.Grant {
+        let granted = Set(scope.split(separator: " ").map(String.init))
         if granted.isEmpty { return .unknown }
         return SpotifyAuthorization.playlistEditingScopes.allSatisfy(granted.contains)
             ? .granted : .missing
@@ -214,6 +219,9 @@ final class AppState: ObservableObject {
             }
             guard try await accessCheck.userID(accessToken: tokens.accessToken) == currentUserID
             else { return .differentAccount }
+            // Spotify may grant fewer scopes than asked (RFC 6749 §3.3). Without a `scope`
+            // answer it is unknown, and a 403 on adding will tell.
+            if Self.grant(forScope: tokens.scope) == .missing { return .denied }
             // Through the token manager: a refresh still out must not overwrite them.
             try await tokenManager.install(tokens)
             return nil
