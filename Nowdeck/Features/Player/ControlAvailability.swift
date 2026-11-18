@@ -84,4 +84,25 @@ struct PlayerControlLayout: Equatable {
         leading = Array(unique.prefix(leadingCount))
         trailing = Array(unique.dropFirst(leadingCount))
     }
+
+    /// The gap between buttons for a row `width` wide, with Agregar a una playlist at the
+    /// left end of the left group (owner's request, 2026-11-18).
+    ///
+    /// Play/pause stays in the exact center, so both groups take the same width and the left
+    /// one, which also holds the add button, decides: `2 × left + center + 4 gaps ≤ width`.
+    /// The design's 36 pt where it fits (the 800 pt of the 11 Pro Max); less on narrower
+    /// screens: with the default controls the 640 pt of the iPhone 8 Plus give 22 pt. Never
+    /// below `minimumGap`.
+    func gap(forWidth width: CGFloat,
+             preferred: CGFloat = Metrics.Player.controlsGap,
+             minimumGap: CGFloat = Metrics.Player.controlsMinimumGap,
+             buttonSize: CGFloat = Metrics.Player.sideButtonSize,
+             centerWidth: CGFloat = Metrics.Player.centerGroupWidth) -> CGFloat {
+        let leftButtons = CGFloat(leading.count + 1)
+        let leftGaps = CGFloat(leading.count)
+        // 2 × (leftButtons × size + leftGaps × gap) + center + 4 × gap ≤ width
+        let room = width - centerWidth - 2 * leftButtons * buttonSize
+        let fitting = (room / (2 * leftGaps + 4)).rounded(.down)
+        return max(minimumGap, min(preferred, fitting))
+    }
 }

@@ -71,6 +71,9 @@ extension Metrics {
         static let miniDeviceIconGap: CGFloat = 8
         static let miniPlayButtonSize: CGFloat = 44
         static let miniPlayIconSize: CGFloat = 17
+        /// Agregar a una playlist, at the left end (2026-11-18): the player's 20 pt icon,
+        /// in a 44 pt tap zone.
+        static let miniAddIconSize: CGFloat = 20
 
         // Detail of a playlist or an album (`Detalle.dc.html`).
         /// "‹ Biblioteca": a 36 pt pill like an inactive tab, moved 4 pt left like the tabs.

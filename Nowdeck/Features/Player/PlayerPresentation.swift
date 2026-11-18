@@ -21,6 +21,10 @@ final class PlayerPresentation: ObservableObject {
     @Published var showsLibraryDevices = false
     /// Cola, presented from the player (only the player has its button).
     @Published var showsQueue = false
+    /// Agregar a una playlist, presented from the player.
+    @Published var showsAddToPlaylist = false
+    /// Agregar a una playlist, presented from inside the library (its mini player).
+    @Published var showsLibraryAddToPlaylist = false
 
     /// The screen the user is looking at.
     var visibleSurface: Surface {
@@ -44,6 +48,15 @@ final class PlayerPresentation: ObservableObject {
         switch visibleSurface {
         case .player: showsDevices = true
         case .library: showsLibraryDevices = true
+        }
+    }
+
+    /// Opens Agregar a una playlist on the visible screen: the player's button, or the mini
+    /// player's while the library covers the player.
+    func showAddToPlaylist() {
+        switch visibleSurface {
+        case .player: showsAddToPlaylist = true
+        case .library: showsLibraryAddToPlaylist = true
         }
     }
 }

@@ -171,7 +171,8 @@ struct PlayerView: View {
             }
             PlayerControls(playback: model.playback, actions: actions,
                            controls: optionalControls,
-                           lyricsActive: lyrics.isButtonActive)
+                           lyricsActive: lyrics.isButtonActive,
+                           canAddToPlaylist: model.nowPlaying?.playlistURI != nil)
         }
     }
 }
@@ -622,25 +623,45 @@ struct ProgressRow: View {
 /// - For podcast episodes the center group has −15 s and +15 s instead of previous and next,
 ///   as Spotify's design guidelines ask ("Podcasts need to have the option to seek 15 seconds
 ///   forward or backwards").
+/// - Agregar a una playlist sits at the left end of the row (owner's request, 2026-11-18).
+///   Like Cola, it is not a theme control: saved themes list their controls explicitly and
+///   would never show it. On narrow screens every gap shrinks so it fits
+///   (`PlayerControlLayout.gap(forWidth:)`).
 struct PlayerControls: View {
     var playback: PlaybackState?
     var actions: PlayerActions
     /// Optional controls in the theme's order (`reproductor.controles`).
     var controls: [Theme.PlayerControl]
     var lyricsActive = false
+    /// A track or episode that a playlist can take (not ads nor local files).
+    var canAddToPlaylist = false
 
     private typealias Layout = Metrics.Player
 
     var body: some View {
+        GeometryReader { proxy in
+            row(gap: PlayerControlLayout(controls: controls).gap(forWidth: proxy.size.width))
+        }
+        .frame(height: Layout.controlsHeight)
+    }
+
+    private func row(gap: CGFloat) -> some View {
         let layout = PlayerControlLayout(controls: controls)
         let availability = ControlAvailability(playback: playback)
-        HStack(spacing: Layout.controlsGap) {
-            HStack(spacing: Layout.controlsGap) {
-                ForEach(layout.leading, id: \.self) { control in
-                    optionalButton(control, availability: availability)
+        return HStack(spacing: gap) {
+            HStack(spacing: 0) {
+                ToggleIconButton(systemName: "plus.circle", isOn: false,
+                                 label: "Agregar a una playlist", isEnabled: canAddToPlaylist,
+                                 action: actions.addToPlaylist)
+                    .accessibilityHint(Text("Elegí una de tus playlists"))
+                Spacer(minLength: layout.leading.isEmpty ? 0 : gap)
+                HStack(spacing: gap) {
+                    ForEach(layout.leading, id: \.self) { control in
+                        optionalButton(control, availability: availability)
+                    }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .trailing)
+            .frame(maxWidth: .infinity)
 
             if isEpisode {
                 SkipButton(systemName: "gobackward.15", label: "Retroceder 15 segundos",
@@ -661,7 +682,7 @@ struct PlayerControls: View {
                            isEnabled: availability.next, action: actions.next)
             }
 
-            HStack(spacing: Layout.controlsGap) {
+            HStack(spacing: gap) {
                 ForEach(layout.trailing, id: \.self) { control in
                     optionalButton(control, availability: availability)
                 }

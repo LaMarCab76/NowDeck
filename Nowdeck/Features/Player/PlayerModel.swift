@@ -73,6 +73,10 @@ final class PlayerModel: ObservableObject {
     /// it keeps only a weak reference back.
     private(set) lazy var controls = PlayerControlsModel(player: self)
 
+    /// Agregar a una playlist. Lives as long as the player, so the list of editable
+    /// playlists and what was added are kept between openings of the sheet.
+    private(set) lazy var playlists = AddToPlaylistModel(api: api)
+
     /// Shared with `controls` (playback commands) and the sheets that call the API on their
     /// own (Dispositivos, Biblioteca).
     let api: SpotifyAPI
