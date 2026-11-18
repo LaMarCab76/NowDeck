@@ -57,13 +57,13 @@ struct PlayerView: View {
                 width: theme.lyricsWidth,
                 offsetMs: preferences.lyricsOffsetMs,
                 artwork: model.artwork.map(Image.init(uiImage:)),
-                // Never a dead tap: without the source's link, the item; without either,
+                // Never a dead tap (both buttons): without the source's link, the item; without either,
                 // `SpotifyLink.open` falls back to Spotify's home page, as the normal view does.
                 onOpenSource: { [url = model.origin?.url ?? item.itemURL] in
                     SpotifyLink.open(url)
                 },
                 onOpenSpotify: { [url = model.origin?.url ?? item.itemURL] in
-                    if let url { SpotifyLink.open(url) }
+                    SpotifyLink.open(url)
                 },
                 onShowDevices: actions.devices,
                 swipe: swipe,
