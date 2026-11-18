@@ -98,12 +98,18 @@ inicio, sí.
 
 Cambia lo anterior en estos puntos (no está en los mockups):
 
-- **Fila superior a todo el ancho** (44), arriba de la carátula: el ícono de Spotify y "Desde
-  la playlist **Nombre**" en la esquina superior izquierda; las píldoras **Cola** y
+- **Fila superior a todo el ancho** (44), arriba de la carátula: el ícono de Spotify y el
+  origen en la esquina superior izquierda; las píldoras **Cola** y
   **Biblioteca** a la derecha (Cola primero, separadas 12; ver "Cola"). El origen va en una píldora del mismo alto que Biblioteca (44, 16 a los costados,
   blanco al 8 %), con el ícono afuera para respetar su espacio libre. Margen de arriba 16 (era
   24), y 4 entre la fila y la carátula. Con todo el ancho, el origen tiene lugar visible para
   más de 25 caracteres.
+  - **Origen en dos líneas** (pedido del dueño, 2026-11-18): "Reproduciendo desde" en 12/16
+    medium (texto secundario) arriba y, abajo, el nombre en 15/20 bold, los mismos tamaños
+    que en el modo letras. Sin nombre se muestra el tipo: "Una playlist" (mientras llega),
+    "Playlist de Spotify" (la API no lo da: radios, mixes y playlists editoriales), "Un
+    álbum", "Un artista", "Un podcast" o "Tus me gusta". El mockup tiene "Desde la playlist
+    **Nombre**" en una línea; manda esta decisión.
 - **Carátula de 216** (era 256) y alto del bloque de la carátula 216. El modo letras ocupa
   la fila y el bloque juntos (264). Cuenta vertical: 16 + 264 + 20 + 94 + 20 = 414.
 - **Ajustes** ya no está en el reproductor: se abre desde la cabecera de Biblioteca (ícono a
@@ -151,8 +157,8 @@ Cambia lo anterior en estos puntos (no está en los mockups):
 
 Reemplaza el bloque superior:
 
-- **Fila superior** (44): el ícono de Spotify y, a 12, "Desde la playlist" en 12 pt arriba y
-  el nombre en 15 pt bold abajo, a la izquierda. El mockup tenía el logo a la derecha; el
+- **Fila superior** (44): el ícono de Spotify y, a 12, "Reproduciendo desde" en 12 pt arriba
+  y el nombre (o el tipo, como en la vista normal) en 15 pt bold abajo, a la izquierda. El mockup tenía el logo a la derecha; el
   dueño lo pasó junto al origen el 2026-11-17, igual que en la vista normal.
 - **Letras**, centradas en el espacio que queda:
   - estrofa actual y estrofa siguiente, al ancho de "Ancho de las letras" (50 %, **66,7 %** o

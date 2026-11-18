@@ -34,15 +34,31 @@ final class PlayerLyricsBridgeTests: XCTestCase {
         let item = try XCTUnwrap(NowPlaying(state: state(.track(track))))
         let named = LyricsModeContent(item: item, origin: PlaybackOrigin(kind: .playlist, name: "Para laburar"),
                                       deviceName: "MacBook Pro")
-        XCTAssertEqual(named.sourceLabel, "Desde la playlist")
+        XCTAssertEqual(named.sourceLabel, "Reproduciendo desde")
         XCTAssertEqual(named.sourceName, "Para laburar")
         XCTAssertEqual(named.artist, "A, B")
         XCTAssertEqual(named.deviceName, "MacBook Pro")
 
         let unnamed = LyricsModeContent(item: item, origin: PlaybackOrigin(kind: .playlist), deviceName: nil)
-        XCTAssertNil(unnamed.sourceLabel)
-        XCTAssertEqual(unnamed.sourceName, "Desde una playlist")
+        XCTAssertEqual(unnamed.sourceLabel, "Reproduciendo desde")
+        XCTAssertEqual(unnamed.sourceName, "Una playlist")
 
-        XCTAssertNil(LyricsModeContent(item: item, origin: nil, deviceName: nil).sourceName)
+        let withoutOrigin = LyricsModeContent(item: item, origin: nil, deviceName: nil)
+        XCTAssertNil(withoutOrigin.sourceName)
+        XCTAssertNil(withoutOrigin.sourceLabel)
+    }
+
+    func testOriginDisplayNameFallsBackToTheType() {
+        XCTAssertEqual(PlaybackOrigin(kind: .playlist, name: "Para laburar").displayName, "Para laburar")
+        XCTAssertEqual(PlaybackOrigin(kind: .playlist).displayName, "Una playlist",
+                       "While the name is on its way")
+        XCTAssertEqual(PlaybackOrigin(kind: .playlist, isNameUnavailable: true).displayName,
+                       "Playlist de Spotify", "Radios and Spotify's own playlists")
+        XCTAssertEqual(PlaybackOrigin(kind: .playlist, name: "", isNameUnavailable: true).displayName,
+                       "Playlist de Spotify")
+        XCTAssertEqual(PlaybackOrigin(kind: .album).displayName, "Un álbum")
+        XCTAssertEqual(PlaybackOrigin(kind: .artist).displayName, "Un artista")
+        XCTAssertEqual(PlaybackOrigin(kind: .show).displayName, "Un podcast")
+        XCTAssertEqual(PlaybackOrigin(kind: .likedSongs).displayName, "Tus me gusta")
     }
 }
