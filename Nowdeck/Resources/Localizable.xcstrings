@@ -3780,6 +3780,22 @@
         }
       }
     },
+    "Reproducir desde acá" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play from here"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reproducir desde acá"
+          }
+        }
+      }
+    },
     "Reproductor" : {
       "localizations" : {
         "en" : {

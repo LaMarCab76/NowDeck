@@ -29,6 +29,8 @@ struct LyricsModeContent: Equatable {
 /// - Top row (44): Spotify icon and source on the left, as in the normal view (the owner moved
 ///   the logo there on 2026-11-17; the mockup had it on the right). It opens Spotify.
 /// - Center: current stanza (30 pt) and next stanza (22 pt), `width` of the usable width.
+///   Dragging up or down browses the stanzas; tapping one moves the playback there
+///   (`LyricsBrowsing`).
 /// - Bottom row (56): artwork, title, artist and device. It is the band of the track swipe.
 struct LyricsModeView: View {
     let content: LyricsModeContent
@@ -49,6 +51,9 @@ struct LyricsModeView: View {
     var onOpenSpotify: () -> Void = {}
     /// Opens the devices sheet (milestone 4).
     var onShowDevices: () -> Void = {}
+    /// Moves the playback to a position in ms: tapping a stanza (`LyricsBrowsing`). `nil`
+    /// where Spotify forbids seeking: the lyrics then take no touches.
+    var onSeek: ((Int) -> Void)?
     /// The track swipe works on the bottom row only, never on the lyrics: the row follows
     /// the finger and the next or previous item's row comes in from the side.
     var swipe: TrackSwipePhase = .idle
@@ -60,7 +65,8 @@ struct LyricsModeView: View {
         VStack(spacing: 0) {
             header
                 .frame(height: Metrics.Lyrics.headerHeight)
-            LyricsStanzasView(lyrics: lyrics?.displayed(as: style), playback: playback, width: width, offsetMs: offsetMs)
+            LyricsStanzasView(lyrics: lyrics?.displayed(as: style), playback: playback, width: width,
+                              offsetMs: offsetMs, onSeek: onSeek)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             footer
                 .frame(height: Metrics.Lyrics.footerHeight)
@@ -167,15 +173,26 @@ struct LyricsModeView: View {
 
 /// The current and next stanza, refreshed from the interpolated playback position: about 10
 /// times a second in word mode and twice a second in stanza mode (docs/04-letras.md).
+///
+/// With `onSeek`, the stanzas can be browsed and tapped (`LyricsBrowsing`).
 private struct LyricsStanzasView: View {
     let lyrics: SyncedLyrics?
     let playback: LyricsPlayback
     let width: Theme.LyricsWidth
     let offsetMs: Int
+    let onSeek: ((Int) -> Void)?
 
     /// The snapshot used for interpolation. Polls closer than 1.5 s to it are ignored so the
     /// lyrics do not jitter (see `LyricsPlayback.reconciled(with:)`).
     @State private var anchor: LyricsPlayback?
+    /// The stanza the user browsed to, shown instead of the playback's; `nil` follows the
+    /// playback.
+    @State private var browseIndex: Int?
+    /// The stanza the current drag started from.
+    @State private var dragStartIndex: Int?
+    /// Changes with every browsing touch, to restart the idle timeout.
+    @State private var browseTouches = 0
+    @GestureState private var isDragging = false
     @EnvironmentObject private var theme: ThemeStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -183,22 +200,26 @@ private struct LyricsStanzasView: View {
         GeometryReader { proxy in
             if let lyrics {
                 TimelineView(.periodic(from: .now, by: refreshInterval(for: lyrics))) { context in
-                    let position = (anchor ?? playback).lyricsPositionMs(at: context.date,
-                                                                     offsetMs: offsetMs)
+                    let frame = browseIndex.flatMap { LyricsBrowsing.frame(browsing: $0, in: lyrics) }
+                        ?? LyricsTimeline.frame(for: lyrics, atMs: position(at: context.date))
                     // The ZStack keeps its identity between ticks, so when the stanza index
-                    // changes the old stanzas rise away and the new ones come in.
-                    let frame = LyricsTimeline.frame(for: lyrics, atMs: position)
+                    // changes the old stanzas rise away and the new ones come in. While
+                    // browsing they cross-fade instead: rising would look wrong going back.
                     ZStack {
                         if let frame {
                             stanzas(lyrics, frame: frame, width: proxy.size.width * width.fraction)
                                 .frame(width: proxy.size.width, height: proxy.size.height)
                                 .id(frame.primaryIndex)
-                                .transition(Motion.rise(Motion.stanzaRise, reduceMotion: reduceMotion))
+                                .transition(browseIndex == nil
+                                    ? Motion.rise(Motion.stanzaRise, reduceMotion: reduceMotion)
+                                    : .opacity)
                         }
                     }
                     .animation(Motion.stanzaChange, value: frame?.primaryIndex)
                 }
                 .transition(.opacity)
+                .contentShape(Rectangle())
+                .simultaneousGesture(onSeek == nil ? nil : browseGesture(lyrics))
             }
         }
         // New lyrics (another track) fade in instead of popping.
@@ -209,7 +230,68 @@ private struct LyricsStanzasView: View {
         }
         .onChange(of: lyrics) { _ in
             anchor = playback
+            browseIndex = nil
         }
+        .onChange(of: isDragging) { dragging in
+            // Also after a cancelled drag, when `onEnded` is not called.
+            if !dragging { dragStartIndex = nil }
+        }
+        .onChange(of: onSeek == nil) { forbidden in
+            if forbidden { browseIndex = nil }
+        }
+        .task(id: browseTouches) {
+            guard browseIndex != nil else { return }
+            try? await Task.sleep(nanoseconds: UInt64(LyricsBrowsing.idleTimeout * 1_000_000_000))
+            guard !Task.isCancelled, !isDragging else { return }
+            withAnimation(Motion.lyricsBrowseEnd) { browseIndex = nil }
+        }
+    }
+
+    private func position(at date: Date) -> Int {
+        (anchor ?? playback).lyricsPositionMs(at: date, offsetMs: offsetMs)
+    }
+
+    // MARK: Browsing and seeking
+
+    private func browseGesture(_ lyrics: SyncedLyrics) -> some Gesture {
+        DragGesture(minimumDistance: LyricsBrowsing.dragMinimumDistance)
+            .updating($isDragging) { _, dragging, _ in dragging = true }
+            .onChanged { drag in
+                let start = dragStartIndex ?? browseIndex
+                    ?? LyricsBrowsing.startIndex(for: lyrics, atMs: position(at: Date()))
+                dragStartIndex = start
+                let index = LyricsBrowsing.index(from: start, translation: drag.translation.height,
+                                                 count: lyrics.stanzas.count)
+                if index != browseIndex {
+                    // Each stanza passing under the finger is felt, like a picker's notches.
+                    if browseIndex != nil || index != start {
+                        UISelectionFeedbackGenerator().selectionChanged()
+                    }
+                    browseIndex = index
+                }
+            }
+            .onEnded { _ in
+                dragStartIndex = nil
+                browseTouches += 1
+            }
+    }
+
+    /// Moves the playback to where `index` starts and follows the playback again.
+    private func seek(to index: Int, in lyrics: SyncedLyrics) {
+        guard let onSeek, lyrics.stanzas.indices.contains(index) else { return }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        let target = LyricsBrowsing.seekTarget(for: lyrics.stanzas[index], offsetMs: offsetMs)
+        onSeek(target)
+        // The new position reaches `playback` only on the next render; anchoring it now
+        // keeps the old stanza from flashing between the browsed one and the playback.
+        anchor = LyricsPlayback(progressMs: target, isPlaying: (anchor ?? playback).isPlaying,
+                                timestamp: Date())
+        browseIndex = nil
+    }
+
+    /// When a stanza starts, in the playback's time, for the label shown while browsing.
+    private func startLabel(for stanza: LyricsStanza) -> String {
+        PlaybackProgress.formatted(ms: LyricsBrowsing.seekTarget(for: stanza, offsetMs: offsetMs))
     }
 
     private func refreshInterval(for lyrics: SyncedLyrics) -> TimeInterval {
@@ -226,6 +308,14 @@ private struct LyricsStanzasView: View {
         let next = frame.nextIndex.map { lyrics.stanzas[$0] }
 
         return VStack(spacing: Metrics.Lyrics.stanzaSpacing) {
+            if browseIndex != nil {
+                // Where a tap on the stanza below jumps to.
+                Label(startLabel(for: primary), systemImage: "play.fill")
+                    .textStyle(.lyricsBrowseTime)
+                    .foregroundColor(theme.palette.accent.color)
+                    .accessibilityHidden(true)
+            }
+
             primaryText(primary, sync: lyrics.sync, frame: frame)
                 .textStyle(.currentStanza)
                 .multilineTextAlignment(.center)
@@ -235,15 +325,24 @@ private struct LyricsStanzasView: View {
                 .minimumScaleFactor(0.6)
                 .frame(width: width)
                 .layoutPriority(1)
+                .contentShape(Rectangle())
+                .onTapGesture { seek(to: frame.primaryIndex, in: lyrics) }
+                .allowsHitTesting(onSeek != nil)
                 .accessibilityLabel(Text(verbatim: primary.text))
+                .modifier(SeekToStanzaAction(isEnabled: onSeek != nil) {
+                    seek(to: frame.primaryIndex, in: lyrics)
+                })
 
-            if let next {
+            if let next, let nextIndex = frame.nextIndex {
                 Text(verbatim: next.text)
                     .textStyle(.nextStanza)
                     .foregroundColor(theme.palette.pendingLyric.color)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .frame(width: width)
+                    .contentShape(Rectangle())
+                    .onTapGesture { seek(to: nextIndex, in: lyrics) }
+                    .allowsHitTesting(onSeek != nil)
                     .accessibilityHidden(true)
             }
         }
@@ -270,6 +369,20 @@ private struct LyricsStanzasView: View {
             }
             return Text(verbatim: sung).foregroundColor(sungColor)
                 + Text(verbatim: pending.trimmingTrailingWhitespace).foregroundColor(pendingColor)
+        }
+    }
+}
+
+/// VoiceOver: "Reproducir desde acá" on the current stanza, where seeking is allowed.
+private struct SeekToStanzaAction: ViewModifier {
+    var isEnabled: Bool
+    var action: () -> Void
+
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content.accessibilityAction(named: Text("Reproducir desde acá"), action)
+        } else {
+            content
         }
     }
 }

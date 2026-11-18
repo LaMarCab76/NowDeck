@@ -19,6 +19,11 @@ enum Motion {
     /// The current stanza leaving upward while the next one comes in.
     static let stanzaChange = Animation.easeOut(duration: 0.35)
 
+    /// The progress bar growing under the finger, and back.
+    static let progressScrub = Animation.easeOut(duration: 0.15)
+    /// Lyrics mode leaving the stanzas the user browsed and following the playback again.
+    static let lyricsBrowseEnd = Animation.easeInOut(duration: 0.3)
+
     /// How far texts move when they change.
     static let trackRise: CGFloat = 10
     static let stanzaRise: CGFloat = 18

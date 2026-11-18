@@ -67,6 +67,7 @@ struct PlayerView: View {
                     SpotifyLink.open(url)
                 },
                 onShowDevices: actions.devices,
+                onSeek: canSeek ? actions.seek : nil,
                 swipe: swipe,
                 pageWidth: screenWidth,
                 upNext: model.upNext,
@@ -162,13 +163,20 @@ struct PlayerView: View {
         theme.playerControls.filter { $0 != .lyrics || showsLyricsButton }
     }
 
+    /// Spotify allows moving the playback here (`actions.disallows.seeking`, restricted
+    /// device): the progress bar and the stanzas of lyrics mode take the finger.
+    private var canSeek: Bool {
+        ControlAvailability(playback: model.playback).seek
+    }
+
     private var bottomBlock: some View {
         VStack(spacing: Layout.bottomBlockGap) {
             if let item = model.nowPlaying, let playback = model.playback {
                 ProgressRow(progressMs: playback.progressMs ?? 0, durationMs: item.durationMs,
                             isPlaying: playback.isPlaying, fetchedAt: model.fetchedAt,
                             showsRemainingTime: preferences.showsRemainingTime,
-                            onToggleTime: { preferences.showsRemainingTime.toggle() })
+                            onToggleTime: { preferences.showsRemainingTime.toggle() },
+                            onSeek: canSeek ? actions.seek : nil)
             }
             PlayerControls(playback: model.playback, actions: actions,
                            controls: optionalControls,
@@ -525,9 +533,16 @@ enum DeviceSymbol {
 
 // MARK: - Progress
 
-/// Elapsed time · bar · duration (or time left, from Ajustes › Reproductor). Informative
-/// only: no knob, no dragging (docs/06). Tapping the time on the right switches between the
-/// duration and the time left, like Apple Music; it never moves the playback position.
+/// Elapsed time · bar · duration (or time left, from Ajustes › Reproductor). Tapping the time
+/// on the right switches between the duration and the time left, like Apple Music; it never
+/// moves the playback position.
+///
+/// Seeking (owner's request, 2026-11-18): where Spotify allows it (`onSeek` set), a finger on
+/// the bar moves the playback. The whole 44 pt band around the bar takes the finger; while it
+/// moves, the bar grows to 8 pt and the elapsed time follows it, and the seek is sent once,
+/// on release. Where Spotify forbids seeking (`actions.disallows.seeking`, a restricted
+/// device) `onSeek` is `nil` and the bar stays informative, with no hint that it moves, as
+/// Spotify's guidelines ask for restricted actions (docs/06).
 struct ProgressRow: View {
     var progressMs: Int
     var durationMs: Int
@@ -535,7 +550,14 @@ struct ProgressRow: View {
     var fetchedAt: Date
     var showsRemainingTime = false
     var onToggleTime: (() -> Void)?
+    /// Moves the playback to a position in ms. `nil`: informative bar.
+    var onSeek: ((Int) -> Void)?
 
+    /// Where the finger is while it drags on the bar; `nil` otherwise.
+    @State private var scrubMs: Int?
+    /// Goes back to `false` by itself also when the system cancels the gesture, when
+    /// `onEnded` is not called.
+    @GestureState private var isScrubbing = false
     @EnvironmentObject private var theme: ThemeStore
     private typealias Layout = Metrics.Player
 
@@ -545,10 +567,16 @@ struct ProgressRow: View {
             let position = PlaybackProgress.interpolatedMs(
                 progressMs: progressMs, durationMs: durationMs, isPlaying: isPlaying,
                 fetchedAt: fetchedAt, now: context.date)
-            content(positionMs: position)
+            content(positionMs: scrubMs ?? position)
         }
         .frame(height: Layout.progressRowHeight)
+        .onChange(of: isScrubbing) { scrubbing in
+            // A cancelled drag (an alert, a call) sends nothing.
+            if !scrubbing { scrubMs = nil }
+        }
     }
+
+    private var canSeek: Bool { onSeek != nil && durationMs > 0 }
 
     private func content(positionMs: Int) -> some View {
         let elapsed = PlaybackProgress.formatted(ms: positionMs)
@@ -561,17 +589,10 @@ struct ProgressRow: View {
             // its length when the time on the right is toggled and when a long episode
             // crosses the one-hour mark (`1:00:00` → `59:59`).
             timeSlot(elapsed, widest: total, alignment: .leading)
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Palette.progressTrack)
-                    Capsule()
-                        .fill(theme.palette.text.color)
-                        .frame(width: proxy.size.width
-                                * PlaybackProgress.fraction(positionMs: positionMs,
-                                                            durationMs: durationMs))
-                }
-            }
-            .frame(height: Layout.progressBarHeight)
+                // While dragging, the time the release will jump to stands out.
+                .foregroundStyle(scrubMs == nil ? theme.palette.tertiaryText.color
+                                                : theme.palette.text.color)
+            bar(positionMs: positionMs)
             timeSlot(trailing,
                      widest: PlaybackProgress.remainingFormatted(positionMs: 0,
                                                                  durationMs: durationMs),
@@ -598,6 +619,44 @@ struct ProgressRow: View {
                 }
             }
         }
+        .modifier(SeekAdjustable(positionMs: positionMs, onSeek: canSeek ? onSeek : nil))
+    }
+
+    private func bar(positionMs: Int) -> some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Palette.progressTrack)
+                Capsule()
+                    .fill(theme.palette.text.color)
+                    .frame(width: proxy.size.width
+                            * PlaybackProgress.fraction(positionMs: positionMs,
+                                                        durationMs: durationMs))
+            }
+            .frame(height: scrubMs == nil ? Layout.progressBarHeight
+                                          : Layout.progressBarScrubbingHeight)
+            .frame(maxHeight: .infinity)
+            .animation(Motion.progressScrub, value: scrubMs == nil)
+            .contentShape(VerticalOutsetRectangle(outset: Layout.progressBarTouchOutset))
+            .gesture(canSeek ? scrubGesture(width: proxy.size.width) : nil)
+        }
+        .frame(height: Layout.progressRowHeight)
+    }
+
+    private func scrubGesture(width: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 0)
+            .updating($isScrubbing) { _, scrubbing, _ in scrubbing = true }
+            .onChanged { drag in
+                scrubMs = PlaybackProgress.positionMs(atX: drag.location.x, width: width,
+                                                      durationMs: durationMs)
+            }
+            .onEnded { drag in
+                let target = PlaybackProgress.positionMs(atX: drag.location.x, width: width,
+                                                         durationMs: durationMs)
+                // The command moves the position on screen at once (optimistic), so the bar
+                // does not jump back between the release and Spotify's answer.
+                onSeek?(target)
+                scrubMs = nil
+            }
     }
 
     /// A time label as wide as `widest` (hidden). The font is monospaced, so the text with
@@ -609,6 +668,37 @@ struct ProgressRow: View {
             Text(verbatim: text)
         }
         .frame(minWidth: Layout.progressTimeWidth, alignment: alignment)
+    }
+}
+
+/// VoiceOver: swiping up or down on the progress moves it 15 s, the same step as the
+/// podcast buttons. Only where seeking is allowed.
+private struct SeekAdjustable: ViewModifier {
+    var positionMs: Int
+    var onSeek: ((Int) -> Void)?
+
+    func body(content: Content) -> some View {
+        if let onSeek {
+            content.accessibilityAdjustableAction { direction in
+                switch direction {
+                case .increment: onSeek(positionMs + PlayerControlsModel.seekStepMs)
+                case .decrement: onSeek(positionMs - PlayerControlsModel.seekStepMs)
+                @unknown default: break
+                }
+            }
+        } else {
+            content
+        }
+    }
+}
+
+/// A rectangle taller than its view: lets a thin bar take the finger from the whole row
+/// around it without changing the layout.
+private struct VerticalOutsetRectangle: Shape {
+    var outset: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        Path(rect.insetBy(dx: 0, dy: -outset))
     }
 }
 
