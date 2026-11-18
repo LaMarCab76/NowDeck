@@ -4,6 +4,9 @@ import SwiftUI
 /// sheet opened, and the user's editable playlists. Tapping a playlist adds the item right
 /// away; the row then shows a check.
 ///
+/// A search field filters the playlists by name, and the ones that already hold the item
+/// come first, under "YA ESTÁ EN" (owner's request, 2026-11-18).
+///
 /// Same 640×398 sheet as Dispositivos and Cola (handle, header with the Spotify logo and
 /// Cerrar, list with a bottom fade, footer with "ABRIR SPOTIFY").
 struct AddToPlaylistSheetView: View {
@@ -16,6 +19,7 @@ struct AddToPlaylistSheetView: View {
 
     @EnvironmentObject private var theme: ThemeStore
     @State private var dragOffset: CGFloat = 0
+    @State private var query = ""
 
     private typealias Sheet = Metrics.Devices
     private typealias Layout = Metrics.Queue
@@ -71,7 +75,7 @@ struct AddToPlaylistSheetView: View {
                         // that loaded. Failed adds are retried from their row instead.
                         if model.canRetryList {
                             Button("Reintentar") {
-                                Task { await model.load(force: true) }
+                                Task { await model.prepare(force: true) }
                             }
                             .buttonStyle(DevicesRefreshButtonStyle())
                         }
@@ -80,8 +84,10 @@ struct AddToPlaylistSheetView: View {
                 }
                 if playlists.isEmpty {
                     emptyList
-                } else {
+                } else if model.isMembershipReady {
                     list(playlists)
+                } else {
+                    checkingPanel
                 }
             }
         } else if let problem = model.problem {
@@ -89,7 +95,7 @@ struct AddToPlaylistSheetView: View {
             VStack(alignment: .leading, spacing: Layout.emptyGap) {
                 ProblemLine(problem: problem)
                 Button("Reintentar") {
-                    Task { await model.load(force: true) }
+                    Task { await model.prepare(force: true) }
                 }
                 .buttonStyle(DevicesRefreshButtonStyle())
             }
@@ -103,27 +109,43 @@ struct AddToPlaylistSheetView: View {
     }
 
     private func list(_ playlists: [EditablePlaylist]) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("TUS PLAYLISTS")
-                .textStyle(.devicesLabel)
-                .foregroundStyle(theme.palette.label.color)
-                .lineLimit(1)
-                .frame(height: Layout.labelHeight, alignment: .top)
-                .accessibilityAddTraits(.isHeader)
+        let sections = PlaylistSections(playlists: playlists, containing: model.containingIDs,
+                                        query: query)
+        return VStack(alignment: .leading, spacing: 0) {
+            PlaylistSearchField(text: $query)
+                .padding(.bottom, Metrics.AddToPlaylist.searchBottomGap)
+
+            if model.membershipIncomplete {
+                NoteLine(text: "No se pudieron revisar todas tus playlists: puede que el tema también esté en otras.")
+                    .padding(.bottom, Spacing.xs)
+            }
 
             ScrollView(.vertical, showsIndicators: false) {
-                LazyVStack(spacing: 0) {
-                    ForEach(playlists) { playlist in
-                        PlaylistRow(playlist: playlist, state: model.state(of: playlist)) {
-                            Task { await model.add(to: playlist) }
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    if sections.isEmpty {
+                        noMatches
+                    }
+                    if !sections.alreadyIn.isEmpty {
+                        sectionLabel("YA ESTÁ EN")
+                        rows(sections.alreadyIn)
+                    }
+                    if !sections.others.isEmpty {
+                        if sections.alreadyIn.isEmpty {
+                            sectionLabel("TUS PLAYLISTS")
+                        } else {
+                            sectionLabel("OTRAS PLAYLISTS")
+                                .padding(.top, Metrics.AddToPlaylist.sectionTopGap)
                         }
+                        rows(sections.others)
                     }
                     Footer()
                 }
                 // The footer can scroll out from under the fade.
                 .padding(.bottom, Layout.fadeHeight)
             }
-            .refreshable { await model.load(force: true) }
+            // In landscape the keyboard covers most of the sheet: scrolling puts it away.
+            .scrollDismissesKeyboard(.immediately)
+            .refreshable { await model.prepare(force: true) }
             .overlay(alignment: .bottom) {
                 LinearGradient(colors: [theme.palette.surface.color.opacity(0),
                                         theme.palette.surface.color],
@@ -132,6 +154,52 @@ struct AddToPlaylistSheetView: View {
                     .allowsHitTesting(false)
             }
         }
+    }
+
+    private func rows(_ playlists: [EditablePlaylist]) -> some View {
+        ForEach(playlists) { playlist in
+            PlaylistRow(playlist: playlist, state: model.state(of: playlist)) {
+                Task { await model.add(to: playlist) }
+            }
+        }
+    }
+
+    private func sectionLabel(_ title: LocalizedStringKey) -> some View {
+        Text(title)
+            .textStyle(.devicesLabel)
+            .foregroundStyle(theme.palette.label.color)
+            .lineLimit(1)
+            .frame(height: Layout.labelHeight, alignment: .top)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    /// The search matched nothing.
+    private var noMatches: some View {
+        Text("Ninguna playlist se llama así.")
+            .textStyle(.devicesMessage)
+            .foregroundStyle(theme.palette.bodyText.color)
+            .frame(maxWidth: .infinity, minHeight: Layout.rowHeight, alignment: .leading)
+            .accessibilityAddTraits(.updatesFrequently)
+    }
+
+    /// The first time, every playlist is read to know where the item already is. The list
+    /// waits for it: rows that moved while the user reaches for one would add the item to
+    /// the wrong playlist.
+    private var checkingPanel: some View {
+        VStack(alignment: .leading, spacing: Layout.emptyGap) {
+            ProgressView()
+                .tint(theme.palette.tertiaryText.color)
+            if let progress = model.membershipProgress {
+                Text("Buscando el tema en tus playlists… \(progress.done) de \(progress.total)")
+                    .textStyle(.devicesMessage)
+                    .foregroundStyle(theme.palette.bodyText.color)
+                    .monospacedDigit()
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: Layout.rowHeight, alignment: .leading)
+        .padding(.top, Spacing.xs)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("Buscando el tema en tus playlists"))
     }
 
     /// No editable playlist, inside a scroll view so pull to refresh still works after
@@ -145,7 +213,7 @@ struct AddToPlaylistSheetView: View {
                     .frame(width: proxy.size.width, alignment: .leading)
                     .frame(minHeight: proxy.size.height)
             }
-            .refreshable { await model.load(force: true) }
+            .refreshable { await model.prepare(force: true) }
         }
     }
 
@@ -229,6 +297,70 @@ private struct AddToPlaylistHeader: View {
             .accessibilityLabel(Text("Cerrar"))
         }
         .frame(height: Layout.headerArtworkSize)
+    }
+}
+
+// MARK: - Search
+
+/// A smaller version of Buscar's field: magnifying glass, text and, while there is text, a
+/// button that clears it.
+private struct PlaylistSearchField: View {
+    @Binding var text: String
+    @FocusState private var isFocused: Bool
+
+    @EnvironmentObject private var theme: ThemeStore
+    private typealias Layout = Metrics.AddToPlaylist
+
+    var body: some View {
+        HStack(spacing: Layout.searchFieldIconGap) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: Layout.searchFieldIconSize - 3, weight: .bold))
+                .foregroundStyle(theme.palette.bodyText.color)
+                .frame(width: Layout.searchFieldIconSize, height: Layout.searchFieldIconSize)
+                .accessibilityHidden(true)
+
+            // `String()`: an empty, non-localized title (a literal would add an empty key
+            // to the String Catalog).
+            TextField(String(), text: $text)
+                .textStyle(.playlistSearchInput)
+                .foregroundStyle(theme.palette.text.color)
+                .tint(theme.palette.accent.color)
+                .focused($isFocused)
+                .submitLabel(.done)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                .accessibilityLabel(Text("Buscar una playlist"))
+                // Drawn by hand, as in Buscar: iOS 16 does not color a TextField prompt.
+                .background(alignment: .leading) {
+                    if text.isEmpty {
+                        Text("Buscar en tus playlists")
+                            .textStyle(.playlistSearchInput)
+                            .foregroundStyle(theme.palette.label.color)
+                            .lineLimit(1)
+                            .accessibilityHidden(true)
+                    }
+                }
+
+            if !text.isEmpty {
+                Button {
+                    text = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: Layout.searchFieldIconSize, weight: .regular))
+                        .foregroundStyle(theme.palette.tertiaryText.color)
+                        .frame(width: Metrics.minTouchTarget, height: Metrics.minTouchTarget)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Borrar búsqueda"))
+            }
+        }
+        .padding(.leading, Layout.searchFieldPadding)
+        .padding(.trailing, text.isEmpty ? Layout.searchFieldPadding : 0)
+        .frame(height: Layout.searchFieldHeight)
+        .background(Capsule().fill(Palette.searchField))
+        .contentShape(Capsule())
+        .onTapGesture { isFocused = true }
     }
 }
 
@@ -439,6 +571,26 @@ private struct MessagePanel: View {
         .frame(maxWidth: Layout.emptyMaxWidth, alignment: .leading)
         .frame(maxWidth: .infinity, maxHeight: fillsHeight ? .infinity : nil, alignment: .leading)
         .padding(.bottom, fillsHeight ? Layout.emptyBottomPadding : 0)
+    }
+}
+
+/// A warning that does not stop the list, with the same look as `ProblemLine`.
+private struct NoteLine: View {
+    var text: LocalizedStringKey
+
+    @EnvironmentObject private var theme: ThemeStore
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
+            Image(systemName: "exclamationmark.circle")
+                .foregroundStyle(theme.palette.warning.color)
+                .accessibilityHidden(true)
+            Text(text)
+                .foregroundStyle(theme.palette.bodyText.color)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .textStyle(.devicesMessage)
+        .accessibilityElement(children: .combine)
     }
 }
 

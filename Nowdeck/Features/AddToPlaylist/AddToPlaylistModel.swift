@@ -10,6 +10,9 @@ struct EditablePlaylist: Identifiable, Equatable, Sendable {
     var isCollaborative: Bool
     /// Its page on Spotify, for the row's "Abrir en Spotify" (docs/06).
     var pageURL: URL?
+    /// Spotify's version of its items: when it changes, the playlist is read again to know
+    /// whether it holds the item.
+    var snapshotID: String? = nil
 
     /// The playlists of `GET /me/playlists` that `userID` can edit, in Spotify's order (the
     /// one the user sees in their library). Playlists without an ID or a name are skipped,
@@ -36,9 +39,34 @@ struct EditablePlaylist: Identifiable, Equatable, Sendable {
                 itemCount: playlist.itemCount,
                 isCollaborative: isCollaborative && !isOwned,
                 pageURL: NowPlaying.pageURL(externalURL: playlist.externalUrls?.spotify,
-                                            uri: playlist.uri ?? "spotify:playlist:\(id)")))
+                                            uri: playlist.uri ?? "spotify:playlist:\(id)"),
+                snapshotID: playlist.snapshotId))
         }
         return result
+    }
+}
+
+/// The sheet's two groups: the playlists that already hold the item, then the rest, each
+/// in Spotify's order and both filtered by the search text.
+struct PlaylistSections: Equatable {
+    var alreadyIn: [EditablePlaylist]
+    var others: [EditablePlaylist]
+
+    var isEmpty: Bool { alreadyIn.isEmpty && others.isEmpty }
+
+    init(alreadyIn: [EditablePlaylist], others: [EditablePlaylist]) {
+        self.alreadyIn = alreadyIn
+        self.others = others
+    }
+
+    /// `query` matches anywhere in the name, ignoring case and accents ("cancion" finds
+    /// "Canción"). Blank text matches every playlist.
+    init(playlists: [EditablePlaylist], containing: Set<String>, query: String) {
+        let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let matching = text.isEmpty ? playlists
+            : playlists.filter { $0.name.localizedStandardContains(text) }
+        alreadyIn = matching.filter { containing.contains($0.id) }
+        others = matching.filter { !containing.contains($0.id) }
     }
 }
 
@@ -143,6 +171,10 @@ enum AddToPlaylistProblem: Equatable {
 ///
 /// Removing is not offered: `DELETE /playlists/{id}/items` identifies items by URI only and
 /// does not document what happens to earlier copies of the same track.
+///
+/// Playlists that already hold the item are listed first (owner's request, 2026-11-18).
+/// Spotify has no endpoint for that, so every editable playlist is read once and its URIs are
+/// kept with its `snapshot_id`; later openings read only the playlists that changed.
 @MainActor
 final class AddToPlaylistModel: ObservableObject {
     enum RowState: Equatable {
@@ -154,6 +186,14 @@ final class AddToPlaylistModel: ObservableObject {
 
     /// How long a list read stays fresh before an opening reads it again.
     static let maximumListAge: TimeInterval = 5 * 60
+    /// Playlists read at the same time while looking for the item. Low, because the quota
+    /// is shared with the player's polling.
+    static let membershipConcurrency = 3
+
+    struct MembershipProgress: Equatable {
+        var done: Int
+        var total: Int
+    }
 
     /// `nil` until the first answer arrives.
     @Published private(set) var playlists: [EditablePlaylist]?
@@ -173,6 +213,16 @@ final class AddToPlaylistModel: ObservableObject {
     @Published private var pending: [String: RowState] = [:]
     /// `"<uri>|<playlist id>"` of every add that worked while the app was open.
     @Published private var added: Set<String> = []
+    /// The sheet knows which playlists hold the item and can show the list. Until then it
+    /// shows `membershipProgress`, so rows never move under the user's finger.
+    @Published private(set) var isMembershipReady = false
+    /// Playlists read so far while looking for the item; `nil` when nothing is being read.
+    @Published private(set) var membershipProgress: MembershipProgress?
+    /// IDs of the playlists that held the item when this opening's check finished. Fixed
+    /// until the next opening or a pull to refresh: a row the user adds to stays in place.
+    @Published private(set) var containingIDs: Set<String> = []
+    /// Some playlists could not be read: the item may also be in one of them.
+    @Published private(set) var membershipIncomplete = false
 
     private let api: SpotifyAPI
     private let now: () -> Date
@@ -185,6 +235,16 @@ final class AddToPlaylistModel: ObservableObject {
     private var sequence = 0
     /// The `sequence` at which each playlist last received an add.
     private var lastAdd: [String: Int] = [:]
+    /// The URIs of each playlist, read at `snapshotID`.
+    private var contents: [String: PlaylistContents] = [:]
+    /// Playlists whose last read failed.
+    private var unreadable: Set<String> = []
+    private var membershipTask: Task<Void, Never>?
+
+    private struct PlaylistContents {
+        var snapshotID: String?
+        var uris: Set<String>
+    }
 
     init(api: SpotifyAPI, now: @escaping () -> Date = { Date() }) {
         self.api = api
@@ -200,12 +260,28 @@ final class AddToPlaylistModel: ObservableObject {
         problem = nil
         canRetryList = false
         needsPermission = access.grant() == .missing
+        // With a fresh list whose playlists were all read, the order is known right away
+        // (no progress flash). Otherwise `prepare()` decides it.
+        isMembershipReady = false
+        containingIDs = []
+        if isListFresh, membershipTask == nil, let playlists,
+           playlists.allSatisfy({ !needsReading($0) }) {
+            finishMembership()
+        }
+    }
+
+    /// What the sheet runs when it opens, and on pull to refresh or Reintentar: the list,
+    /// then which playlists hold the item.
+    func prepare(force: Bool = false) async {
+        await load(force: force)
+        await checkMembership()
     }
 
     func state(of playlist: EditablePlaylist) -> RowState {
         guard let targetURI else { return .idle }
         let key = Self.key(uri: targetURI, playlistID: playlist.id)
-        if added.contains(key) { return .added }
+        // Already there: checked, and a tap does not add a second copy.
+        if added.contains(key) || containingIDs.contains(playlist.id) { return .added }
         return pending[key] ?? .idle
     }
 
@@ -216,8 +292,7 @@ final class AddToPlaylistModel: ObservableObject {
             await loadTask.value
             return
         }
-        if !force, playlists != nil, let loadedAt,
-           now().timeIntervalSince(loadedAt) < Self.maximumListAge {
+        if !force, playlists != nil, isListFresh {
             return
         }
         let task = Task { await fetch() }
@@ -253,6 +328,82 @@ final class AddToPlaylistModel: ObservableObject {
         }
     }
 
+    /// Reads the playlists that changed since they were last read (or were never read), then
+    /// fixes `containingIDs` for the item of this opening. A call while a check is running
+    /// waits for it. Playlists that fail are skipped and flagged (`membershipIncomplete`).
+    func checkMembership() async {
+        if let membershipTask {
+            await membershipTask.value
+        } else {
+            guard let playlists else { return }
+            let task = Task { await readContents(of: playlists.filter(needsReading)) }
+            membershipTask = task
+            await task.value
+            membershipTask = nil
+        }
+        finishMembership()
+    }
+
+    private func readContents(of toRead: [EditablePlaylist]) async {
+        guard !toRead.isEmpty else { return }
+        membershipProgress = MembershipProgress(done: 0, total: toRead.count)
+        defer { membershipProgress = nil }
+        let api = self.api
+        await withTaskGroup(of: (EditablePlaylist, Set<String>?).self) { group in
+            // At most `membershipConcurrency` reads at a time: one starts as another ends.
+            var waiting = toRead[...]
+            for _ in 0..<Self.membershipConcurrency {
+                guard let playlist = waiting.popFirst() else { break }
+                group.addTask { (playlist, await Self.readURIs(of: playlist, api: api)) }
+            }
+            while let (playlist, uris) = await group.next() {
+                if let uris {
+                    contents[playlist.id] = PlaylistContents(snapshotID: playlist.snapshotID,
+                                                             uris: uris)
+                    unreadable.remove(playlist.id)
+                } else {
+                    unreadable.insert(playlist.id)
+                }
+                membershipProgress?.done += 1
+                if let playlist = waiting.popFirst() {
+                    group.addTask { (playlist, await Self.readURIs(of: playlist, api: api)) }
+                }
+            }
+        }
+    }
+
+    /// `nil` when the read failed. An empty playlist needs no request.
+    nonisolated private static func readURIs(of playlist: EditablePlaylist,
+                                             api: SpotifyAPI) async -> Set<String>? {
+        if playlist.itemCount == 0 { return [] }
+        return try? await api.playlistItemURIs(playlistID: playlist.id)
+    }
+
+    private func finishMembership() {
+        guard let playlists else { return }
+        if let uri = targetURI {
+            containingIDs = Set(playlists.lazy
+                .filter { self.contents[$0.id]?.uris.contains(uri) == true }
+                .map(\.id))
+        }
+        membershipIncomplete = playlists.contains { unreadable.contains($0.id) }
+        isMembershipReady = true
+    }
+
+    /// Never read, or read at another version. Without a `snapshot_id` there is no way to
+    /// tell, so it is read again.
+    private func needsReading(_ playlist: EditablePlaylist) -> Bool {
+        guard let snapshotID = playlist.snapshotID, let read = contents[playlist.id],
+              !unreadable.contains(playlist.id)
+        else { return true }
+        return read.snapshotID != snapshotID
+    }
+
+    private var isListFresh: Bool {
+        guard let loadedAt else { return false }
+        return now().timeIntervalSince(loadedAt) < Self.maximumListAge
+    }
+
     /// Adds the target item to `playlist`. Does nothing while it is being added or once it
     /// was added.
     func add(to playlist: EditablePlaylist) async {
@@ -264,10 +415,11 @@ final class AddToPlaylistModel: ObservableObject {
         let startedAt = sequence
         pending[key] = .adding
         do {
-            try await api.addToPlaylist(playlistID: playlist.id, uri: uri)
+            let snapshot = try await api.addToPlaylist(playlistID: playlist.id, uri: uri)
             // Recorded even if the sheet now shows another item: it stays checked when this
             // item comes back.
             added.insert(key)
+            recordAdd(of: uri, to: playlist.id, newSnapshot: snapshot)
             pending[key] = nil
             sequence += 1
             lastAdd[playlist.id] = sequence
@@ -312,6 +464,23 @@ final class AddToPlaylistModel: ObservableObject {
     }
 
     // MARK: Helpers
+
+    /// Keeps the playlist's contents current after an add, so the next opening lists it
+    /// first without reading it again. The new `snapshot_id` is taken only if the contents
+    /// matched the version in the list; otherwise the next check reads the playlist.
+    private func recordAdd(of uri: String, to playlistID: String, newSnapshot: String) {
+        guard var read = contents[playlistID] else { return }
+        read.uris.insert(uri)
+        let listed = playlists?.first { $0.id == playlistID }
+        if !newSnapshot.isEmpty, let listed, listed.snapshotID == read.snapshotID {
+            read.snapshotID = newSnapshot
+            if var list = playlists, let index = list.firstIndex(where: { $0.id == playlistID }) {
+                list[index].snapshotID = newSnapshot
+                playlists = list
+            }
+        }
+        contents[playlistID] = read
+    }
 
     /// After an add: one more item, unless a list read finished while the request was out.
     /// That read may or may not include the add, so the count is dropped instead of guessed

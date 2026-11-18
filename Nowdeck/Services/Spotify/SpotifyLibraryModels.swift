@@ -95,6 +95,9 @@ struct SimplifiedPlaylist: Decodable, Equatable, Sendable {
     /// The old name of `items`, still in the reference as deprecated.
     var tracks: ItemCount?
     var externalUrls: ExternalURLs?
+    /// "The version identifier for the current playlist": it changes whenever the items do.
+    /// Agregar a una playlist uses it to know when a playlist must be read again.
+    var snapshotId: String? = nil
 
     /// Number of items, from `items` or, on older answers, `tracks`.
     var itemCount: Int? { items?.total ?? tracks?.total }

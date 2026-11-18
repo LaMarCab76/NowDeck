@@ -80,6 +80,8 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
      la Biblioteca.
    - Hoja con las playlists que el usuario puede editar (propias y colaborativas); tocar una
      agrega el tema o episodio que suena. Lo agregado queda marcado. Quitar se hace en Spotify.
+   - Buscador por nombre arriba de la lista, y primero las playlists que ya tienen el tema
+     ("YA ESTÁ EN", con el check), después el resto (agregado el 2026-11-18).
    - Pide un permiso nuevo (editar playlists): las sesiones anteriores lo dan desde la misma
      hoja con "Dar permiso".
 11. **Ajustes**

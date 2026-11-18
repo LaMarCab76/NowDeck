@@ -315,8 +315,20 @@ sigue el diseño de Cola:
   ofrece "Abrir en Spotify" con la página de esa playlist (el enlace de vuelta de docs/06).
 - El total de temas suma uno al agregar. Si una lectura de la lista se cruza con el pedido,
   ese total se oculta hasta la próxima lectura en lugar de adivinarlo.
+- **Buscador** (2026-11-18, a pedido del dueño): entre la cabecera y la lista, una versión
+  chica del campo de Buscar: cápsula de 40 (blanco al 10 %), lupa de 18, texto de 16 y el
+  placeholder "Buscar en tus playlists" en `etiqueta`; con texto, una ✕ para borrarlo. Filtra
+  por nombre sin distinguir mayúsculas ni tildes. Sin coincidencias: "Ninguna playlist se llama
+  así.". Deslizar la lista cierra el teclado (en horizontal tapa casi toda la hoja).
+- **Primero, donde ya está** (2026-11-18, a pedido del dueño): "YA ESTÁ EN" con las playlists
+  que ya tienen el tema (check en acento; tocarlas no agrega otra copia), y debajo "OTRAS
+  PLAYLISTS". Si no está en ninguna, un solo grupo "TUS PLAYLISTS". La primera vez se leen
+  todas las playlists: hasta terminar se ve un indicador con "Buscando el tema en tus
+  playlists… N de M" en lugar de la lista, para que las filas no se muevan bajo el dedo. Lo
+  que se agrega con la hoja abierta queda en su lugar; sube a "YA ESTÁ EN" la próxima vez. Si
+  alguna playlist no se pudo leer, un aviso lo dice arriba de la lista.
 - Solo aparecen las playlists **propias y las colaborativas** (`owner.id` = usuario o
-  `collaborative: true`), en el orden de Spotify. Al final: "Solo aparecen tus playlists y las
+  `collaborative: true`), en el orden de Spotify dentro de cada grupo. Al final: "Solo aparecen tus playlists y las
   colaborativas. Para quitar temas, usá Spotify." y "ABRIR SPOTIFY ↗".
 - Lo agregado queda marcado mientras la app está abierta y no se vuelve a agregar con otro
   toque (evita duplicados por accidente). **No se puede quitar** desde la app (ver docs/03).
