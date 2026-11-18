@@ -415,11 +415,11 @@ final class AddToPlaylistModel: ObservableObject {
         let startedAt = sequence
         pending[key] = .adding
         do {
-            let snapshot = try await api.addToPlaylist(playlistID: playlist.id, uri: uri)
+            try await api.addToPlaylist(playlistID: playlist.id, uri: uri)
             // Recorded even if the sheet now shows another item: it stays checked when this
             // item comes back.
             added.insert(key)
-            recordAdd(of: uri, to: playlist.id, newSnapshot: snapshot)
+            recordAdd(of: uri, to: playlist.id)
             pending[key] = nil
             sequence += 1
             lastAdd[playlist.id] = sequence
@@ -447,7 +447,9 @@ final class AddToPlaylistModel: ObservableObject {
     }
 
     /// Opens Spotify's login to grant the playlist-editing scopes, then reads the list if it
-    /// is missing or its last read failed (that error was hidden behind the permission).
+    /// is missing or its last read failed (that error was hidden behind the permission), and
+    /// checks which playlists hold the item: the sheet's first `prepare()` may have ended
+    /// without a list, and the list waits for that check.
     func requestPermission() async {
         guard !isRequestingPermission else { return }
         isRequestingPermission = true
@@ -461,25 +463,17 @@ final class AddToPlaylistModel: ObservableObject {
         problem = nil
         canRetryList = false
         if listNeedsReading { await load(force: true) }
+        await checkMembership()
     }
 
     // MARK: Helpers
 
-    /// Keeps the playlist's contents current after an add, so the next opening lists it
-    /// first without reading it again. The new `snapshot_id` is taken only if the contents
-    /// matched the version in the list; otherwise the next check reads the playlist.
-    private func recordAdd(of uri: String, to playlistID: String, newSnapshot: String) {
-        guard var read = contents[playlistID] else { return }
-        read.uris.insert(uri)
-        let listed = playlists?.first { $0.id == playlistID }
-        if !newSnapshot.isEmpty, let listed, listed.snapshotID == read.snapshotID {
-            read.snapshotID = newSnapshot
-            if var list = playlists, let index = list.firstIndex(where: { $0.id == playlistID }) {
-                list[index].snapshotID = newSnapshot
-                playlists = list
-            }
-        }
-        contents[playlistID] = read
+    /// Adds the URI to the playlist's cached contents, so an opening before the next list read
+    /// lists it first. The cached `snapshot_id` stays the old one: the new one from `POST`
+    /// may also cover changes made elsewhere since the read, so the next list read (with the
+    /// new version) reads the playlist again instead of trusting these contents.
+    private func recordAdd(of uri: String, to playlistID: String) {
+        contents[playlistID]?.uris.insert(uri)
     }
 
     /// After an add: one more item, unless a list read finished while the request was out.

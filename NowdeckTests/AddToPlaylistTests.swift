@@ -641,10 +641,20 @@ final class AddToPlaylistTests: XCTestCase {
     }
 
     func testAnAddedRowStaysInPlaceAndComesFirstNextTime() async throws {
-        let (api, recorder) = makeAPI(handler: Self.routes(playlists: [
-            Self.playlist("a", owner: "me"), Self.playlist("b", owner: "me"),
-        ]))
-        let model = AddToPlaylistModel(api: api)
+        let snapshots = SnapshotBox(["a": "v1", "b": "v1"])
+        let uri = trackURI
+        let (api, recorder) = makeAPI { request in
+            if request.httpMethod == "POST" {
+                snapshots["b"] = "v2"
+                return (.stub(201), Self.json(["snapshot_id": "v2"]))
+            }
+            let list = [Self.playlist("a", owner: "me", snapshot: snapshots["a"]),
+                        Self.playlist("b", owner: "me", snapshot: snapshots["b"])]
+            let inB = snapshots["b"] == "v2" ? [uri] : []
+            return try Self.routes(playlists: list, items: ["b": inB])(request)
+        }
+        var now = Date(timeIntervalSince1970: 0)
+        let model = AddToPlaylistModel(api: api, now: { now })
         model.open(for: trackURI, access: .granted)
         await model.prepare()
         let b = try XCTUnwrap(model.playlists?.last)
@@ -659,7 +669,40 @@ final class AddToPlaylistTests: XCTestCase {
         XCTAssertEqual(model.containingIDs, ["b"])
         await model.prepare()
         XCTAssertEqual(Self.itemReads(recorder.requests).count, 2,
-                       "The new snapshot came with the add: no second read")
+                       "Same list as before: the cached contents plus the add are used")
+
+        // The next list read brings the new version: the playlist is read again instead of
+        // trusting contents that may miss changes made elsewhere.
+        now = now.addingTimeInterval(AddToPlaylistModel.maximumListAge + 1)
+        model.open(for: trackURI, access: .granted)
+        await model.prepare()
+        XCTAssertEqual(Self.itemReads(recorder.requests).suffix(1), ["b"])
+        XCTAssertEqual(model.containingIDs, ["b"])
+    }
+
+    func testGrantingThePermissionAlsoChecksWhereTheItemIs() async throws {
+        let online = Counter()
+        let uri = trackURI
+        let (api, _) = makeAPI { request in
+            if online.next() <= 1 { throw URLError(.notConnectedToInternet) }
+            return try Self.routes(playlists: [Self.playlist("a", owner: "me"),
+                                               Self.playlist("b", owner: "me")],
+                                   items: ["b": [uri]])(request)
+        }
+        let model = AddToPlaylistModel(api: api)
+        var grant = PlaylistEditingAccess.Grant.missing
+        model.open(for: trackURI, access: PlaylistEditingAccess(grant: { grant }, request: {
+            grant = .granted
+            return nil
+        }))
+        await model.prepare()
+        XCTAssertNil(model.playlists)
+        XCTAssertFalse(model.isMembershipReady)
+
+        await model.requestPermission()
+
+        XCTAssertTrue(model.isMembershipReady, "Otherwise the sheet would wait forever")
+        XCTAssertEqual(model.containingIDs, ["b"])
     }
 
     // MARK: Presentation
