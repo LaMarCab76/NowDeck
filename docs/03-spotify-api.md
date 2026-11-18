@@ -165,7 +165,8 @@ Verificado en developer.spotify.com el 2026-11-17 (referencias de *Get Available
 - Errores de la hoja: `403` con un mensaje genérico (Premium o *Users Management*, como el resto
   de la app); `429` respetado por el cliente (no sale a la red hasta que pase `Retry-After`);
   sin red o `5xx`, aviso y la lista anterior queda en pantalla. La transferencia, como todo
-  comando, no se reintenta sola.
+  comando, no se reintenta sola ante `5xx` o sin red (solo se reenvía una vez tras un `401`,
+  con el token renovado; ver "Errores").
 
 ### `actions` (revisado en el hito 3, 2026-11-17)
 
@@ -261,7 +262,10 @@ Cómo lo maneja `SpotifyAPI`:
 - Ante un `429`, recuerda hasta cuándo esperar y, mientras tanto, falla sin salir a la red.
 - Ante un `5xx`, reintenta solo los `GET`, dos veces, a los 0,5 s y a los 1,5 s más
   *jitter*.
-- Los comandos no se reintentan solos: repetir "siguiente" podría saltar dos temas.
+- Los comandos (PUT/POST, incluido agregar a una playlist) no se reintentan solos ante un
+  `5xx` o sin red: repetir "siguiente" podría saltar dos temas, y repetir un agregado podría
+  duplicarlo. La única excepción es el `401`: como cualquier pedido, se reenvía **una vez**
+  con el token renovado, porque Spotify lo rechazó antes de ejecutarlo.
 
 ## Modelos
 
