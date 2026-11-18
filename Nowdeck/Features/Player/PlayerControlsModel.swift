@@ -49,6 +49,10 @@ final class PlayerControlsModel: ObservableObject {
     private var batchFailed = false
     private var noticeTask: Task<Void, Never>?
     private var playbackSubscription: AnyCancellable?
+    /// Whether Spotify is playing as far as answered commands tell: taken from the screen
+    /// when a burst of commands starts (nothing optimistic on it then) and changed only by
+    /// an accepted play or pause, never by a failed one.
+    private var confirmedIsPlaying: Bool?
     /// Seeks sent and not answered yet.
     private var pendingSeeks = 0
     /// Where the playback is if the seeks on their way fail: the position before the first
@@ -88,8 +92,8 @@ final class PlayerControlsModel: ObservableObject {
             optimistic: { $0.isPlaying = resume },
             rollback: { if $0.isPlaying == resume { $0.isPlaying = !resume } },
             completion: { [weak self] succeeded in
-                // A failed play or pause leaves the playback as it was.
-                self?.playStateChanged(isPlaying: succeeded ? resume : !resume)
+                // A failed play or pause leaves Spotify as it was: nothing to record.
+                if succeeded { self?.playStateChanged(isPlaying: resume) }
             })
     }
 
@@ -153,8 +157,7 @@ final class PlayerControlsModel: ObservableObject {
         guard target != position else { return }
         if pendingSeeks == 0 {
             // The first seek of a burst: where Spotify is now is where a failure goes back to.
-            seekBaseline = SeekBaseline(positionMs: position,
-                                        isPlaying: player.playback?.isPlaying == true,
+            seekBaseline = SeekBaseline(positionMs: position, isPlaying: confirmedPlayState,
                                         date: player.now())
         }
         pendingSeeks += 1
@@ -165,15 +168,23 @@ final class PlayerControlsModel: ObservableObject {
             })
     }
 
-    /// Play or pause answered while seeks are on their way: from now on the baseline they
+    /// Play or pause accepted. While seeks are on their way, from now on the baseline they
     /// would go back to runs, or stops, as Spotify left the playback. Commands finish in
     /// order, so the baseline always holds the play state Spotify confirmed so far, never
     /// the optimistic one on screen.
     private func playStateChanged(isPlaying: Bool) {
+        confirmedIsPlaying = isPlaying
         guard pendingSeeks > 0, let player, let baseline = seekBaseline else { return }
         let date = player.now()
         seekBaseline = SeekBaseline(positionMs: baseline.position(at: date),
                                     isPlaying: isPlaying, date: date)
+    }
+
+    /// The confirmed play state (`confirmedIsPlaying`), or the one on screen when no command
+    /// is on its way.
+    private var confirmedPlayState: Bool {
+        if pendingCommands > 0, let confirmedIsPlaying { return confirmedIsPlaying }
+        return player?.playback?.isPlaying == true
     }
 
     /// Seeks finish in the order they were sent. A failed one is undone only once no seek
@@ -189,8 +200,7 @@ final class PlayerControlsModel: ObservableObject {
             // play state is the confirmed one: the screen may already show a pause that is
             // still on its way.
             seekBaseline = SeekBaseline(positionMs: target,
-                                        isPlaying: seekBaseline?.isPlaying
-                                            ?? (player.playback?.isPlaying == true),
+                                        isPlaying: seekBaseline?.isPlaying ?? confirmedPlayState,
                                         date: date)
             return
         }
@@ -213,6 +223,7 @@ final class PlayerControlsModel: ObservableObject {
                      rollback: ((inout PlaybackState) -> Void)? = nil,
                      completion: ((_ succeeded: Bool) -> Void)? = nil) {
         guard let player else { return }
+        if pendingCommands == 0 { confirmedIsPlaying = player.playback?.isPlaying }
         player.holdPolling()
         if let optimistic { player.updatePlayback(optimistic) }
         pendingCommands += 1
