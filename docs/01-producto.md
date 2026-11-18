@@ -39,12 +39,12 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
       con botón Copiar.
    3. **Client ID**: campo para pegarlo, los permisos que se van a pedir y "Conectar con Spotify".
 2. **Reproducción**: la pantalla principal.
-   - Arriba: carátula a la izquierda y, a la derecha, logo de Spotify + "Desde la playlist X",
+   - Arriba: carátula a la izquierda y, a la derecha, logo de Spotify + "Reproduciendo desde / X",
      Biblioteca, Ajustes, título, artista y "Reproduciendo en <dispositivo>".
    - Abajo, a todo el ancho: barra de progreso (informativa, sin arrastre) y controles.
    - Fondo: un color suave tomado de la carátula.
 3. **Modo letras**, dentro de Reproducción, activado con el botón de letras.
-   - Fila superior: "Desde la playlist / Nombre" en dos líneas a la izquierda y el logo a la
+   - Fila superior: "Reproduciendo desde / Nombre" en dos líneas a la izquierda y el logo a la
      derecha.
    - Centro: estrofa actual y estrofa siguiente, al ancho configurado (por defecto 2/3).
    - Fila inferior: carátula chica, título, artista y dispositivo.
