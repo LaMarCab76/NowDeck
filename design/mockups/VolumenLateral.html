@@ -421,9 +421,14 @@ td.num { font-family: var(--font-mono); }
       ctl[id].style.opacity = state.open ? "0" : "1";
       ctl[id].style.pointerEvents = state.open ? "none" : "auto";
       ctl[id].tabIndex = state.open ? -1 : 0;
+      if (state.open) ctl[id].setAttribute("aria-hidden", "true");
+      else ctl[id].removeAttribute("aria-hidden");
     });
     volBtn.classList.toggle("on", state.open);
     volBtn.setAttribute("aria-expanded", String(state.open));
+    // Closing with the focus inside the bar: hand it to the speaker, so the arrow keys
+    // never move a bar that is no longer visible.
+    if (!state.open && volInner.contains(document.activeElement)) volBtn.focus();
     volInner.setAttribute("aria-hidden", String(!state.open));
     Array.prototype.forEach.call(volInner.querySelectorAll("button,[tabindex]"), function (el) { el.tabIndex = state.open ? 0 : -1; });
     $("toggle-main").textContent = state.open ? "Cerrar volumen" : "Abrir volumen";
