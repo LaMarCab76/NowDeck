@@ -54,7 +54,7 @@ private struct AddToPlaylistSheetHost: View {
                 AddToPlaylistSheetView(model: model, item: item, artwork: artwork,
                                        dismiss: dismiss)
                     .onAppear { model.open(for: uri, access: access) }
-                    .task { await model.load() }
+                    .task { await model.prepare() }
             } else {
                 // The button is disabled without an addable item; if the item ended while
                 // the cover was opening, there is nothing to add.

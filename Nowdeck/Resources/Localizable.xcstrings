@@ -874,6 +874,22 @@
         }
       }
     },
+    "Borrar búsqueda" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear search"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrar búsqueda"
+          }
+        }
+      }
+    },
     "Buscando dispositivos" : {
       "localizations" : {
         "en" : {
@@ -886,6 +902,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Buscando dispositivos"
+          }
+        }
+      }
+    },
+    "Buscando el tema en tus playlists" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looking for the song in your playlists"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscando el tema en tus playlists"
+          }
+        }
+      }
+    },
+    "Buscando el tema en tus playlists… %lld de %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looking for the song in your playlists… %lld of %lld"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscando el tema en tus playlists… %lld de %lld"
           }
         }
       }
@@ -918,6 +966,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Buscar en Spotify"
+          }
+        }
+      }
+    },
+    "Buscar en tus playlists" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search your playlists"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar en tus playlists"
+          }
+        }
+      }
+    },
+    "Buscar una playlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search for a playlist"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar una playlist"
           }
         }
       }
@@ -2573,6 +2653,22 @@
         }
       }
     },
+    "Ninguna playlist se llama así." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No playlist matches that name."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ninguna playlist se llama así."
+          }
+        }
+      }
+    },
     "Ninguno" : {
       "localizations" : {
         "en" : {
@@ -2925,6 +3021,22 @@
         }
       }
     },
+    "No se pudieron revisar todas tus playlists: puede que el tema también esté en otras." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Some of your playlists couldn't be checked: the song may be in others too."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudieron revisar todas tus playlists: puede que el tema también esté en otras."
+          }
+        }
+      }
+    },
     "No se pudo agregar" : {
       "localizations" : {
         "en" : {
@@ -3049,6 +3161,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "OPCIONAL"
+          }
+        }
+      }
+    },
+    "OTRAS PLAYLISTS" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OTHER PLAYLISTS"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OTRAS PLAYLISTS"
           }
         }
       }
@@ -5056,6 +5184,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vuelve al reproductor"
+          }
+        }
+      }
+    },
+    "YA ESTÁ EN" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ALREADY IN"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YA ESTÁ EN"
           }
         }
       }

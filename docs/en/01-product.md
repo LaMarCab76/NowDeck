@@ -89,6 +89,8 @@ While the app is in the foreground, **the screen does not turn off**
    - Sheet with the playlists the user can edit (their own and collaborative ones); tapping one
      adds the song or episode that's playing. What was added stays marked. Removing is done in
      Spotify.
+   - A search field by name above the list, and the playlists that already have the song
+     first ("ALREADY IN", *YA ESTÁ EN*, with the check), then the rest (added on 2026-11-18).
    - It asks for a new permission (editing playlists): earlier sessions grant it from the same
      sheet with "Allow" (*Dar permiso*).
 11. **Settings**

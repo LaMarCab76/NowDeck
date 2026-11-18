@@ -345,8 +345,24 @@ follows the Queue design:
   with that playlist's page (the link back from docs/en/06-compliance.md).
 - The song total goes up by one when adding. If a read of the list overlaps with the request,
   that total is hidden until the next read instead of guessing it.
+- **Search field** (2026-11-18, at the owner's request): between the header and the list, a
+  small version of Search's field: 40 capsule (white at 10 %), 18 magnifying glass, 16 text and
+  the placeholder "Search your playlists" (*Buscar en tus playlists*) in `etiqueta`; with
+  text, an ✕ clears it. It filters by name ignoring case and accents. No matches: "No playlist
+  matches that name." (*Ninguna playlist se llama así.*). Scrolling the list dismisses the
+  keyboard (in landscape it covers almost the whole sheet).
+- **Already in, first** (2026-11-18, at the owner's request): "ALREADY IN" (*YA ESTÁ EN*) with
+  the playlists that already have the song (check in accent; tapping them doesn't add another
+  copy), and below it "OTHER PLAYLISTS" (*OTRAS PLAYLISTS*). If it's in none, a single "YOUR
+  PLAYLISTS" group. The first time, every playlist is read: until that finishes, a spinner with
+  "Looking for the song in your playlists… N of M" (*Buscando el tema en tus playlists… N de
+  M*) replaces the list, so rows don't move under the finger. What's added with the sheet open
+  stays in place; it moves up to "ALREADY IN" the next time. If some playlist couldn't be read,
+  a note above the list says so, and that playlist isn't marked "already in" from old data.
+  On pull to refresh, the list stays on screen with its previous order; a tap meanwhile waits
+  for the read and doesn't add if the song was already there.
 - Only **your own and collaborative** playlists appear (`owner.id` = user or
-  `collaborative: true`), in Spotify's order. At the end: "Only your own and collaborative
+  `collaborative: true`), in Spotify's order within each group. At the end: "Only your own and collaborative
   playlists appear. To remove songs, use Spotify." (*Solo aparecen tus playlists y las
   colaborativas. Para quitar temas, usá Spotify.*) and "OPEN SPOTIFY ↗" (*ABRIR SPOTIFY ↗*).
 - What was added stays marked while the app is open and isn't added again with another tap
