@@ -105,4 +105,44 @@ struct PlayerControlLayout: Equatable {
         let fitting = (room / (2 * leftGaps + 4)).rounded(.down)
         return max(minimumGap, min(preferred, fitting))
     }
+
+    /// Where the volume bar opens in a row `width` wide with `gap` between buttons
+    /// (owner's request, 2026-11-18; mockup `VolumenLateral.html`).
+    ///
+    /// The row is the HStack of `PlayerControls`: the left frame and the right frame take
+    /// `side` each, and four gaps separate them from previous · play/pause · next. While the
+    /// bar is open the whole row moves left until previous sits on the left edge, and the
+    /// bar fills the room from the speaker's right edge to the end of the row.
+    func volumeExpansion(forWidth width: CGFloat, gap: CGFloat,
+                         buttonSize: CGFloat = Metrics.Player.sideButtonSize,
+                         centerWidth: CGFloat = Metrics.Player.centerGroupWidth) -> VolumeExpansion {
+        let side = (width - centerWidth - 4 * gap) / 2
+        let shift = side + gap
+        let trailingStart = side + centerWidth + 4 * gap
+        // Volume on the left (or not in the theme): a speaker of its own comes in with the
+        // bar, after the right group.
+        let volumeIndex = trailing.firstIndex(of: .volume)
+        let slot = volumeIndex ?? trailing.count
+        let speakerX = trailingStart + CGFloat(slot) * (buttonSize + gap)
+        let barArea = width - (speakerX - shift) - buttonSize
+        return VolumeExpansion(shift: shift, speakerX: speakerX, barAreaWidth: max(0, barArea),
+                               usesRowSpeaker: volumeIndex != nil, keptTrailingCount: slot)
+    }
+}
+
+/// The volume bar inside the controls row (`PlayerControlLayout.volumeExpansion`).
+struct VolumeExpansion: Equatable {
+    /// How far the row moves left while the bar is open.
+    var shift: CGFloat
+    /// The speaker's x in the closed row. The bar opens from its right edge, and closes
+    /// back into it.
+    var speakerX: CGFloat
+    /// From the speaker's right edge to the end of the row, once the row has moved.
+    var barAreaWidth: CGFloat
+    /// The theme's volume button is in the right group, so the bar comes out of it. When
+    /// `false`, a speaker comes in with the bar at `speakerX`.
+    var usesRowSpeaker: Bool
+    /// Right-group controls before the speaker. They stay; the ones after it would sit
+    /// under the bar, so they fade out with the left group.
+    var keptTrailingCount: Int
 }
