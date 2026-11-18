@@ -344,7 +344,9 @@ follows the Queue design:
   "Looking for the song in your playlists… N of M" (*Buscando el tema en tus playlists… N de
   M*) replaces the list, so rows don't move under the finger. What's added with the sheet open
   stays in place; it moves up to "ALREADY IN" the next time. If some playlist couldn't be read,
-  a note above the list says so.
+  a note above the list says so, and that playlist isn't marked "already in" from old data.
+  On pull to refresh, the list stays on screen with its previous order; a tap meanwhile waits
+  for the read and doesn't add if the song was already there.
 - Only **your own and collaborative** playlists appear (`owner.id` = user or
   `collaborative: true`), in Spotify's order within each group. At the end: "Only your own and collaborative
   playlists appear. To remove songs, use Spotify." (*Solo aparecen tus playlists y las

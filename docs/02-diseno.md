@@ -326,7 +326,10 @@ sigue el diseño de Cola:
   todas las playlists: hasta terminar se ve un indicador con "Buscando el tema en tus
   playlists… N de M" en lugar de la lista, para que las filas no se muevan bajo el dedo. Lo
   que se agrega con la hoja abierta queda en su lugar; sube a "YA ESTÁ EN" la próxima vez. Si
-  alguna playlist no se pudo leer, un aviso lo dice arriba de la lista.
+  alguna playlist no se pudo leer, un aviso lo dice arriba de la lista, y esa playlist no se
+  marca como "ya está" con datos viejos. Al deslizar para actualizar, la lista sigue a la vista
+  con su orden anterior; un toque en ese momento espera la lectura y no agrega si el tema ya
+  estaba.
 - Solo aparecen las playlists **propias y las colaborativas** (`owner.id` = usuario o
   `collaborative: true`), en el orden de Spotify dentro de cada grupo. Al final: "Solo aparecen tus playlists y las
   colaborativas. Para quitar temas, usá Spotify." y "ABRIR SPOTIFY ↗".

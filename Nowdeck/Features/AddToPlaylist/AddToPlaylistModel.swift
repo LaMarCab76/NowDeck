@@ -240,6 +240,9 @@ final class AddToPlaylistModel: ObservableObject {
     /// Playlists whose last read failed.
     private var unreadable: Set<String> = []
     private var membershipTask: Task<Void, Never>?
+    /// The running `prepare`. An add waits for it: a refresh may find the item already in
+    /// the tapped playlist, and the rows keep the last order meanwhile.
+    private var prepareTask: Task<Void, Never>?
 
     private struct PlaylistContents {
         var snapshotID: String?
@@ -272,9 +275,21 @@ final class AddToPlaylistModel: ObservableObject {
 
     /// What the sheet runs when it opens, and on pull to refresh or Reintentar: the list,
     /// then which playlists hold the item.
+    ///
+    /// On a refresh the list stays on screen with its last order (no panel flashing under the
+    /// pull to refresh); `add(to:)` waits for this instead of trusting that order.
     func prepare(force: Bool = false) async {
-        await load(force: force)
-        await checkMembership()
+        if let prepareTask {
+            await prepareTask.value
+            return
+        }
+        let task = Task {
+            await load(force: force)
+            await checkMembership()
+        }
+        prepareTask = task
+        await task.value
+        prepareTask = nil
     }
 
     func state(of playlist: EditablePlaylist) -> RowState {
@@ -383,11 +398,22 @@ final class AddToPlaylistModel: ObservableObject {
         guard let playlists else { return }
         if let uri = targetURI {
             containingIDs = Set(playlists.lazy
-                .filter { self.contents[$0.id]?.uris.contains(uri) == true }
+                .filter { self.currentContents(of: $0.id)?.contains(uri) == true }
                 .map(\.id))
         }
         membershipIncomplete = playlists.contains { unreadable.contains($0.id) }
         isMembershipReady = true
+    }
+
+    /// The playlist's URIs, only if they were read at the version in the list and its last
+    /// read worked. Older contents never confirm the item is there: it may have been removed
+    /// (the incomplete-check note covers those playlists).
+    private func currentContents(of playlistID: String) -> Set<String>? {
+        guard !unreadable.contains(playlistID), let read = contents[playlistID],
+              let listed = playlists?.first(where: { $0.id == playlistID }),
+              read.snapshotID == listed.snapshotID
+        else { return nil }
+        return read.uris
     }
 
     /// Never read, or read at another version. Without a `snapshot_id` there is no way to
@@ -412,8 +438,18 @@ final class AddToPlaylistModel: ObservableObject {
         guard state == .idle || state == .failed else { return }
 
         let key = Self.key(uri: uri, playlistID: playlist.id)
-        let startedAt = sequence
         pending[key] = .adding
+        if let prepareTask {
+            // A refresh is reading the list and its contents: the playlist may already hold
+            // the item, and a second copy cannot be removed from the app.
+            await prepareTask.value
+            if currentContents(of: playlist.id)?.contains(uri) == true {
+                pending[key] = nil
+                if targetURI == uri { containingIDs.insert(playlist.id) }
+                return
+            }
+        }
+        let startedAt = sequence
         do {
             try await api.addToPlaylist(playlistID: playlist.id, uri: uri)
             // Recorded even if the sheet now shows another item: it stays checked when this
