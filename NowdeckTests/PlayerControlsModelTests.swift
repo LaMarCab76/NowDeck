@@ -273,6 +273,44 @@ final class PlayerControlsModelTests: XCTestCase {
         XCTAssertEqual(h.commands, [])
     }
 
+    // MARK: Seeking to a position (progress bar, lyrics)
+
+    func testSeekToPositionMovesThereAtOnce() async throws {
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: 84_000))
+        h.controls.seek(toMs: 30_500)
+        XCTAssertEqual(h.model.playback?.progressMs, 30_500, "Optimistic: the bar does not jump back")
+        try await eventually { h.commands.count == 1 }
+        XCTAssertEqual(h.commandRequests.map(\.commandLine), ["PUT /me/player/seek"])
+        XCTAssertEqual(h.commandRequests.last?.queryValue("position_ms"), "30500")
+    }
+
+    func testSeekToPositionStaysWithinTheTrack() async throws {
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: 84_000))
+        let duration = try XCTUnwrap(h.model.nowPlaying?.durationMs)
+        h.controls.seek(toMs: duration + 10_000)
+        h.controls.seek(toMs: -5_000)
+        try await eventually { h.commands.count == 2 }
+        XCTAssertEqual(h.commandRequests.map { $0.queryValue("position_ms") },
+                       [String(duration), "0"])
+    }
+
+    func testSeekToPositionDisallowed() async throws {
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: 84_000,
+                                            disallows: ["seeking"]))
+        h.controls.seek(toMs: 10_000)
+        try await settle()
+        XCTAssertEqual(h.commands, [])
+        XCTAssertEqual(h.model.playback?.progressMs, 84_000)
+    }
+
+    func testFailedSeekToPositionGoesBack() async throws {
+        let h = try await make(PlaybackJSON(isPlaying: false, progressMs: 84_000))
+        h.commandStatus.value = 500
+        h.controls.seek(toMs: 120_000)
+        XCTAssertEqual(h.model.playback?.progressMs, 120_000)
+        try await eventually { h.model.playback?.progressMs == 84_000 }
+    }
+
     // MARK: Volume from polls
 
     func testPolledVolumeChangeShowsThePanel() async throws {

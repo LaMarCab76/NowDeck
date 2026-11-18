@@ -1,8 +1,9 @@
 import Combine
 import Foundation
 
-/// The player's commands: play/pause, previous, next, shuffle, repeat and the ±15 s seek of
-/// podcast episodes, plus the volume panel (`volume`).
+/// The player's commands: play/pause, previous, next, shuffle, repeat, seeking (the ±15 s of
+/// podcast episodes, the progress bar and the stanzas of lyrics mode), plus the volume panel
+/// (`volume`).
 ///
 /// Every command follows the same steps (docs/03-spotify-api.md, "Polling y estado local"):
 /// 1. Check `ControlAvailability`: a forbidden action is never sent.
@@ -124,12 +125,19 @@ final class PlayerControlsModel: ObservableObject {
     }
 
     private func seek(by deltaMs: Int) {
+        guard let position = player?.currentPositionMs else { return }
+        seek(toMs: position + deltaMs)
+    }
+
+    /// Moves the playback to `positionMs`: dragging the progress bar, or tapping a stanza in
+    /// lyrics mode. Only where Spotify allows seeking (`ControlAvailability.seek`).
+    func seek(toMs positionMs: Int) {
         guard let player, availability.seek,
               let position = player.currentPositionMs,
               let durationMs = player.nowPlaying?.durationMs, durationMs > 0
         else { return }
         // Past the end Spotify jumps to the next item: stop at the end instead.
-        let target = min(max(0, position + deltaMs), durationMs)
+        let target = min(max(0, positionMs), durationMs)
         let applied = target - position
         guard applied != 0 else { return }
         run(.seek(positionMs: target),
