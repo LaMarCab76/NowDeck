@@ -49,12 +49,11 @@ final class PlayerControlsModel: ObservableObject {
     private var batchFailed = false
     private var noticeTask: Task<Void, Never>?
     private var playbackSubscription: AnyCancellable?
-    /// How far each seek on its way moved the position, in the order they were sent. `nil`
-    /// when the position before it was unknown.
-    private var pendingSeekShifts: [Int?] = []
-    /// What the failed seeks since the last accepted one moved, not undone yet. `nil` when
-    /// one of them started from an unknown position.
-    private var failedSeekShift: Int? = 0
+    /// Seeks sent and not answered yet.
+    private var pendingSeeks = 0
+    /// Where the playback is if the seeks on their way fail: the position before the first
+    /// of them, or the target of the last one Spotify accepted.
+    private var seekBaseline: SeekBaseline?
 
     init(player: PlayerModel,
          confirmDelay: TimeInterval = 0.6,
@@ -148,37 +147,44 @@ final class PlayerControlsModel: ObservableObject {
         let target = min(max(0, positionMs), durationMs)
         let position = player.currentPositionMs
         guard target != position else { return }
-        pendingSeekShifts.append(position.map { target - $0 })
+        if pendingSeeks == 0 {
+            // The first seek of a burst: where Spotify is now is where a failure goes back to.
+            seekBaseline = SeekBaseline(positionMs: position,
+                                        isPlaying: player.playback?.isPlaying == true,
+                                        date: player.now())
+        }
+        pendingSeeks += 1
         run(.seek(positionMs: target),
             optimistic: { $0.progressMs = target },
-            completion: { [weak self] succeeded in self?.seekFinished(succeeded: succeeded) })
+            completion: { [weak self] succeeded in
+                self?.seekFinished(target: target, succeeded: succeeded)
+            })
     }
 
     /// Seeks finish in the order they were sent. A failed one is undone only once no seek
     /// is left on its way, and then back to the last position Spotify accepted: undoing it
     /// earlier would move the bar away from a newer target, and undoing it alone would land
     /// on the target of an earlier seek that may have failed too.
-    private func seekFinished(succeeded: Bool) {
-        guard !pendingSeekShifts.isEmpty else { return }
-        let shift = pendingSeekShifts.removeFirst()
+    private func seekFinished(target: Int, succeeded: Bool) {
+        guard let player, pendingSeeks > 0 else { return }
+        pendingSeeks -= 1
+        let date = player.now()
         if succeeded {
             // Spotify is now where this seek went: earlier failures no longer count.
-            failedSeekShift = 0
+            seekBaseline = SeekBaseline(positionMs: target,
+                                        isPlaying: player.playback?.isPlaying == true,
+                                        date: date)
             return
         }
-        failedSeekShift = shift.flatMap { shift in failedSeekShift.map { $0 + shift } }
-        guard pendingSeekShifts.isEmpty else { return }
-        let undo = failedSeekShift
-        failedSeekShift = 0
-        player?.updatePlayback { state in
-            // Back by what the failed seeks moved, from the position as it is now (time
-            // kept running while they were out). An unknown starting point goes back to
-            // unknown.
-            guard let undo else {
-                state.progressMs = nil
-                return
+        guard pendingSeeks == 0, let baseline = seekBaseline else { return }
+        let durationMs = player.nowPlaying?.durationMs
+        player.updatePlayback { state in
+            // The baseline kept running while the seeks were out; it is not rebuilt from
+            // the bar, which stops at the end of the track. An unknown position goes back
+            // to unknown.
+            state.progressMs = baseline.position(at: date).map { position in
+                durationMs.map { min(position, $0) } ?? position
             }
-            state.progressMs = max(0, (state.progressMs ?? 0) - undo)
         }
     }
 
@@ -255,5 +261,20 @@ final class PlayerControlsModel: ObservableObject {
             guard !Task.isCancelled else { return }
             self?.notice = nil
         }
+    }
+}
+
+/// A playback position and when it was true, advancing with the clock while playing.
+private struct SeekBaseline {
+    /// `nil` when Spotify did not say (`progress_ms: null`).
+    var positionMs: Int?
+    var isPlaying: Bool
+    var date: Date
+
+    func position(at now: Date) -> Int? {
+        guard let positionMs else { return nil }
+        guard isPlaying else { return positionMs }
+        let elapsed = max(0, now.timeIntervalSince(date))
+        return positionMs + Int((elapsed * 1000).rounded(.down))
     }
 }

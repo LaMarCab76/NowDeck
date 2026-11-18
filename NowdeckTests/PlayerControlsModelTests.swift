@@ -12,6 +12,7 @@ final class PlayerControlsModelTests: XCTestCase {
         let playback: StubBox<PlaybackJSON>
         /// Status of every command.
         let commandStatus: StubBox<Int>
+        let clock: TestClock
 
         var commandRequests: [URLRequest] {
             recorder.requests.filter { $0.httpMethod != "GET" }
@@ -56,7 +57,7 @@ final class PlayerControlsModelTests: XCTestCase {
         await model.poll()
         XCTAssertEqual(model.status, .active)
         return Harness(model: model, controls: controls, recorder: recorder,
-                       playback: playback, commandStatus: commandStatus)
+                       playback: playback, commandStatus: commandStatus, clock: clock)
     }
 
     /// Lets queued commands run when the test expects nothing to happen.
@@ -377,6 +378,24 @@ final class PlayerControlsModelTests: XCTestCase {
         gate.signal()
         try await eventually { h.controls.notice == .failed }
         XCTAssertEqual(h.model.playback?.progressMs, 30_000)
+    }
+
+    func testAFailedSeekToTheEndGoesBackWithTheTimeThatPassed() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal() } // never leave the stub blocked
+        let h = try await make(PlaybackJSON(isPlaying: true, progressMs: 84_000),
+                               commandGate: gate)
+        let duration = try XCTUnwrap(h.model.nowPlaying?.durationMs)
+        h.controls.seek(toMs: duration)
+
+        // Ten seconds go by while the seek is out; the bar stays at the end meanwhile.
+        h.clock.advance(10)
+        h.playback.value.progressMs = 94_000
+        h.commandStatus.value = 500
+        gate.signal()
+        try await eventually { h.controls.notice == .failed }
+        XCTAssertEqual(h.model.playback?.progressMs, 94_000,
+                       "Back to where the track is now, not where it was ten seconds ago")
     }
 
     // MARK: Volume from polls
