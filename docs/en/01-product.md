@@ -78,9 +78,12 @@ While the app is in the foreground, **the screen does not turn off**
 9. **Queue** (added on 2026-11-17, at the owner's request)
    - Queue pill in the player's top row, to the left of Library.
    - Bottom sheet with what's playing now and up to 20 songs under "UP NEXT" (*A CONTINUACIÓN*).
-   - **Read-only**: the Web API doesn't allow removing, reordering, or skipping to a song in
-     the queue. Songs can't be tapped; long-pressing them shows the full name and "Open in
-     Spotify" (*Abrir en Spotify*). The list ends with "To remove or reorder songs, use
+   - The Web API doesn't allow removing, reordering, or skipping to a song in the queue.
+     Since 2026-11-18 (owner's request), **tapping a song** asks "Play this song?"
+     (*¿Reproducir este tema?*) with "Play" (*Reproducir*) and "Cancel" (*Cancelar*); on
+     confirming, that song starts playing (inside its playlist or album when possible; see
+     docs/en/03, "Queue"). Episodes and local files can't be tapped. Long-pressing a song
+     shows the full name and "Open in Spotify" (*Abrir en Spotify*). The list ends with "To remove or reorder songs, use
      Spotify." (*Para quitar o reordenar temas, usá Spotify.*) and "OPEN SPOTIFY" (*ABRIR
      SPOTIFY*).
 10. **Add to a playlist** (added on 2026-11-18, at the owner's request)
@@ -135,8 +138,8 @@ While the app is in the foreground, **the screen does not turn off**
 
 - Playing audio on the iPhone (Spotify Connect receiver, librespot).
 - Voice control: Spotify's policy forbids it.
-- Editing the queue (removing, reordering, or skipping to a song): the Web API doesn't allow it.
-  Adding to the queue (`POST /me/player/queue`) does exist, but it has no design yet.
+- Editing the queue (removing or reordering): the Web API doesn't allow it. Tapping a song in
+  the queue plays it, but it is not a real skip (see docs/en/03, "Queue"). Adding to the queue (`POST /me/player/queue`) does exist, but it has no design yet.
 - Quick access shortcuts (presets).
 - Search results screen, pending design.
 - OLED *burn-in* protection (dimming brightness, shifting pixels): discussed as a future

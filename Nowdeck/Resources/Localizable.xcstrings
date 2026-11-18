@@ -3667,6 +3667,22 @@
         }
       }
     },
+    "Pregunta antes de reproducirlo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Asks before playing it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pregunta antes de reproducirlo"
+          }
+        }
+      }
+    },
     "Progreso" : {
       "localizations" : {
         "en" : {
@@ -5236,6 +5252,38 @@
         }
       }
     },
+    "«%@» de %@ empieza a sonar ahora." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” by %@ starts playing now."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«%@» de %@ empieza a sonar ahora."
+          }
+        }
+      }
+    },
+    "«%@» empieza a sonar ahora." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” starts playing now."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«%@» empieza a sonar ahora."
+          }
+        }
+      }
+    },
     "¿No ves tu dispositivo?" : {
       "localizations" : {
         "en" : {
@@ -5248,6 +5296,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "¿No ves tu dispositivo?"
+          }
+        }
+      }
+    },
+    "¿Reproducir este tema?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play this song?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Reproducir este tema?"
           }
         }
       }

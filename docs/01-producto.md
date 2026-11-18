@@ -72,8 +72,11 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
 9. **Cola** (agregada el 2026-11-17, a pedido del dueño)
    - Píldora Cola en la fila superior del reproductor, a la izquierda de Biblioteca.
    - Hoja inferior con lo que suena ahora y hasta 20 temas de "A continuación".
-   - **Solo lectura**: la Web API no deja quitar, reordenar ni saltar a un tema de la cola. Los
-     temas no se tocan; mantenerlos apretados muestra el nombre completo y "Abrir en Spotify".
+   - La Web API no deja quitar, reordenar ni saltar a un tema de la cola. Desde el 2026-11-18
+     (pedido del dueño), **tocar un tema** pregunta "¿Reproducir este tema?" con
+     "Reproducir" y "Cancelar"; al confirmar, ese tema empieza a sonar (dentro de su playlist
+     o álbum cuando se puede; ver docs/03, "Cola"). Los episodios y los archivos locales no se
+     tocan. Mantener apretado un tema muestra el nombre completo y "Abrir en Spotify".
      La lista termina con "Para quitar o reordenar temas, usá Spotify." y "ABRIR SPOTIFY".
 10. **Agregar a una playlist** (agregada el 2026-11-18, a pedido del dueño)
    - Botón en el extremo izquierdo de los controles del reproductor y del mini reproductor de
@@ -125,8 +128,9 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
 
 - Reproducir audio en el iPhone (receptor de Spotify Connect, librespot).
 - Control por voz: la política de Spotify lo prohíbe.
-- Editar la cola (quitar, reordenar o saltar a un tema): la Web API no lo permite. Agregar a
-  la cola (`POST /me/player/queue`) sí existe, pero todavía no tiene diseño.
+- Editar la cola (quitar o reordenar): la Web API no lo permite. Tocar un tema de la cola lo
+  reproduce, pero no es un salto real (ver docs/03, "Cola"). Agregar a la cola
+  (`POST /me/player/queue`) sí existe, pero todavía no tiene diseño.
 - Accesos rápidos (presets).
 - Pantalla de resultados de búsqueda, pendiente de diseño.
 - Protección contra *burn-in* de OLED (atenuar brillo, desplazar píxeles): se habló como opción

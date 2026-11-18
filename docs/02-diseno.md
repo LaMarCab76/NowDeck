@@ -371,8 +371,15 @@ sigue el diseño de Cola:
 - "A CONTINUACIÓN" (12 mono, `etiqueta`) y filas de 56 con separadores blancos al 10 %:
   número (12 mono), carátula de 40 (sin recortar, radio 4), título 16 semibold con la marca
   de explícito, artistas 13 `textoCuerpo` y duración (12 mono). Hasta **20** temas.
-- Las filas **no son botones**: mantenerlas apretadas muestra el nombre completo y "Abrir en
-  Spotify", como en el detalle. Abajo, un degradado de 40 hacia la superficie.
+- **Tocar un tema** (desde el 2026-11-18, pedido del dueño; no está en el mockup) abre la
+  alerta del sistema "¿Reproducir este tema?", con "«Título» de Artistas empieza a sonar
+  ahora." y los botones "Reproducir" y "Cancelar". Al apretar, la fila baja al 70 %. Mientras
+  arranca, una ruedita reemplaza la duración y las demás filas no responden; si falla, la
+  línea de aviso aparece arriba de la lista ("No hay un dispositivo activo. Elegí uno para
+  escuchar.", "No pudimos reproducirlo. Probá de nuevo.", etc.). La hoja queda abierta y se
+  actualiza sola cuando empieza el tema. Episodios y archivos locales no son botones.
+- Mantener apretado un tema muestra el nombre completo y "Abrir en Spotify", como en el
+  detalle. Abajo, un degradado de 40 hacia la superficie.
 - Al final de la lista: "Para quitar o reordenar temas, usá Spotify." (14, `textoCuerpo`) y
   "ABRIR SPOTIFY ↗".
 - **Cola vacía**: ícono de lista, "No hay nada en la cola" (20 bold) y "Cuando termine este
