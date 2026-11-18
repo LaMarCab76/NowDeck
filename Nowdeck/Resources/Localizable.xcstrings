@@ -1,376 +1,5307 @@
 {
   "sourceLanguage" : "es",
   "strings" : {
-    "%@ de %@" : {},
+    "%@ de %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ de %@"
+          }
+        }
+      }
+    },
     "%lld H" : {
-      "comment" : "Total duration in whole hours"
+      "comment" : "Total duration in whole hours",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld H"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld H"
+          }
+        }
+      }
     },
     "%lld H %lld MIN" : {
-      "comment" : "Total duration: hours and minutes"
+      "comment" : "Total duration: hours and minutes",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld H %lld MIN"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld H %lld MIN"
+          }
+        }
+      }
     },
     "%lld MIN" : {
-      "comment" : "Total duration under an hour"
+      "comment" : "Total duration under an hour",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld MIN"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld MIN"
+          }
+        }
+      }
     },
     "%lld TEMAS" : {
-      "comment" : "Detail track list label: number of tracks"
+      "comment" : "Detail track list label: number of tracks",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld SONGS"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld TEMAS"
+          }
+        }
+      }
     },
-    "%lld de 100" : {},
+    "%lld de 100" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of 100"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld de 100"
+          }
+        }
+      }
+    },
     "%lld temas" : {
-      "comment" : "Playlist detail: number of tracks"
+      "comment" : "Playlist detail: number of tracks",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld songs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld temas"
+          }
+        }
+      }
     },
     "1 TEMA" : {
-      "comment" : "Detail track list label: one track"
+      "comment" : "Detail track list label: one track",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 SONG"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 TEMA"
+          }
+        }
+      }
     },
     "1 tema" : {
-      "comment" : "Playlist detail: a playlist with one track"
+      "comment" : "Playlist detail: a playlist with one track",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 song"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 tema"
+          }
+        }
+      }
     },
-    "2/3" : {},
-    "5 minutos" : {},
-    "A CONTINUACIÓN" : {},
-    "A la derecha de la barra se ve cuánto falta, en vez de la duración del tema. También podés cambiarlo tocando ese tiempo en el reproductor." : {},
-    "ABRIR EN SPOTIFY" : {},
-    "ABRIR SPOTIFY" : {},
-    "AGREGAR A UNA PLAYLIST" : {},
-    "ANTES DE ACTIVARLA" : {},
-    "Abre en Spotify" : {},
-    "Abre la app de Spotify" : {},
-    "Abre la carpeta" : {},
-    "Abre la lista de dispositivos" : {},
-    "Abrir el panel" : {},
-    "Abrir el panel de Spotify" : {},
-    "Abrir en Spotify" : {},
-    "Abrí **Settings** y copiá el **Client ID**. El Client secret no hace falta." : {},
-    "Abrí Spotify en ese dispositivo. La lista solo muestra los que tienen Spotify activo en este momento." : {},
-    "Activado" : {},
-    "Activar carpetas (experimental)" : {},
-    "Actualizar lista" : {},
-    "Adaptador de audio" : {},
-    "Adelantar 15 segundos" : {},
-    "Agrega el tema a esta playlist" : {},
-    "Agregado" : {},
-    "Agregado a %@" : {},
-    "Agregando" : {},
-    "Agregar a tus playlists los temas que elijas" : {},
-    "Agregar a una playlist" : {},
-    "Ajustes" : {},
-    "Aleatorio" : {},
-    "Algo salió mal. Probá de nuevo." : {},
-    "Ancho de las letras" : {},
-    "Anterior" : {},
-    "Apariencia" : {},
-    "Aplicar tema" : {},
-    "Artista" : {},
-    "Atrás" : {},
+    "2/3" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2/3"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2/3"
+          }
+        }
+      }
+    },
+    "5 minutos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 minutes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 minutos"
+          }
+        }
+      }
+    },
+    "A CONTINUACIÓN" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "UP NEXT"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A CONTINUACIÓN"
+          }
+        }
+      }
+    },
+    "A la derecha de la barra se ve cuánto falta, en vez de la duración del tema. También podés cambiarlo tocando ese tiempo en el reproductor." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The right end of the bar shows the time left instead of the song's length. You can also switch it by tapping that time in the player."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A la derecha de la barra se ve cuánto falta, en vez de la duración del tema. También podés cambiarlo tocando ese tiempo en el reproductor."
+          }
+        }
+      }
+    },
+    "ABRIR EN SPOTIFY" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OPEN IN SPOTIFY"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ABRIR EN SPOTIFY"
+          }
+        }
+      }
+    },
+    "ABRIR SPOTIFY" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OPEN SPOTIFY"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ABRIR SPOTIFY"
+          }
+        }
+      }
+    },
+    "AGREGAR A UNA PLAYLIST" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ADD TO A PLAYLIST"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AGREGAR A UNA PLAYLIST"
+          }
+        }
+      }
+    },
+    "ANTES DE ACTIVARLA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "BEFORE YOU TURN IT ON"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ANTES DE ACTIVARLA"
+          }
+        }
+      }
+    },
+    "Abre en Spotify" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens in Spotify"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre en Spotify"
+          }
+        }
+      }
+    },
+    "Abre la app de Spotify" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the Spotify app"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre la app de Spotify"
+          }
+        }
+      }
+    },
+    "Abre la carpeta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the folder"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre la carpeta"
+          }
+        }
+      }
+    },
+    "Abre la lista de dispositivos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the device list"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre la lista de dispositivos"
+          }
+        }
+      }
+    },
+    "Abrir el panel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the dashboard"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir el panel"
+          }
+        }
+      }
+    },
+    "Abrir el panel de Spotify" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the Spotify dashboard"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir el panel de Spotify"
+          }
+        }
+      }
+    },
+    "Abrir en Spotify" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in Spotify"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir en Spotify"
+          }
+        }
+      }
+    },
+    "Abrí **Settings** y copiá el **Client ID**. El Client secret no hace falta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open **Settings** and copy the **Client ID**. You don't need the Client secret."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrí **Settings** y copiá el **Client ID**. El Client secret no hace falta."
+          }
+        }
+      }
+    },
+    "Abrí Spotify en ese dispositivo. La lista solo muestra los que tienen Spotify activo en este momento." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Spotify on that device. The list only shows devices with Spotify active right now."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrí Spotify en ese dispositivo. La lista solo muestra los que tienen Spotify activo en este momento."
+          }
+        }
+      }
+    },
+    "Activado" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activado"
+          }
+        }
+      }
+    },
+    "Activar carpetas (experimental)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on folders (experimental)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activar carpetas (experimental)"
+          }
+        }
+      }
+    },
+    "Actualizar lista" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh list"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizar lista"
+          }
+        }
+      }
+    },
+    "Adaptador de audio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio adapter"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adaptador de audio"
+          }
+        }
+      }
+    },
+    "Adelantar 15 segundos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip forward 15 seconds"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adelantar 15 segundos"
+          }
+        }
+      }
+    },
+    "Agrega el tema a esta playlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adds the song to this playlist"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agrega el tema a esta playlist"
+          }
+        }
+      }
+    },
+    "Agregado" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agregado"
+          }
+        }
+      }
+    },
+    "Agregado a %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added to %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agregado a %@"
+          }
+        }
+      }
+    },
+    "Agregando" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adding"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agregando"
+          }
+        }
+      }
+    },
+    "Agregar a tus playlists los temas que elijas" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add the songs you choose to your playlists"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agregar a tus playlists los temas que elijas"
+          }
+        }
+      }
+    },
+    "Agregar a una playlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to a playlist"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agregar a una playlist"
+          }
+        }
+      }
+    },
+    "Ajustes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes"
+          }
+        }
+      }
+    },
+    "Aleatorio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shuffle"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aleatorio"
+          }
+        }
+      }
+    },
+    "Algo salió mal. Probá de nuevo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something went wrong. Try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algo salió mal. Probá de nuevo."
+          }
+        }
+      }
+    },
+    "Ancho de las letras" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lyrics width"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ancho de las letras"
+          }
+        }
+      }
+    },
+    "Anterior" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anterior"
+          }
+        }
+      }
+    },
+    "Apariencia" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appearance"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apariencia"
+          }
+        }
+      }
+    },
+    "Aplicar tema" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apply theme"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplicar tema"
+          }
+        }
+      }
+    },
+    "Artista" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artist"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artista"
+          }
+        }
+      }
+    },
+    "Atrás" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atrás"
+          }
+        }
+      }
+    },
     "Audiolibro" : {
-      "comment" : "Library card subtitle"
+      "comment" : "Library card subtitle",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audiobook"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audiolibro"
+          }
+        }
+      }
     },
     "Audiolibro · %@" : {
-      "comment" : "Library card subtitle: the audiobook's authors, verbatim"
+      "comment" : "Library card subtitle: the audiobook's authors, verbatim",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audiobook · %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audiolibro · %@"
+          }
+        }
+      }
     },
-    "Audiolibros" : {},
-    "Auto" : {},
-    "BIBLIOTECA" : {},
-    "Bajar volumen" : {},
-    "Biblioteca" : {},
-    "Blanco" : {},
-    "Borrar búsqueda" : {},
-    "Buscando dispositivos" : {},
-    "Buscando el tema en tus playlists" : {},
-    "Buscando el tema en tus playlists… %lld de %lld" : {},
-    "Buscar" : {},
-    "Buscar en Spotify" : {},
-    "Buscar en tus playlists" : {},
-    "Buscar una playlist" : {},
-    "CLIENT ID" : {},
-    "COLOR DE RESALTADO" : {},
-    "Cancelar" : {},
-    "Cargando" : {},
-    "Cargando la cola" : {},
-    "Cargando tus playlists" : {},
+    "Audiolibros" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audiobooks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audiolibros"
+          }
+        }
+      }
+    },
+    "Auto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Car"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto"
+          }
+        }
+      }
+    },
+    "Azul noche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Night blue"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Azul noche"
+          }
+        }
+      }
+    },
+    "BIBLIOTECA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LIBRARY"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "BIBLIOTECA"
+          }
+        }
+      }
+    },
+    "Bajar volumen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volume down"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bajar volumen"
+          }
+        }
+      }
+    },
+    "Biblioteca" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Library"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Biblioteca"
+          }
+        }
+      }
+    },
+    "Blanco" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "White"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blanco"
+          }
+        }
+      }
+    },
+    "Borrar búsqueda" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear search"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrar búsqueda"
+          }
+        }
+      }
+    },
+    "Buscando dispositivos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looking for devices"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscando dispositivos"
+          }
+        }
+      }
+    },
+    "Buscando el tema en tus playlists" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looking for the song in your playlists"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscando el tema en tus playlists"
+          }
+        }
+      }
+    },
+    "Buscando el tema en tus playlists… %lld de %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looking for the song in your playlists… %lld of %lld"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscando el tema en tus playlists… %lld de %lld"
+          }
+        }
+      }
+    },
+    "Buscar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar"
+          }
+        }
+      }
+    },
+    "Buscar en Spotify" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Spotify"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar en Spotify"
+          }
+        }
+      }
+    },
+    "Buscar en tus playlists" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search your playlists"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar en tus playlists"
+          }
+        }
+      }
+    },
+    "Buscar una playlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search for a playlist"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar una playlist"
+          }
+        }
+      }
+    },
+    "CLIENT ID" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CLIENT ID"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CLIENT ID"
+          }
+        }
+      }
+    },
+    "COLOR DE RESALTADO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ACCENT COLOR"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "COLOR DE RESALTADO"
+          }
+        }
+      }
+    },
+    "Cancelar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        }
+      }
+    },
+    "Cargando" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cargando"
+          }
+        }
+      }
+    },
+    "Cargando la cola" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading the queue"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cargando la cola"
+          }
+        }
+      }
+    },
+    "Cargando tus playlists" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading your playlists"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cargando tus playlists"
+          }
+        }
+      }
+    },
     "Carpeta · %lld playlists" : {
-      "comment" : "Library card subtitle: number of playlists in a folder"
+      "comment" : "Library card subtitle: number of playlists in a folder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder · %lld playlists"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carpeta · %lld playlists"
+          }
+        }
+      }
     },
     "Carpeta · 1 playlist" : {
-      "comment" : "Library card subtitle: a folder"
+      "comment" : "Library card subtitle: a folder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder · 1 playlist"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carpeta · 1 playlist"
+          }
+        }
+      }
     },
-    "Carpetas de playlists" : {},
-    "Carpetas de playlists (experimental)" : {},
-    "Carátula" : {},
-    "Celeste" : {},
-    "Cerrar" : {},
-    "Client ID" : {},
-    "Cola" : {},
-    "Colaborativa" : {},
-    "Completo" : {},
-    "Computadora" : {},
-    "Conectando…" : {},
-    "Conectar con Spotify" : {},
-    "Consola" : {},
-    "Contenido del archivo" : {},
-    "Copia el Redirect URI" : {},
-    "Copiado" : {},
-    "Copiar" : {},
-    "Coral" : {},
-    "Creá tu app en Spotify" : {},
-    "Creá una en Spotify y deslizá hacia abajo para que aparezca acá." : {},
-    "Cuando termine este tema, Spotify decide qué sigue. Podés elegir algo desde la Biblioteca." : {},
-    "DISPOSITIVO ACTUAL" : {},
-    "DISPOSITIVO ACTUAL · SESIÓN PRIVADA" : {},
-    "Dar permiso" : {},
+    "Carpetas de playlists" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist folders"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carpetas de playlists"
+          }
+        }
+      }
+    },
+    "Carpetas de playlists (experimental)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist folders (experimental)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carpetas de playlists (experimental)"
+          }
+        }
+      }
+    },
+    "Carátula" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artwork"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carátula"
+          }
+        }
+      }
+    },
+    "Celeste" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sky blue"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Celeste"
+          }
+        }
+      }
+    },
+    "Cerrar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar"
+          }
+        }
+      }
+    },
+    "Client ID" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Client ID"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Client ID"
+          }
+        }
+      }
+    },
+    "Cola" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Queue"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cola"
+          }
+        }
+      }
+    },
+    "Colaborativa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collaborative"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colaborativa"
+          }
+        }
+      }
+    },
+    "Completo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completo"
+          }
+        }
+      }
+    },
+    "Computadora" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Computer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Computadora"
+          }
+        }
+      }
+    },
+    "Conectando…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecting…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectando…"
+          }
+        }
+      }
+    },
+    "Conectar con Spotify" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect to Spotify"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectar con Spotify"
+          }
+        }
+      }
+    },
+    "Consola" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Console"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consola"
+          }
+        }
+      }
+    },
+    "Contenido del archivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File contents"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contenido del archivo"
+          }
+        }
+      }
+    },
+    "Copia el Redirect URI" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copies the Redirect URI"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copia el Redirect URI"
+          }
+        }
+      }
+    },
+    "Copiado" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copied"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiado"
+          }
+        }
+      }
+    },
+    "Copiar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar"
+          }
+        }
+      }
+    },
+    "Coral" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coral"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coral"
+          }
+        }
+      }
+    },
+    "Creá tu app en Spotify" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create your Spotify app"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creá tu app en Spotify"
+          }
+        }
+      }
+    },
+    "Creá una en Spotify y deslizá hacia abajo para que aparezca acá." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create one in Spotify and pull down to see it here."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creá una en Spotify y deslizá hacia abajo para que aparezca acá."
+          }
+        }
+      }
+    },
+    "Cuando termine este tema, Spotify decide qué sigue. Podés elegir algo desde la Biblioteca." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When this song ends, Spotify decides what's next. You can pick something from the Library."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando termine este tema, Spotify decide qué sigue. Podés elegir algo desde la Biblioteca."
+          }
+        }
+      }
+    },
+    "DISPOSITIVO ACTUAL" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CURRENT DEVICE"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DISPOSITIVO ACTUAL"
+          }
+        }
+      }
+    },
+    "DISPOSITIVO ACTUAL · SESIÓN PRIVADA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CURRENT DEVICE · PRIVATE SESSION"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DISPOSITIVO ACTUAL · SESIÓN PRIVADA"
+          }
+        }
+      }
+    },
+    "Dar permiso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dar permiso"
+          }
+        }
+      }
+    },
     "De %@" : {
-      "comment" : "Playlist detail: the playlist's owner, verbatim"
+      "comment" : "Playlist detail: the playlist's owner, verbatim",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De %@"
+          }
+        }
+      }
     },
-    "Decodificador" : {},
-    "Desactivado" : {},
-    "Desenfoque" : {},
-    "Dispositivo" : {},
-    "Donde pregunta qué API vas a usar, marcá **Web API** y guardá." : {},
-    "ELEGÍ UN DISPOSITIVO" : {},
-    "El archivo pesa más de 16 KB. Un tema es mucho más chico: revisá que sea el archivo correcto." : {},
-    "El color de resaltado tiene poco contraste con el fondo (%@). Lo vamos a aclarar al aplicarlo." : {},
-    "El color de resaltado tiene poco contraste con el fondo (%@). Lo vamos a oscurecer al aplicarlo." : {},
-    "El color de «%@» no es válido: tiene que tener la forma #RRGGBB." : {},
-    "El nombre del tema tiene que tener entre 1 y 40 caracteres." : {},
-    "El portapapeles no tiene texto. Copiá el contenido del tema y probá de nuevo." : {},
-    "El texto secundario tiene poco contraste con el fondo (%@). Lo vamos a aclarar al aplicarlo." : {},
-    "El texto secundario tiene poco contraste con el fondo (%@). Lo vamos a oscurecer al aplicarlo." : {},
-    "El texto sobre el color de resaltado tiene poco contraste (%@). Lo vamos a aclarar al aplicarlo." : {},
-    "El texto sobre el color de resaltado tiene poco contraste (%@). Lo vamos a oscurecer al aplicarlo." : {},
-    "El texto tiene poco contraste con el fondo (%@). Lo vamos a aclarar al aplicarlo." : {},
-    "El texto tiene poco contraste con el fondo (%@). Lo vamos a oscurecer al aplicarlo." : {},
-    "El texto tiene poco contraste con la superficie (%@). Lo vamos a aclarar al aplicarlo." : {},
-    "El texto tiene poco contraste con la superficie (%@). Lo vamos a oscurecer al aplicarlo." : {},
-    "El valor de «%@» no es válido." : {},
-    "Elegir dispositivo" : {},
-    "Elegir un archivo" : {},
-    "Elegí una de tus playlists" : {},
-    "Empezar" : {},
-    "En **Redirect URIs** pegá esto, tal cual:" : {},
-    "Entraste con otra cuenta de Spotify. Probá de nuevo con la que usás en Nowdeck." : {},
-    "Entrá a **developer.spotify.com/dashboard** con tu cuenta Premium." : {},
-    "Esa playlist ya no existe en Spotify." : {},
-    "Ese dispositivo ya no está disponible. Actualizamos la lista." : {},
-    "Este dispositivo no acepta control remoto" : {},
-    "Este dispositivo no permite cambiar el volumen" : {},
-    "Este tema es de una versión más nueva de Nowdeck." : {},
-    "Explícito" : {},
-    "Exportar tema" : {},
-    "FONDO DEL REPRODUCTOR" : {},
-    "Falta un permiso" : {},
-    "Fijate que use la misma cuenta de Spotify que esta app." : {},
-    "Filtrar biblioteca" : {},
-    "Foto del artista" : {},
-    "Gris" : {},
-    "Gris oscuro" : {},
-    "Hay campos que esta versión no conoce y se van a ignorar: %@." : {},
-    "Hay una forma no oficial de leerlas: pedírselas al servicio que usa la propia app de Spotify, con tu misma sesión." : {},
-    "Importar tema" : {},
-    "LETRAS" : {},
-    "La carátula a la derecha todavía no está disponible: se va a mostrar a la izquierda." : {},
-    "Las letras se muestran %@ s antes." : {},
-    "Las letras se muestran %@ s más tarde." : {},
-    "Las letras vienen de LRCLIB, una base comunitaria: no las provee Spotify y pueden faltar o tener errores. Con sincronía por palabra se resaltan mientras suenan; si no, se ve la estrofa completa." : {},
-    "Lavanda" : {},
-    "Lee tus carpetas con el servicio interno de Spotify, que no está aprobado para apps de terceros. Puede dejar de andar, y Spotify podría bloquear el Client ID de tu app." : {},
-    "Letras" : {},
-    "Listo. Nowdeck ya está conectado." : {},
-    "Lo podés cambiar cuando quieras en Ajustes → Reproductor." : {},
-    "Los resultados de búsqueda todavía no están disponibles en esta versión." : {},
-    "Mitad" : {},
-    "Mostrar duración" : {},
-    "Mostrar las letras antes" : {},
-    "Mostrar las letras más tarde" : {},
-    "Mostrar letras" : {},
-    "Mostrar tiempo restante" : {},
-    "Muestra lo que sigue" : {},
-    "Muestra los temas" : {},
-    "NOWDECK VA A PEDIR PERMISO PARA" : {},
-    "Nada sonando" : {},
-    "Negro" : {},
-    "Ninguna playlist se llama así." : {},
-    "Ninguno" : {},
-    "No admite control remoto" : {},
-    "No disponible" : {},
-    "No encontramos dispositivos. Abrí Spotify en la compu, el celu o el parlante donde quieras escuchar." : {},
-    "No encontramos la letra de este tema" : {},
-    "No es un tema de Nowdeck." : {},
-    "No es un tema de Nowdeck: el texto no es un JSON válido." : {},
-    "No hay conexión a internet. Revisala y probá de nuevo." : {},
-    "No hay conexión con Spotify. Revisá internet y probá de nuevo." : {},
-    "No hay nada en la cola" : {},
-    "No hay nada guardado acá todavía." : {},
-    "No hay otros dispositivos disponibles." : {},
-    "No hay un dispositivo activo" : {},
-    "No hay un dispositivo activo. Elegí uno para escuchar." : {},
-    "No hay un dispositivo activo. Elegí uno para seguir." : {},
-    "No pudimos buscar la letra. Probá de nuevo en un rato." : {},
-    "No pudimos cargar los temas. Revisá la conexión y probá de nuevo." : {},
-    "No pudimos cargar tu biblioteca. Revisá la conexión y probá de nuevo." : {},
-    "No pudimos conectar con Spotify. Probá de nuevo en un rato." : {},
-    "No pudimos leer el archivo. Probá abrirlo de nuevo." : {},
-    "No pudimos mandar el comando. Probá de nuevo." : {},
-    "No pudimos reproducirlo. Probá de nuevo." : {},
-    "No se pudieron revisar todas tus playlists: puede que el tema también esté en otras." : {},
-    "No se pudo agregar" : {},
-    "No se puede importar" : {},
-    "No tenés playlists para editar" : {},
-    "No ve tu contraseña. En tus playlists solo agrega lo que vos elijas." : {},
-    "Nowdeck es un proyecto open source independiente. No está afiliado a Spotify ni cuenta con su aval." : {},
-    "Nowdeck maneja la música de cualquier dispositivo con tu cuenta de Spotify. Para eso necesita una app de desarrollador tuya: se crea una sola vez y lleva unos 5 minutos." : {},
-    "Nowdeck ya está conectado a tu Spotify. Girá el iPhone y apoyalo en el escritorio." : {},
-    "OPCIONAL" : {},
-    "OTRAS PLAYLISTS" : {},
-    "Oscurecer" : {},
-    "PASO 1 DE 2" : {},
-    "PASO 2 DE 2" : {},
-    "PROGRESO" : {},
-    "Para agregar temas a tus playlists, Spotify tiene que darle permiso a Nowdeck. Se abre Spotify un momento y volvés acá." : {},
-    "Para agregar temas, aceptá el permiso en Spotify." : {},
-    "Para quitar o reordenar temas, usá Spotify." : {},
-    "Para usar Nowdeck tenés que aceptar los permisos en Spotify." : {},
-    "Parlante" : {},
-    "Pasa la música a este dispositivo" : {},
-    "Pasando la música" : {},
-    "Pausar" : {},
-    "Pausar, saltar temas y cambiar el volumen" : {},
-    "Pegalo acá" : {},
-    "Pegar" : {},
-    "Pegar desde el portapapeles" : {},
-    "Pegá tu Client ID" : {},
-    "Personalizado" : {},
+    "Decodificador" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set-top box"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decodificador"
+          }
+        }
+      }
+    },
+    "Desactivado" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactivado"
+          }
+        }
+      }
+    },
+    "Desenfoque" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blur"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desenfoque"
+          }
+        }
+      }
+    },
+    "Dispositivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivo"
+          }
+        }
+      }
+    },
+    "Donde pregunta qué API vas a usar, marcá **Web API** y guardá." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Where it asks which API you'll use, check **Web API** and save."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Donde pregunta qué API vas a usar, marcá **Web API** y guardá."
+          }
+        }
+      }
+    },
+    "ELEGÍ UN DISPOSITIVO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CHOOSE A DEVICE"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ELEGÍ UN DISPOSITIVO"
+          }
+        }
+      }
+    },
+    "El archivo pesa más de 16 KB. Un tema es mucho más chico: revisá que sea el archivo correcto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The file is larger than 16 KB. A theme is much smaller: check that it's the right file."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El archivo pesa más de 16 KB. Un tema es mucho más chico: revisá que sea el archivo correcto."
+          }
+        }
+      }
+    },
+    "El color de resaltado tiene poco contraste con el fondo (%@). Lo vamos a aclarar al aplicarlo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The accent color has low contrast with the background (%@). It will be lightened when applied."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El color de resaltado tiene poco contraste con el fondo (%@). Lo vamos a aclarar al aplicarlo."
+          }
+        }
+      }
+    },
+    "El color de resaltado tiene poco contraste con el fondo (%@). Lo vamos a oscurecer al aplicarlo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The accent color has low contrast with the background (%@). It will be darkened when applied."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El color de resaltado tiene poco contraste con el fondo (%@). Lo vamos a oscurecer al aplicarlo."
+          }
+        }
+      }
+    },
+    "El color de «%@» no es válido: tiene que tener la forma #RRGGBB." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The color of “%@” isn't valid: it must be in the form #RRGGBB."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El color de «%@» no es válido: tiene que tener la forma #RRGGBB."
+          }
+        }
+      }
+    },
+    "El nombre del tema tiene que tener entre 1 y 40 caracteres." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The theme name must be between 1 and 40 characters."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El nombre del tema tiene que tener entre 1 y 40 caracteres."
+          }
+        }
+      }
+    },
+    "El portapapeles no tiene texto. Copiá el contenido del tema y probá de nuevo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The clipboard has no text. Copy the theme's contents and try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El portapapeles no tiene texto. Copiá el contenido del tema y probá de nuevo."
+          }
+        }
+      }
+    },
+    "El texto secundario tiene poco contraste con el fondo (%@). Lo vamos a aclarar al aplicarlo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The secondary text has low contrast with the background (%@). It will be lightened when applied."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El texto secundario tiene poco contraste con el fondo (%@). Lo vamos a aclarar al aplicarlo."
+          }
+        }
+      }
+    },
+    "El texto secundario tiene poco contraste con el fondo (%@). Lo vamos a oscurecer al aplicarlo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The secondary text has low contrast with the background (%@). It will be darkened when applied."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El texto secundario tiene poco contraste con el fondo (%@). Lo vamos a oscurecer al aplicarlo."
+          }
+        }
+      }
+    },
+    "El texto sobre el color de resaltado tiene poco contraste (%@). Lo vamos a aclarar al aplicarlo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The text on the accent color has low contrast (%@). It will be lightened when applied."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El texto sobre el color de resaltado tiene poco contraste (%@). Lo vamos a aclarar al aplicarlo."
+          }
+        }
+      }
+    },
+    "El texto sobre el color de resaltado tiene poco contraste (%@). Lo vamos a oscurecer al aplicarlo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The text on the accent color has low contrast (%@). It will be darkened when applied."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El texto sobre el color de resaltado tiene poco contraste (%@). Lo vamos a oscurecer al aplicarlo."
+          }
+        }
+      }
+    },
+    "El texto tiene poco contraste con el fondo (%@). Lo vamos a aclarar al aplicarlo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The text has low contrast with the background (%@). It will be lightened when applied."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El texto tiene poco contraste con el fondo (%@). Lo vamos a aclarar al aplicarlo."
+          }
+        }
+      }
+    },
+    "El texto tiene poco contraste con el fondo (%@). Lo vamos a oscurecer al aplicarlo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The text has low contrast with the background (%@). It will be darkened when applied."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El texto tiene poco contraste con el fondo (%@). Lo vamos a oscurecer al aplicarlo."
+          }
+        }
+      }
+    },
+    "El texto tiene poco contraste con la superficie (%@). Lo vamos a aclarar al aplicarlo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The text has low contrast with the surface (%@). It will be lightened when applied."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El texto tiene poco contraste con la superficie (%@). Lo vamos a aclarar al aplicarlo."
+          }
+        }
+      }
+    },
+    "El texto tiene poco contraste con la superficie (%@). Lo vamos a oscurecer al aplicarlo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The text has low contrast with the surface (%@). It will be darkened when applied."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El texto tiene poco contraste con la superficie (%@). Lo vamos a oscurecer al aplicarlo."
+          }
+        }
+      }
+    },
+    "El valor de «%@» no es válido." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The value of “%@” isn't valid."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El valor de «%@» no es válido."
+          }
+        }
+      }
+    },
+    "Elegir dispositivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elegir dispositivo"
+          }
+        }
+      }
+    },
+    "Elegir un archivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a file"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elegir un archivo"
+          }
+        }
+      }
+    },
+    "Elegí una de tus playlists" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose one of your playlists"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elegí una de tus playlists"
+          }
+        }
+      }
+    },
+    "Empezar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get started"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empezar"
+          }
+        }
+      }
+    },
+    "En **Redirect URIs** pegá esto, tal cual:" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In **Redirect URIs**, paste this exactly as it is:"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En **Redirect URIs** pegá esto, tal cual:"
+          }
+        }
+      }
+    },
+    "Entraste con otra cuenta de Spotify. Probá de nuevo con la que usás en Nowdeck." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You signed in with a different Spotify account. Try again with the one you use in Nowdeck."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entraste con otra cuenta de Spotify. Probá de nuevo con la que usás en Nowdeck."
+          }
+        }
+      }
+    },
+    "Entrá a **developer.spotify.com/dashboard** con tu cuenta Premium." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Go to **developer.spotify.com/dashboard** with your Premium account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrá a **developer.spotify.com/dashboard** con tu cuenta Premium."
+          }
+        }
+      }
+    },
+    "Esa playlist ya no existe en Spotify." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That playlist no longer exists on Spotify."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esa playlist ya no existe en Spotify."
+          }
+        }
+      }
+    },
+    "Ese dispositivo ya no está disponible. Actualizamos la lista." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That device is no longer available. The list was refreshed."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ese dispositivo ya no está disponible. Actualizamos la lista."
+          }
+        }
+      }
+    },
+    "Este dispositivo no acepta control remoto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This device doesn't accept remote control"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este dispositivo no acepta control remoto"
+          }
+        }
+      }
+    },
+    "Este dispositivo no permite cambiar el volumen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This device doesn't allow changing the volume"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este dispositivo no permite cambiar el volumen"
+          }
+        }
+      }
+    },
+    "Este tema es de una versión más nueva de Nowdeck." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This theme is from a newer version of Nowdeck."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este tema es de una versión más nueva de Nowdeck."
+          }
+        }
+      }
+    },
+    "Explícito" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explicit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explícito"
+          }
+        }
+      }
+    },
+    "Exportar tema" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export theme"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exportar tema"
+          }
+        }
+      }
+    },
+    "FONDO DEL REPRODUCTOR" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PLAYER BACKGROUND"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FONDO DEL REPRODUCTOR"
+          }
+        }
+      }
+    },
+    "Falta un permiso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permission needed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falta un permiso"
+          }
+        }
+      }
+    },
+    "Fijate que use la misma cuenta de Spotify que esta app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make sure it uses the same Spotify account as this app."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fijate que use la misma cuenta de Spotify que esta app."
+          }
+        }
+      }
+    },
+    "Filtrar biblioteca" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filter library"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtrar biblioteca"
+          }
+        }
+      }
+    },
+    "Foto del artista" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artist photo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto del artista"
+          }
+        }
+      }
+    },
+    "Gris" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gray"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gris"
+          }
+        }
+      }
+    },
+    "Gris oscuro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dark gray"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gris oscuro"
+          }
+        }
+      }
+    },
+    "Hay campos que esta versión no conoce y se van a ignorar: %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Some fields aren't known to this version and will be ignored: %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hay campos que esta versión no conoce y se van a ignorar: %@."
+          }
+        }
+      }
+    },
+    "Hay una forma no oficial de leerlas: pedírselas al servicio que usa la propia app de Spotify, con tu misma sesión." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "There's an unofficial way to read them: asking the service the Spotify app itself uses, with your same session."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hay una forma no oficial de leerlas: pedírselas al servicio que usa la propia app de Spotify, con tu misma sesión."
+          }
+        }
+      }
+    },
+    "Importar tema" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import theme"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importar tema"
+          }
+        }
+      }
+    },
+    "LETRAS" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LYRICS"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LETRAS"
+          }
+        }
+      }
+    },
+    "La carátula a la derecha todavía no está disponible: se va a mostrar a la izquierda." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artwork on the right isn't available yet: it will be shown on the left."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La carátula a la derecha todavía no está disponible: se va a mostrar a la izquierda."
+          }
+        }
+      }
+    },
+    "Las letras se muestran %@ s antes." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lyrics are shown %@ s earlier."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las letras se muestran %@ s antes."
+          }
+        }
+      }
+    },
+    "Las letras se muestran %@ s más tarde." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lyrics are shown %@ s later."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las letras se muestran %@ s más tarde."
+          }
+        }
+      }
+    },
+    "Las letras vienen de LRCLIB, una base comunitaria: no las provee Spotify y pueden faltar o tener errores. Con sincronía por palabra se resaltan mientras suenan; si no, se ve la estrofa completa." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lyrics come from LRCLIB, a community database: they aren't provided by Spotify and may be missing or contain mistakes. With word-by-word sync, words light up as they're sung; otherwise you see the whole verse."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las letras vienen de LRCLIB, una base comunitaria: no las provee Spotify y pueden faltar o tener errores. Con sincronía por palabra se resaltan mientras suenan; si no, se ve la estrofa completa."
+          }
+        }
+      }
+    },
+    "Lavanda" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lavender"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lavanda"
+          }
+        }
+      }
+    },
+    "Lee tus carpetas con el servicio interno de Spotify, que no está aprobado para apps de terceros. Puede dejar de andar, y Spotify podría bloquear el Client ID de tu app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reads your folders through Spotify's internal service, which isn't approved for third-party apps. It may stop working, and Spotify could block your app's Client ID."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lee tus carpetas con el servicio interno de Spotify, que no está aprobado para apps de terceros. Puede dejar de andar, y Spotify podría bloquear el Client ID de tu app."
+          }
+        }
+      }
+    },
+    "Letras" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lyrics"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letras"
+          }
+        }
+      }
+    },
+    "Listo. Nowdeck ya está conectado." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done. Nowdeck is connected."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listo. Nowdeck ya está conectado."
+          }
+        }
+      }
+    },
+    "Lo podés cambiar cuando quieras en Ajustes → Reproductor." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can change it anytime in Settings → Player."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo podés cambiar cuando quieras en Ajustes → Reproductor."
+          }
+        }
+      }
+    },
+    "Los resultados de búsqueda todavía no están disponibles en esta versión." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search results aren't available in this version yet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los resultados de búsqueda todavía no están disponibles en esta versión."
+          }
+        }
+      }
+    },
+    "Mitad" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Half"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mitad"
+          }
+        }
+      }
+    },
+    "Mostrar duración" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show duration"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar duración"
+          }
+        }
+      }
+    },
+    "Mostrar las letras antes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show lyrics earlier"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar las letras antes"
+          }
+        }
+      }
+    },
+    "Mostrar las letras más tarde" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show lyrics later"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar las letras más tarde"
+          }
+        }
+      }
+    },
+    "Mostrar letras" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show lyrics"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar letras"
+          }
+        }
+      }
+    },
+    "Mostrar tiempo restante" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show time left"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar tiempo restante"
+          }
+        }
+      }
+    },
+    "Muestra lo que sigue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows what's next"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muestra lo que sigue"
+          }
+        }
+      }
+    },
+    "Muestra los temas" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows the songs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muestra los temas"
+          }
+        }
+      }
+    },
+    "NOWDECK VA A PEDIR PERMISO PARA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NOWDECK WILL ASK FOR PERMISSION TO"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NOWDECK VA A PEDIR PERMISO PARA"
+          }
+        }
+      }
+    },
+    "Nada sonando" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing playing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada sonando"
+          }
+        }
+      }
+    },
+    "Negro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Black"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Negro"
+          }
+        }
+      }
+    },
+    "Negro y verde" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Black and green"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Negro y verde"
+          }
+        }
+      }
+    },
+    "Ninguna playlist se llama así." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No playlist matches that name."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ninguna playlist se llama así."
+          }
+        }
+      }
+    },
+    "Ninguno" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ninguno"
+          }
+        }
+      }
+    },
+    "No admite control remoto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No remote control"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No admite control remoto"
+          }
+        }
+      }
+    },
+    "No disponible" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unavailable"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No disponible"
+          }
+        }
+      }
+    },
+    "No encontramos dispositivos. Abrí Spotify en la compu, el celu o el parlante donde quieras escuchar." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No devices found. Open Spotify on the computer, phone or speaker you want to listen on."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No encontramos dispositivos. Abrí Spotify en la compu, el celu o el parlante donde quieras escuchar."
+          }
+        }
+      }
+    },
+    "No encontramos la letra de este tema" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No lyrics found for this song"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No encontramos la letra de este tema"
+          }
+        }
+      }
+    },
+    "No es un tema de Nowdeck." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This isn't a Nowdeck theme."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No es un tema de Nowdeck."
+          }
+        }
+      }
+    },
+    "No es un tema de Nowdeck: el texto no es un JSON válido." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This isn't a Nowdeck theme: the text isn't valid JSON."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No es un tema de Nowdeck: el texto no es un JSON válido."
+          }
+        }
+      }
+    },
+    "No hay conexión a internet. Revisala y probá de nuevo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No internet connection. Check it and try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay conexión a internet. Revisala y probá de nuevo."
+          }
+        }
+      }
+    },
+    "No hay conexión con Spotify. Revisá internet y probá de nuevo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't reach Spotify. Check your internet connection and try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay conexión con Spotify. Revisá internet y probá de nuevo."
+          }
+        }
+      }
+    },
+    "No hay nada en la cola" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The queue is empty"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay nada en la cola"
+          }
+        }
+      }
+    },
+    "No hay nada guardado acá todavía." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing saved here yet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay nada guardado acá todavía."
+          }
+        }
+      }
+    },
+    "No hay otros dispositivos disponibles." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No other devices available."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay otros dispositivos disponibles."
+          }
+        }
+      }
+    },
+    "No hay un dispositivo activo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No active device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay un dispositivo activo"
+          }
+        }
+      }
+    },
+    "No hay un dispositivo activo. Elegí uno para escuchar." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No active device. Choose one to listen on."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay un dispositivo activo. Elegí uno para escuchar."
+          }
+        }
+      }
+    },
+    "No hay un dispositivo activo. Elegí uno para seguir." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No active device. Choose one to continue."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay un dispositivo activo. Elegí uno para seguir."
+          }
+        }
+      }
+    },
+    "No pudimos buscar la letra. Probá de nuevo en un rato." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't look up the lyrics. Try again in a while."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos buscar la letra. Probá de nuevo en un rato."
+          }
+        }
+      }
+    },
+    "No pudimos cargar los temas. Revisá la conexión y probá de nuevo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load the songs. Check your connection and try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos cargar los temas. Revisá la conexión y probá de nuevo."
+          }
+        }
+      }
+    },
+    "No pudimos cargar tu biblioteca. Revisá la conexión y probá de nuevo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load your library. Check your connection and try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos cargar tu biblioteca. Revisá la conexión y probá de nuevo."
+          }
+        }
+      }
+    },
+    "No pudimos conectar con Spotify. Probá de nuevo en un rato." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't connect to Spotify. Try again in a while."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos conectar con Spotify. Probá de nuevo en un rato."
+          }
+        }
+      }
+    },
+    "No pudimos leer el archivo. Probá abrirlo de nuevo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't read the file. Try opening it again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos leer el archivo. Probá abrirlo de nuevo."
+          }
+        }
+      }
+    },
+    "No pudimos mandar el comando. Probá de nuevo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't send the command. Try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos mandar el comando. Probá de nuevo."
+          }
+        }
+      }
+    },
+    "No pudimos reproducirlo. Probá de nuevo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't play it. Try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos reproducirlo. Probá de nuevo."
+          }
+        }
+      }
+    },
+    "No se pudieron revisar todas tus playlists: puede que el tema también esté en otras." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Some of your playlists couldn't be checked: the song may be in others too."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudieron revisar todas tus playlists: puede que el tema también esté en otras."
+          }
+        }
+      }
+    },
+    "No se pudo agregar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't add it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo agregar"
+          }
+        }
+      }
+    },
+    "No se puede importar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't import"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se puede importar"
+          }
+        }
+      }
+    },
+    "No tenés playlists para editar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have no playlists you can edit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No tenés playlists para editar"
+          }
+        }
+      }
+    },
+    "No ve tu contraseña. En tus playlists solo agrega lo que vos elijas." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It never sees your password. It only adds to your playlists what you choose."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No ve tu contraseña. En tus playlists solo agrega lo que vos elijas."
+          }
+        }
+      }
+    },
+    "Nowdeck es un proyecto open source independiente. No está afiliado a Spotify ni cuenta con su aval." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowdeck is an independent open source project. It isn't affiliated with or endorsed by Spotify."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowdeck es un proyecto open source independiente. No está afiliado a Spotify ni cuenta con su aval."
+          }
+        }
+      }
+    },
+    "Nowdeck maneja la música de cualquier dispositivo con tu cuenta de Spotify. Para eso necesita una app de desarrollador tuya: se crea una sola vez y lleva unos 5 minutos." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowdeck controls the music on any device signed in to your Spotify account. To do that it needs your own developer app: you create it once, and it takes about 5 minutes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowdeck maneja la música de cualquier dispositivo con tu cuenta de Spotify. Para eso necesita una app de desarrollador tuya: se crea una sola vez y lleva unos 5 minutos."
+          }
+        }
+      }
+    },
+    "Nowdeck ya está conectado a tu Spotify. Girá el iPhone y apoyalo en el escritorio." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowdeck is now connected to your Spotify. Turn your iPhone sideways and stand it on your desk."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowdeck ya está conectado a tu Spotify. Girá el iPhone y apoyalo en el escritorio."
+          }
+        }
+      }
+    },
+    "OPCIONAL" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OPTIONAL"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OPCIONAL"
+          }
+        }
+      }
+    },
+    "OTRAS PLAYLISTS" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OTHER PLAYLISTS"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OTRAS PLAYLISTS"
+          }
+        }
+      }
+    },
+    "Oscurecer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dim"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oscurecer"
+          }
+        }
+      }
+    },
+    "PASO 1 DE 2" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "STEP 1 OF 2"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PASO 1 DE 2"
+          }
+        }
+      }
+    },
+    "PASO 2 DE 2" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "STEP 2 OF 2"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PASO 2 DE 2"
+          }
+        }
+      }
+    },
+    "PROGRESO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PROGRESS"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PROGRESO"
+          }
+        }
+      }
+    },
+    "Para agregar temas a tus playlists, Spotify tiene que darle permiso a Nowdeck. Se abre Spotify un momento y volvés acá." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To add songs to your playlists, Spotify has to give Nowdeck permission. Spotify opens for a moment and then you come back here."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para agregar temas a tus playlists, Spotify tiene que darle permiso a Nowdeck. Se abre Spotify un momento y volvés acá."
+          }
+        }
+      }
+    },
+    "Para agregar temas, aceptá el permiso en Spotify." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To add songs, accept the permission in Spotify."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para agregar temas, aceptá el permiso en Spotify."
+          }
+        }
+      }
+    },
+    "Para quitar o reordenar temas, usá Spotify." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To remove or reorder songs, use Spotify."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para quitar o reordenar temas, usá Spotify."
+          }
+        }
+      }
+    },
+    "Para usar Nowdeck tenés que aceptar los permisos en Spotify." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To use Nowdeck, you need to accept the permissions in Spotify."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para usar Nowdeck tenés que aceptar los permisos en Spotify."
+          }
+        }
+      }
+    },
+    "Parlante" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speaker"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parlante"
+          }
+        }
+      }
+    },
+    "Pasa la música a este dispositivo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moves the music to this device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pasa la música a este dispositivo"
+          }
+        }
+      }
+    },
+    "Pasando la música" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moving the music"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pasando la música"
+          }
+        }
+      }
+    },
+    "Pausar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pausar"
+          }
+        }
+      }
+    },
+    "Pausar, saltar temas y cambiar el volumen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause, skip songs and change the volume"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pausar, saltar temas y cambiar el volumen"
+          }
+        }
+      }
+    },
+    "Pegalo acá" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste it here"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pegalo acá"
+          }
+        }
+      }
+    },
+    "Pegar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pegar"
+          }
+        }
+      }
+    },
+    "Pegar desde el portapapeles" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste from clipboard"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pegar desde el portapapeles"
+          }
+        }
+      }
+    },
+    "Pegá tu Client ID" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste your Client ID"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pegá tu Client ID"
+          }
+        }
+      }
+    },
+    "Personalizado" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizado"
+          }
+        }
+      }
+    },
     "Playlist" : {
-      "comment" : "Library card subtitle"
+      "comment" : "Library card subtitle",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist"
+          }
+        }
+      }
     },
-    "Playlist de Spotify" : {},
+    "Playlist de Spotify" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify playlist"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist de Spotify"
+          }
+        }
+      }
+    },
     "Playlist · %lld temas" : {
-      "comment" : "Library card subtitle: number of tracks"
+      "comment" : "Library card subtitle: number of tracks",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist · %lld songs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist · %lld temas"
+          }
+        }
+      }
     },
     "Playlist · 1 tema" : {
-      "comment" : "Library card subtitle: a playlist with one track"
+      "comment" : "Library card subtitle: a playlist with one track",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist · 1 song"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlist · 1 tema"
+          }
+        }
+      }
     },
-    "Playlists" : {},
+    "Playlists" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlists"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playlists"
+          }
+        }
+      }
+    },
     "Podcast" : {
-      "comment" : "Library card subtitle"
+      "comment" : "Library card subtitle",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podcast"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podcast"
+          }
+        }
+      }
     },
     "Podcast · %lld episodios" : {
-      "comment" : "Library card subtitle: number of episodes"
+      "comment" : "Library card subtitle: number of episodes",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podcast · %lld episodes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podcast · %lld episodios"
+          }
+        }
+      }
     },
     "Podcast · 1 episodio" : {
-      "comment" : "Library card subtitle: a podcast with one episode"
+      "comment" : "Library card subtitle: a podcast with one episode",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podcast · 1 episode"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podcast · 1 episodio"
+          }
+        }
+      }
     },
-    "Podcasts" : {},
-    "Poné algo en Spotify en cualquiera de tus dispositivos y aparece acá." : {},
-    "Portapapeles" : {},
-    "Progreso" : {},
+    "Podcasts" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podcasts"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podcasts"
+          }
+        }
+      }
+    },
+    "Poné algo en Spotify en cualquiera de tus dispositivos y aparece acá." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play something on Spotify on any of your devices and it shows up here."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poné algo en Spotify en cualquiera de tus dispositivos y aparece acá."
+          }
+        }
+      }
+    },
+    "Portapapeles" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clipboard"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Portapapeles"
+          }
+        }
+      }
+    },
+    "Progreso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Progress"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Progreso"
+          }
+        }
+      }
+    },
     "Publicidad" : {
-      "comment" : "Player title while Spotify plays an ad"
+      "comment" : "Player title while Spotify plays an ad",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advertisement"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Publicidad"
+          }
+        }
+      }
     },
-    "Puede dejar de andar en cualquier momento, sin aviso." : {},
-    "Receptor de audio" : {},
-    "Reintentar" : {},
-    "Reloj" : {},
-    "Repetir: desactivado" : {},
-    "Repetir: este tema" : {},
-    "Repetir: todo" : {},
-    "Reproduce en el dispositivo activo" : {},
-    "Reproduciendo desde" : {},
-    "Reproduciendo en" : {},
-    "Reproduciendo en %@" : {},
-    "Reproducir" : {},
-    "Reproductor" : {},
-    "Restablecer" : {},
-    "Retroceder 15 segundos" : {},
-    "Revisá la conexión a internet. Nowdeck vuelve a probar solo." : {},
-    "Revisá que tu cuenta siga en Users Management, en los ajustes de tu app en el panel de Spotify, y que la cuenta dueña de la app tenga Premium. Nowdeck vuelve a probar solo." : {},
-    "SIN ACTUALIZAR" : {},
-    "SONANDO" : {},
-    "SPOTIFY PIDE ESPERAR" : {},
-    "Se abre el inicio de sesión de Spotify. Después volvés solo a Nowdeck." : {},
-    "Se cerró el inicio de sesión. Si Spotify mostró un error, revisá el Client ID y que el Redirect URI sea nowdeck://callback." : {},
-    "Se cerró la página de Spotify antes de terminar." : {},
-    "Seguir sin carpetas" : {},
-    "Según la carátula" : {},
-    "Sesión privada" : {},
-    "Si Spotify la detecta, podría bloquear el Client ID de tu app." : {},
-    "Si es un parlante o una tele, despertalo primero: en reposo no aparece." : {},
-    "Siguiente" : {},
-    "Sin ajuste. Si las letras van tarde, tocá +; si se adelantan, tocá −." : {},
-    "Sin conexión con Spotify" : {},
-    "Sin datos" : {},
-    "Sincronía de las letras" : {},
-    "Solo aparecen tus playlists y las colaborativas. Para quitar temas, usá Spotify." : {},
-    "Solo deja ver los temas de las playlists que creaste o en las que colaborás. Podés reproducirla igual, o verla en Spotify." : {},
-    "Son 32 letras y números. Se guarda solo en este iPhone, en el Llavero." : {},
-    "Spotify Premium" : {},
-    "Spotify no aceptó el comando. Revisá que tu cuenta tenga Premium." : {},
-    "Spotify no deja leer tu biblioteca con esta cuenta. Revisá que siga en Users Management, en el panel de Spotify." : {},
-    "Spotify no deja usar tu app" : {},
-    "Spotify no deja usar tu app con esa cuenta. Entrá con la misma cuenta de siempre." : {},
-    "Spotify no deja usar tu app con esta cuenta. Entrá con la misma cuenta con la que creaste la app, o sumala en Users Management, en los ajustes de tu app en el panel de Spotify." : {},
-    "Spotify no deja ver estos temas con esta cuenta." : {},
-    "Spotify no dejó agregarlo. Puede que ya no puedas editar esa playlist." : {},
-    "Spotify no dejó leer tus carpetas. Se muestran tus playlists sin agrupar." : {},
-    "Spotify no dejó reproducirlo. Revisá que tu cuenta tenga Premium." : {},
-    "Spotify no la aprueba para apps de terceros." : {},
-    "Spotify no les muestra tus carpetas a las apps como Nowdeck: la biblioteca muestra tus playlists sueltas, sin agrupar." : {},
-    "Spotify no muestra los temas de esta playlist" : {},
-    "Spotify no reconoce este Client ID. Revisá que sea el de tu app." : {},
-    "Spotify pide esperar un momento. Probá de nuevo en unos segundos." : {},
-    "Spotify pide esperar. Probá de nuevo en un momento." : {},
-    "Spotify pidió esperar un momento. Probá de nuevo en un rato." : {},
-    "Spotify rechazó el pedido. Revisá que tu cuenta tenga Premium y siga en Users Management de tu app." : {},
-    "Spotify ya no reconoce el Client ID guardado. Puede que la app se haya borrado en el panel de Spotify: pegá el Client ID de tu app o creá una nueva." : {},
-    "Suavizan y oscurecen la foto del artista para que el título se lea mejor. Mientras movés uno, ves cómo queda." : {},
-    "Subir volumen" : {},
-    "Suena en" : {},
-    "Suma un botón de letras al reproductor." : {},
-    "TEMA" : {},
-    "TUS PLAYLISTS" : {},
-    "TV" : {},
-    "Tablet" : {},
-    "Teléfono" : {},
-    "Tema válido" : {},
-    "Temas, artistas, álbumes, podcasts o audiolibros" : {},
-    "Tiene que tener 32 letras y números, y ahora tiene %lld caracteres. Revisá que lo hayas copiado completo." : {},
-    "Tocá **Create app**. En nombre y descripción poné lo que quieras." : {},
-    "Tocá un resultado y empieza a sonar en el dispositivo activo." : {},
-    "Todavía no tiene temas." : {},
-    "Transmisión de audio" : {},
-    "Transmisión de video" : {},
-    "Tu iPhone, ahora control de escritorio." : {},
-    "Tu sesión de Spotify venció. Conectate de nuevo para seguir." : {},
-    "Tus me gusta" : {},
-    "Un artista" : {},
-    "Un navegador para entrar al panel de desarrolladores de Spotify" : {},
-    "Un podcast" : {},
-    "Un álbum" : {},
-    "Una playlist" : {},
-    "VAS A NECESITAR" : {},
-    "Ver en Spotify" : {},
-    "Ver más en Spotify" : {},
-    "Ver qué está sonando y qué escuchaste último" : {},
-    "Ver tus dispositivos y pasar la música de uno a otro" : {},
-    "Ver tus playlists, álbumes, podcasts y audiolibros guardados" : {},
-    "Verde" : {},
-    "Vista previa" : {},
-    "Volumen" : {},
-    "Volumen: %lld de 100" : {},
-    "Volver" : {},
-    "Volver a la biblioteca" : {},
-    "Volver a la lista" : {},
-    "Vuelve al reproductor" : {},
-    "YA ESTÁ EN" : {},
-    "Ya tengo mi Client ID" : {},
-    "¡Listo!" : {},
-    "¿No ves tu dispositivo?" : {},
+    "Puede dejar de andar en cualquier momento, sin aviso." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It may stop working at any time, without notice."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puede dejar de andar en cualquier momento, sin aviso."
+          }
+        }
+      }
+    },
+    "Receptor de audio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AV receiver"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Receptor de audio"
+          }
+        }
+      }
+    },
+    "Reintentar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reintentar"
+          }
+        }
+      }
+    },
+    "Reloj" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watch"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reloj"
+          }
+        }
+      }
+    },
+    "Repetir: desactivado" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeat: off"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repetir: desactivado"
+          }
+        }
+      }
+    },
+    "Repetir: este tema" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeat: this song"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repetir: este tema"
+          }
+        }
+      }
+    },
+    "Repetir: todo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeat: all"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repetir: todo"
+          }
+        }
+      }
+    },
+    "Reproduce en el dispositivo activo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plays on the active device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reproduce en el dispositivo activo"
+          }
+        }
+      }
+    },
+    "Reproduciendo desde" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playing from"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reproduciendo desde"
+          }
+        }
+      }
+    },
+    "Reproduciendo en" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playing on"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reproduciendo en"
+          }
+        }
+      }
+    },
+    "Reproduciendo en %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playing on %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reproduciendo en %@"
+          }
+        }
+      }
+    },
+    "Reproducir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reproducir"
+          }
+        }
+      }
+    },
+    "Reproductor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Player"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reproductor"
+          }
+        }
+      }
+    },
+    "Restablecer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restablecer"
+          }
+        }
+      }
+    },
+    "Retroceder 15 segundos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip back 15 seconds"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retroceder 15 segundos"
+          }
+        }
+      }
+    },
+    "Revisá la conexión a internet. Nowdeck vuelve a probar solo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check your internet connection. Nowdeck will retry on its own."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revisá la conexión a internet. Nowdeck vuelve a probar solo."
+          }
+        }
+      }
+    },
+    "Revisá que tu cuenta siga en Users Management, en los ajustes de tu app en el panel de Spotify, y que la cuenta dueña de la app tenga Premium. Nowdeck vuelve a probar solo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check that your account is still in User Management, in your app's settings on the Spotify dashboard, and that the account that owns the app has Premium. Nowdeck will retry on its own."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revisá que tu cuenta siga en Users Management, en los ajustes de tu app en el panel de Spotify, y que la cuenta dueña de la app tenga Premium. Nowdeck vuelve a probar solo."
+          }
+        }
+      }
+    },
+    "SIN ACTUALIZAR" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NOT UPDATING"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SIN ACTUALIZAR"
+          }
+        }
+      }
+    },
+    "SONANDO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PLAYING"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SONANDO"
+          }
+        }
+      }
+    },
+    "SPOTIFY PIDE ESPERAR" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SPOTIFY ASKS TO WAIT"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SPOTIFY PIDE ESPERAR"
+          }
+        }
+      }
+    },
+    "Se abre el inicio de sesión de Spotify. Después volvés solo a Nowdeck." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify's sign-in opens. Afterwards you come back to Nowdeck automatically."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se abre el inicio de sesión de Spotify. Después volvés solo a Nowdeck."
+          }
+        }
+      }
+    },
+    "Se cerró el inicio de sesión. Si Spotify mostró un error, revisá el Client ID y que el Redirect URI sea nowdeck://callback." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The sign-in was closed. If Spotify showed an error, check the Client ID and that the Redirect URI is nowdeck://callback."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se cerró el inicio de sesión. Si Spotify mostró un error, revisá el Client ID y que el Redirect URI sea nowdeck://callback."
+          }
+        }
+      }
+    },
+    "Se cerró la página de Spotify antes de terminar." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Spotify page was closed before finishing."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se cerró la página de Spotify antes de terminar."
+          }
+        }
+      }
+    },
+    "Seguir sin carpetas" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue without folders"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seguir sin carpetas"
+          }
+        }
+      }
+    },
+    "Según la carátula" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From the artwork"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según la carátula"
+          }
+        }
+      }
+    },
+    "Sesión privada" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Private session"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesión privada"
+          }
+        }
+      }
+    },
+    "Si Spotify la detecta, podría bloquear el Client ID de tu app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If Spotify detects it, it could block your app's Client ID."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si Spotify la detecta, podría bloquear el Client ID de tu app."
+          }
+        }
+      }
+    },
+    "Si es un parlante o una tele, despertalo primero: en reposo no aparece." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If it's a speaker or a TV, wake it up first: it doesn't show up while asleep."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si es un parlante o una tele, despertalo primero: en reposo no aparece."
+          }
+        }
+      }
+    },
+    "Siguiente" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siguiente"
+          }
+        }
+      }
+    },
+    "Sin ajuste. Si las letras van tarde, tocá +; si se adelantan, tocá −." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No adjustment. If the lyrics lag behind, tap +; if they run ahead, tap −."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin ajuste. Si las letras van tarde, tocá +; si se adelantan, tocá −."
+          }
+        }
+      }
+    },
+    "Sin conexión con Spotify" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't reach Spotify"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin conexión con Spotify"
+          }
+        }
+      }
+    },
+    "Sin datos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No data"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin datos"
+          }
+        }
+      }
+    },
+    "Sincronía de las letras" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lyrics timing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronía de las letras"
+          }
+        }
+      }
+    },
+    "Solo aparecen tus playlists y las colaborativas. Para quitar temas, usá Spotify." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only your own and collaborative playlists appear. To remove songs, use Spotify."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo aparecen tus playlists y las colaborativas. Para quitar temas, usá Spotify."
+          }
+        }
+      }
+    },
+    "Solo deja ver los temas de las playlists que creaste o en las que colaborás. Podés reproducirla igual, o verla en Spotify." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It only shows the songs of playlists you created or collaborate on. You can still play it, or view it in Spotify."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo deja ver los temas de las playlists que creaste o en las que colaborás. Podés reproducirla igual, o verla en Spotify."
+          }
+        }
+      }
+    },
+    "Son 32 letras y números. Se guarda solo en este iPhone, en el Llavero." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It's 32 letters and numbers. It's stored only on this iPhone, in the Keychain."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Son 32 letras y números. Se guarda solo en este iPhone, en el Llavero."
+          }
+        }
+      }
+    },
+    "Spotify Premium" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify Premium"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify Premium"
+          }
+        }
+      }
+    },
+    "Spotify no aceptó el comando. Revisá que tu cuenta tenga Premium." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify didn't accept the command. Check that your account has Premium."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify no aceptó el comando. Revisá que tu cuenta tenga Premium."
+          }
+        }
+      }
+    },
+    "Spotify no deja leer tu biblioteca con esta cuenta. Revisá que siga en Users Management, en el panel de Spotify." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify doesn't allow reading your library with this account. Check that it's still in User Management, on the Spotify dashboard."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify no deja leer tu biblioteca con esta cuenta. Revisá que siga en Users Management, en el panel de Spotify."
+          }
+        }
+      }
+    },
+    "Spotify no deja usar tu app" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify won't allow your app"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify no deja usar tu app"
+          }
+        }
+      }
+    },
+    "Spotify no deja usar tu app con esa cuenta. Entrá con la misma cuenta de siempre." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify doesn't allow your app with that account. Sign in with your usual account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify no deja usar tu app con esa cuenta. Entrá con la misma cuenta de siempre."
+          }
+        }
+      }
+    },
+    "Spotify no deja usar tu app con esta cuenta. Entrá con la misma cuenta con la que creaste la app, o sumala en Users Management, en los ajustes de tu app en el panel de Spotify." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify doesn't allow your app with this account. Sign in with the account you created the app with, or add it in User Management, in your app's settings on the Spotify dashboard."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify no deja usar tu app con esta cuenta. Entrá con la misma cuenta con la que creaste la app, o sumala en Users Management, en los ajustes de tu app en el panel de Spotify."
+          }
+        }
+      }
+    },
+    "Spotify no deja ver estos temas con esta cuenta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify doesn't allow viewing these songs with this account."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify no deja ver estos temas con esta cuenta."
+          }
+        }
+      }
+    },
+    "Spotify no dejó agregarlo. Puede que ya no puedas editar esa playlist." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify didn't allow adding it. You may no longer be able to edit that playlist."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify no dejó agregarlo. Puede que ya no puedas editar esa playlist."
+          }
+        }
+      }
+    },
+    "Spotify no dejó leer tus carpetas. Se muestran tus playlists sin agrupar." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify didn't allow reading your folders. Your playlists are shown ungrouped."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify no dejó leer tus carpetas. Se muestran tus playlists sin agrupar."
+          }
+        }
+      }
+    },
+    "Spotify no dejó reproducirlo. Revisá que tu cuenta tenga Premium." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify didn't allow playing it. Check that your account has Premium."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify no dejó reproducirlo. Revisá que tu cuenta tenga Premium."
+          }
+        }
+      }
+    },
+    "Spotify no la aprueba para apps de terceros." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify doesn't approve it for third-party apps."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify no la aprueba para apps de terceros."
+          }
+        }
+      }
+    },
+    "Spotify no les muestra tus carpetas a las apps como Nowdeck: la biblioteca muestra tus playlists sueltas, sin agrupar." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify doesn't show your folders to apps like Nowdeck: the library shows your playlists on their own, ungrouped."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify no les muestra tus carpetas a las apps como Nowdeck: la biblioteca muestra tus playlists sueltas, sin agrupar."
+          }
+        }
+      }
+    },
+    "Spotify no muestra los temas de esta playlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify doesn't show this playlist's songs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify no muestra los temas de esta playlist"
+          }
+        }
+      }
+    },
+    "Spotify no reconoce este Client ID. Revisá que sea el de tu app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify doesn't recognize this Client ID. Check that it's your app's."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify no reconoce este Client ID. Revisá que sea el de tu app."
+          }
+        }
+      }
+    },
+    "Spotify pide esperar un momento. Probá de nuevo en unos segundos." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify asks to wait a moment. Try again in a few seconds."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify pide esperar un momento. Probá de nuevo en unos segundos."
+          }
+        }
+      }
+    },
+    "Spotify pide esperar. Probá de nuevo en un momento." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify asks to wait. Try again in a moment."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify pide esperar. Probá de nuevo en un momento."
+          }
+        }
+      }
+    },
+    "Spotify pidió esperar un momento. Probá de nuevo en un rato." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify asked to wait a moment. Try again in a while."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify pidió esperar un momento. Probá de nuevo en un rato."
+          }
+        }
+      }
+    },
+    "Spotify rechazó el pedido. Revisá que tu cuenta tenga Premium y siga en Users Management de tu app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify rejected the request. Check that your account has Premium and is still in your app's User Management."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify rechazó el pedido. Revisá que tu cuenta tenga Premium y siga en Users Management de tu app."
+          }
+        }
+      }
+    },
+    "Spotify ya no reconoce el Client ID guardado. Puede que la app se haya borrado en el panel de Spotify: pegá el Client ID de tu app o creá una nueva." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify no longer recognizes the saved Client ID. The app may have been deleted on the Spotify dashboard: paste your app's Client ID or create a new one."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spotify ya no reconoce el Client ID guardado. Puede que la app se haya borrado en el panel de Spotify: pegá el Client ID de tu app o creá una nueva."
+          }
+        }
+      }
+    },
+    "Suavizan y oscurecen la foto del artista para que el título se lea mejor. Mientras movés uno, ves cómo queda." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "They soften and dim the artist photo so the title is easier to read. While you move one, you see how it looks."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suavizan y oscurecen la foto del artista para que el título se lea mejor. Mientras movés uno, ves cómo queda."
+          }
+        }
+      }
+    },
+    "Subir volumen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volume up"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subir volumen"
+          }
+        }
+      }
+    },
+    "Suena en" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playing on"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suena en"
+          }
+        }
+      }
+    },
+    "Suma un botón de letras al reproductor." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adds a lyrics button to the player."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suma un botón de letras al reproductor."
+          }
+        }
+      }
+    },
+    "TEMA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "THEME"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TEMA"
+          }
+        }
+      }
+    },
+    "TUS PLAYLISTS" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YOUR PLAYLISTS"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TUS PLAYLISTS"
+          }
+        }
+      }
+    },
+    "TV" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TV"
+          }
+        }
+      }
+    },
+    "Tablet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tablet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tablet"
+          }
+        }
+      }
+    },
+    "Teléfono" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phone"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teléfono"
+          }
+        }
+      }
+    },
+    "Tema válido" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valid theme"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tema válido"
+          }
+        }
+      }
+    },
+    "Temas, artistas, álbumes, podcasts o audiolibros" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Songs, artists, albums, podcasts or audiobooks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Temas, artistas, álbumes, podcasts o audiolibros"
+          }
+        }
+      }
+    },
+    "Tiene que tener 32 letras y números, y ahora tiene %lld caracteres. Revisá que lo hayas copiado completo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It must have 32 letters and numbers, and it now has %lld characters. Check that you copied all of it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiene que tener 32 letras y números, y ahora tiene %lld caracteres. Revisá que lo hayas copiado completo."
+          }
+        }
+      }
+    },
+    "Tocá **Create app**. En nombre y descripción poné lo que quieras." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap **Create app**. Use any name and description you like."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocá **Create app**. En nombre y descripción poné lo que quieras."
+          }
+        }
+      }
+    },
+    "Tocá un resultado y empieza a sonar en el dispositivo activo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap a result and it starts playing on the active device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocá un resultado y empieza a sonar en el dispositivo activo."
+          }
+        }
+      }
+    },
+    "Todavía no tiene temas." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It has no songs yet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todavía no tiene temas."
+          }
+        }
+      }
+    },
+    "Transmisión de audio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio cast"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transmisión de audio"
+          }
+        }
+      }
+    },
+    "Transmisión de video" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video cast"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transmisión de video"
+          }
+        }
+      }
+    },
+    "Tu iPhone, ahora control de escritorio." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your iPhone, now a desk controller."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu iPhone, ahora control de escritorio."
+          }
+        }
+      }
+    },
+    "Tu sesión de Spotify venció. Conectate de nuevo para seguir." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Spotify session expired. Connect again to continue."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu sesión de Spotify venció. Conectate de nuevo para seguir."
+          }
+        }
+      }
+    },
+    "Tus me gusta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liked Songs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus me gusta"
+          }
+        }
+      }
+    },
+    "Un artista" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An artist"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un artista"
+          }
+        }
+      }
+    },
+    "Un navegador para entrar al panel de desarrolladores de Spotify" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A browser to sign in to the Spotify developer dashboard"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un navegador para entrar al panel de desarrolladores de Spotify"
+          }
+        }
+      }
+    },
+    "Un podcast" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A podcast"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un podcast"
+          }
+        }
+      }
+    },
+    "Un álbum" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An album"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un álbum"
+          }
+        }
+      }
+    },
+    "Una playlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A playlist"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una playlist"
+          }
+        }
+      }
+    },
+    "VAS A NECESITAR" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YOU'LL NEED"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "VAS A NECESITAR"
+          }
+        }
+      }
+    },
+    "Ver en Spotify" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View in Spotify"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver en Spotify"
+          }
+        }
+      }
+    },
+    "Ver más en Spotify" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See more in Spotify"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver más en Spotify"
+          }
+        }
+      }
+    },
+    "Ver qué está sonando y qué escuchaste último" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See what's playing and what you played last"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver qué está sonando y qué escuchaste último"
+          }
+        }
+      }
+    },
+    "Ver tus dispositivos y pasar la música de uno a otro" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See your devices and move the music between them"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver tus dispositivos y pasar la música de uno a otro"
+          }
+        }
+      }
+    },
+    "Ver tus playlists, álbumes, podcasts y audiolibros guardados" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See your saved playlists, albums, podcasts and audiobooks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver tus playlists, álbumes, podcasts y audiolibros guardados"
+          }
+        }
+      }
+    },
+    "Verde" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Green"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verde"
+          }
+        }
+      }
+    },
+    "Vista previa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vista previa"
+          }
+        }
+      }
+    },
+    "Volumen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volume"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volumen"
+          }
+        }
+      }
+    },
+    "Volumen: %lld de 100" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volume: %lld of 100"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volumen: %lld de 100"
+          }
+        }
+      }
+    },
+    "Volver" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver"
+          }
+        }
+      }
+    },
+    "Volver a la biblioteca" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to the library"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver a la biblioteca"
+          }
+        }
+      }
+    },
+    "Volver a la lista" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to the list"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver a la lista"
+          }
+        }
+      }
+    },
+    "Vuelve al reproductor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Returns to the player"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vuelve al reproductor"
+          }
+        }
+      }
+    },
+    "YA ESTÁ EN" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ALREADY IN"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "YA ESTÁ EN"
+          }
+        }
+      }
+    },
+    "Ya tengo mi Client ID" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I already have a Client ID"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya tengo mi Client ID"
+          }
+        }
+      }
+    },
+    "¡Listo!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All set!"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Listo!"
+          }
+        }
+      }
+    },
+    "¿No ves tu dispositivo?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't see your device?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿No ves tu dispositivo?"
+          }
+        }
+      }
+    },
     "Álbum" : {
-      "comment" : "Library card subtitle"
+      "comment" : "Library card subtitle",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Álbum"
+          }
+        }
+      }
     },
     "Álbum · %@" : {
-      "comment" : "Library card subtitle: the album's artists, verbatim"
+      "comment" : "Library card subtitle: the album's artists, verbatim",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album · %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Álbum · %@"
+          }
+        }
+      }
     },
-    "Álbumes" : {},
-    "Ámbar" : {}
+    "Álbumes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Albums"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Álbumes"
+          }
+        }
+      }
+    },
+    "Ámbar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amber"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ámbar"
+          }
+        }
+      }
+    }
   },
   "version" : "1.0"
 }

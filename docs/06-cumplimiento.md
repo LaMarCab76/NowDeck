@@ -66,7 +66,8 @@ Romper estas reglas puede hacer que Spotify revoque el acceso a la API.
 - **Client ID propio por usuario**: Spotify no lo prohíbe ni lo avala por escrito. Es la única
   forma práctica de distribuir una app abierta con el límite de 5 usuarios.
 - **Letras de LRCLIB**: la política prohíbe productos integrados con contenido de otro servicio.
-  Por eso la función está apagada por defecto y explicada.
+  Por eso la función está explicada y se puede apagar en Ajustes. Arranca prendida, por
+  decisión del dueño del 2026-11-18 (ver "Zonas grises" en la revisión, más abajo).
 
 - **Carpetas de playlists (experimental, opcional)**: decisión del dueño del 2026-11-17. La Web
   API no da las carpetas; con la opción activa, Nowdeck lee el *rootlist* del servicio interno
