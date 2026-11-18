@@ -102,11 +102,16 @@ Cambia lo anterior en estos puntos (no está en los mockups):
   origen en la esquina superior izquierda; **Cola** y **Biblioteca** a la derecha (Cola
   primero; ver "Cola"). Con todo el ancho, el origen tiene lugar visible para más de 25
   caracteres.
-  - Desde el 2026-11-18 (pedido del dueño) nada de esta fila lleva píldora: el origen va en
-    dos líneas, "Desde la playlist" en 12 medium `textoSecundario` arriba y el nombre en 15
-    bold `texto` abajo (igual que en el modo letras), a 12 del ícono, que queda afuera del
-    botón para respetar su espacio libre. Cola y Biblioteca son ícono y texto (15 semibold)
-    sin fondo, separados 24; la zona de toque sigue siendo de 44 de alto.
+  - **Origen en dos líneas** (pedido del dueño, 2026-11-18): "Reproduciendo desde" en 12/16
+    medium (texto secundario) arriba y, abajo, el nombre en 15/20 bold, los mismos tamaños
+    que en el modo letras. Sin nombre se muestra el tipo: "Una playlist" (mientras llega),
+    "Playlist de Spotify" (la API no lo da: radios, mixes y playlists editoriales), "Un
+    álbum", "Un artista", "Un podcast" o "Tus me gusta". El mockup tiene "Desde la playlist
+    **Nombre**" en una línea; manda esta decisión.
+  - Desde el 2026-11-18 (pedido del dueño) nada de esta fila lleva píldora: el origen va a 12
+    del ícono, que queda afuera del botón para respetar su espacio libre. Cola y Biblioteca
+    son ícono y texto (15 semibold) sin fondo, separados 24; la zona de toque sigue siendo de
+    44 de alto.
   - Margen de arriba 12 (era 24 en el mockup y 16 antes del 2026-11-18) y 14 entre la fila y
     la carátula (era 4), así que entre el texto del origen y la carátula quedan unos 18.
 - **Carátula de 210** (era 256, y 216 antes del 2026-11-18) y alto del bloque de la carátula
@@ -161,8 +166,8 @@ Cambia lo anterior en estos puntos (no está en los mockups):
 
 Reemplaza el bloque superior:
 
-- **Fila superior** (44): el ícono de Spotify y, a 12, "Desde la playlist" en 12 pt arriba y
-  el nombre en 15 pt bold abajo, a la izquierda. El mockup tenía el logo a la derecha; el
+- **Fila superior** (44): el ícono de Spotify y, a 12, "Reproduciendo desde" en 12 pt arriba
+  y el nombre (o el tipo, como en la vista normal) en 15 pt bold abajo, a la izquierda. El mockup tenía el logo a la derecha; el
   dueño lo pasó junto al origen el 2026-11-17, igual que en la vista normal.
 - **Letras**, centradas en el espacio que queda:
   - estrofa actual y estrofa siguiente, al ancho de "Ancho de las letras" (50 %, **66,7 %** o

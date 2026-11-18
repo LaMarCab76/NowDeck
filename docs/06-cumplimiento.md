@@ -141,7 +141,7 @@ Repaso punto por punto sobre la rama `hito/08-terminaciones` (hitos 1 a 7 integr
 ### Enlace de vuelta
 
 - ✅ El logo abre el contenido en Spotify (el contexto o el tema; en Biblioteca, la portada de
-  Spotify). El nombre de la playlist o el álbum también ("Desde la playlist …" en Reproducción,
+  Spotify). El nombre de la playlist o el álbum también ("Reproduciendo desde …" en Reproducción,
   el nombre en el modo letras, y "Abrir en Spotify" en el menú de cada tarjeta).
 - ✅ Enlace universal `open.spotify.com` con `universalLinksOnly`; si Spotify no está
   instalado, se abre su página en la App Store (`SpotifyLink`). Solo se abren URLs de
@@ -173,17 +173,17 @@ Repaso punto por punto sobre la rama `hito/08-terminaciones` (hitos 1 a 7 integr
   casi todos los textos que se pueden cortar ya son botones (el origen abre Spotify, el
   dispositivo abre la hoja), así que "tocar para ver completo" chocaba con esas acciones.
   - Se desplazan, solo si no entran: título (dos líneas; si no alcanzan, una línea que se
-    desplaza), artista, "Desde la playlist …" y "Reproduciendo en …" en Reproducción; nombre
+    desplaza), artista, el nombre del origen y "Reproduciendo en …" en Reproducción; nombre
     del origen, título, artista y dispositivo en el modo letras; título · artista y "Suena en
     …" en el mini reproductor. Pausa de 3 s al inicio, 30 pt/s, borde derecho desvanecido. Con
     *Reducir movimiento* hace una sola pasada cada vez que cambia el texto.
   - Las tarjetas de Biblioteca no se desplazan: tocarlas reproduce, y mantenerlas apretadas
     muestra el nombre completo (vista previa del menú contextual).
   - VoiceOver siempre lee el texto completo.
-- ⚠️ **25 caracteres para la playlist o el álbum en Reproducción**: la fila superior deja poco
-  lugar a "Desde la playlist **Nombre**" (unos 13 caracteres del nombre en 896 pt y casi nada en
-  736 pt). Con la marquesina el nombre se puede leer entero, pero no hay lugar *visible* para
-  25 caracteres. Pendiente de la decisión de diseño del dueño.
+- ✅ **25 caracteres para la playlist o el álbum en Reproducción**: desde el 2026-11-18 el
+  origen va en dos líneas ("Reproduciendo desde" arriba y el nombre abajo, ver `docs/02`), y
+  con la fila a todo el ancho el nombre tiene lugar visible para más de 25 caracteres. Si no
+  entra, se desplaza.
 - ⚠️ **25 caracteres en las tarjetas de Biblioteca**: el nombre va en una línea de 150 pt a
   16 pt semibold (como el mockup), donde entran unos 17 caracteres. El nombre completo se ve
   manteniendo apretada la tarjeta. Si hace falta cumplir la regla al pie de la letra, la

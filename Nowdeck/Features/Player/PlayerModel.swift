@@ -91,8 +91,8 @@ final class PlayerModel: ObservableObject {
 
     private enum NameLookup {
         case found(String)
-        /// `403`/`404`: the app may not read this playlist (for example Spotify's own
-        /// editorial playlists). Show the type only and don't ask again.
+        /// `403`/`404`: the app may not read this playlist (Spotify's own radios, mixes and
+        /// editorial playlists). Show "Playlist de Spotify" and don't ask again.
         case unavailable
         case inFlight
         /// Temporary failure; try again after this date.
@@ -384,7 +384,9 @@ final class PlayerModel: ObservableObject {
         switch playlistNames[playlistID] {
         case .found(let name):
             origin.name = name
-        case .unavailable, .inFlight:
+        case .unavailable:
+            origin.isNameUnavailable = true
+        case .inFlight:
             break
         case .retry(let after) where now() < after:
             break
@@ -407,8 +409,11 @@ final class PlayerModel: ObservableObject {
             }
             guard let self else { return }
             self.playlistNames[playlistID] = result
-            if case .found(let name) = result, self.origin?.playlistID == playlistID {
-                self.origin?.name = name
+            guard self.origin?.playlistID == playlistID else { return }
+            switch result {
+            case .found(let name): self.origin?.name = name
+            case .unavailable: self.origin?.isNameUnavailable = true
+            case .inFlight, .retry: break
             }
         }
     }
