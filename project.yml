@@ -54,6 +54,11 @@ targets:
       properties:
         CFBundleDisplayName: Nowdeck
         CFBundleDevelopmentRegion: es
+        # Spanish is the source language (it has no .lproj of its own); English comes from
+        # the String Catalogs. Any other device language falls back to English.
+        CFBundleLocalizations:
+          - es
+          - en
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen:
@@ -118,5 +123,10 @@ schemes:
         NowdeckTests: [test]
     test:
       gatherCoverageData: true
+      # Tests compare against the Spanish source strings and formats ("Playlist · 48 temas",
+      # "4,3:1"), so they run in Spanish whatever the simulator's language is. The English
+      # catalog is checked by LocalizationTests.
+      language: es
+      region: AR
       targets:
         - NowdeckTests

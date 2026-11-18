@@ -1,0 +1,18 @@
+{
+  "sourceLanguage" : "es",
+  "strings" : {
+    "Tema de Nowdeck" : {
+      "comment" : "File type name of a .nowdeck.json theme (UTTypeDescription, CFBundleTypeName), shown in Files",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowdeck theme"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
