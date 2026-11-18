@@ -45,7 +45,7 @@ While the app is in the foreground, **the screen does not turn off**
    - Top: artwork on the left and, on the right, the Spotify logo + "Playing from / X"
      (*Reproduciendo desde*), Library, Settings, title, artist, and "Playing on <device>"
      (*Reproduciendo en %@*).
-   - Bottom, full width: progress bar (informational, no dragging) and controls.
+   - Bottom, full width: progress bar (drag it to seek, where Spotify allows it) and controls.
    - Background: a soft color taken from the artwork.
 3. **Lyrics mode**, inside the Player, turned on with the lyrics button.
    - Top row: "Playing from / Name" on two lines on the left and the logo on the

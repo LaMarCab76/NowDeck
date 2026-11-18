@@ -90,10 +90,18 @@ first launch, yes.
     Devices.
 - **Bottom block**, full width:
   - **Progress**: current time · bar 4 tall (track white at 18%, fill `texto`) · duration.
-    It is **informational**: no knob and no dragging. With "Show time left" (*Mostrar tiempo
+    No knob. With "Show time left" (*Mostrar tiempo
     restante*) (Settings › Player, off by default) the right side shows how much is left,
     `−2:23`, with the typographic minus sign (U+2212). Tapping that time toggles between
     duration and remaining (touch area of about 44 pt); it never changes the position.
+  - **Seeking** (owner's request, 2026-11-18): putting a finger on the bar and moving it
+    changes the position. The whole 44 strip around the bar takes the finger (the 16 of the
+    row + 14 above and below), between the two times. While dragging, the bar grows to 8 tall
+    and the left time shows, in `texto`, where it will jump to; the request is sent once, on
+    release (a tap without dragging also jumps there). With VoiceOver, swiping up or down moves
+    15 s. If `actions.disallows` forbids `seeking`, or on a device with `is_restricted`, the
+    bar stays **informational**: it doesn't take the finger or give any hint that it can move
+    (see `docs/en/06`).
   - **Controls** (height 64), in three groups:
     - left, in 200 of width: Shuffle and Repeat (48);
     - center, 20 apart: Previous (56), Play/Pause (64, `texto` circle with a dark icon) and
@@ -197,6 +205,19 @@ Replaces the top block:
   - **Word by word**: what's already sung in `texto` and what's pending in `letraPendiente`.
   - **Full verse**: the whole current verse in `texto`. That's what line sync shows, and also
     word sync when "Lyrics style" (*Estilo de las letras*) is set to Verse.
+  - **Browse and jump** (owner's request, 2026-11-18), only where Spotify allows seeking (like
+    the progress bar):
+    - Dragging up or down over the lyrics browses the verses: every 44 of drag shows the next
+      one (up, as when scrolling a list) or the previous one, whole in `texto`, with the
+      following one below. Above it, in accent and 13 monospaced, "▶ 2:07": when it starts.
+      Verses cross-fade (not the usual rise, which would look backwards when going back) with
+      a selection haptic.
+    - Tapping a verse (the big one or the one below, browsing or not) moves the playback to
+      where it starts, minus the "Lyrics timing" (*Sincronía de las letras*), and the lyrics
+      follow the playback again.
+    - After 4 s without touches, the lyrics go back to what's playing on their own.
+    - With VoiceOver, the current verse has the action "Play from here" (*Reproducir desde
+      acá*).
 - **Bottom row** (56): 56 artwork (radius 4), title in 18 bold, artist in 15 and, on the
   right, the device in accent.
 - Library and Settings are not shown.

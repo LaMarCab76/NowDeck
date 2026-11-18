@@ -41,7 +41,8 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
 2. **Reproducción**: la pantalla principal.
    - Arriba: carátula a la izquierda y, a la derecha, logo de Spotify + "Reproduciendo desde / X",
      Biblioteca, Ajustes, título, artista y "Reproduciendo en <dispositivo>".
-   - Abajo, a todo el ancho: barra de progreso (informativa, sin arrastre) y controles.
+   - Abajo, a todo el ancho: barra de progreso (arrastrable para adelantar o atrasar, si Spotify lo permite) y
+     controles.
    - Fondo: un color suave tomado de la carátula.
 3. **Modo letras**, dentro de Reproducción, activado con el botón de letras.
    - Fila superior: "Reproduciendo desde / Nombre" en dos líneas a la izquierda y el logo a la

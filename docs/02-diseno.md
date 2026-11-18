@@ -85,10 +85,18 @@ inicio, sí.
   - **"Reproduciendo en Nombre"** en acento, 15 pt. Al tocarlo se abre Dispositivos.
 - **Bloque inferior**, a todo el ancho:
   - **Progreso**: tiempo actual · barra de 4 de alto (pista blanca al 18 %, relleno `texto`) ·
-    duración. Es **informativa**: sin perilla y sin arrastre. Con "Mostrar tiempo restante"
+    duración. Sin perilla. Con "Mostrar tiempo restante"
     (Ajustes › Reproductor, apagado por defecto) la derecha muestra cuánto falta, `−2:23`, con
     el signo menos tipográfico (U+2212). Tocar ese tiempo alterna entre duración y restante
     (área táctil de unos 44 pt); nunca cambia la posición.
+  - **Adelantar o atrasar** (pedido del dueño, 2026-11-18): apoyar el dedo en la barra y
+    moverlo cambia la posición. Toma el dedo toda la franja de 44 alrededor de la barra (16 de
+    la fila + 14 arriba y abajo), entre los dos tiempos. Mientras se arrastra, la barra pasa a
+    8 de alto y el tiempo de la izquierda muestra, en `texto`, adónde va a saltar; el pedido
+    se manda una sola vez, al soltar (tocar sin arrastrar también salta ahí). Con VoiceOver,
+    deslizar arriba o abajo mueve 15 s. Si `actions.disallows` prohíbe `seeking`, o en un
+    dispositivo con `is_restricted`, la barra queda **informativa**: no toma el dedo ni da
+    ninguna pista de que se pueda mover (ver `docs/06`).
   - **Controles** (alto 64), en tres grupos:
     - izquierda, en 200 de ancho: Aleatorio y Repetir (48);
     - centro, separados 20: Anterior (56), Play/Pausa (64, círculo `texto` con ícono oscuro)
@@ -189,6 +197,18 @@ Reemplaza el bloque superior:
   - **Por palabra**: lo ya cantado en `texto` y lo pendiente en `letraPendiente`.
   - **Estrofa completa**: toda la estrofa actual en `texto`. Es lo que se ve con sincronía por
     línea, y también con sincronía por palabra si "Estilo de las letras" está en Estrofa.
+  - **Recorrer y saltar** (pedido del dueño, 2026-11-18), solo donde Spotify permite
+    adelantar (como la barra de progreso):
+    - Arrastrar hacia arriba o abajo sobre las letras recorre las estrofas: cada 44 de
+      arrastre muestra la siguiente (hacia arriba, como al desplazar una lista) o la anterior,
+      completa en `texto`, con la siguiente debajo. Encima aparece, en acento y monoespaciada
+      de 13, "▶ 2:07": el momento en que empieza. Entre estrofas hay un fundido (no la subida
+      de siempre, que hacia atrás se vería al revés) y un toque háptico de selección.
+    - Tocar una estrofa (la grande o la de abajo, recorriendo o no) lleva la reproducción a
+      donde empieza, descontando la "Sincronía de las letras", y las letras vuelven a seguir
+      la reproducción.
+    - Si no se toca nada durante 4 s, las letras vuelven solas a lo que suena.
+    - Con VoiceOver, la estrofa actual tiene la acción "Reproducir desde acá".
 - **Fila inferior** (56): carátula de 56 (radio 4), título en 18 bold, artista en 15 y, a la
   derecha, el dispositivo en acento.
 - Biblioteca y Ajustes no se muestran.

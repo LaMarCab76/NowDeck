@@ -31,7 +31,12 @@ Romper estas reglas puede hacer que Spotify revoque el acceso a la API.
 - [ ] **Controles**: deshabilitar u ocultar lo que `actions.disallows` prohíba. Las guidelines:
   "Play controls must either have a disabled state to indicate that they are restricted or
   they should not be displayed at all". Nowdeck los deshabilita (ver `docs/03`, "`actions`").
-- [ ] **Progreso**: informativo, sin ningún indicio de que se pueda adelantar.
+- [ ] **Progreso**: donde Spotify no deja adelantar, informativo, sin ningún indicio de que se
+  pueda adelantar. La frase de la guía ("Make clear that the track progress bar is for
+  information only - there should be no indication that the user can seek") está en la
+  sección *Handling Spotify Free restricted actions in your companion app* (releído el
+  2026-11-18): es para las acciones restringidas, no prohíbe adelantar donde Spotify lo
+  permite.
 - [ ] **Podcasts**: mostrar el título del episodio y el nombre del podcast. Saltos de ±15 s para
   episodios: **aplica** (verificado el 2026-11-17 en *Design & Branding Guidelines* → "Playing
   views"). La sección empieza con "If you choose to show play controls in your app, the
@@ -225,9 +230,14 @@ Repaso punto por punto sobre la rama `hito/08-terminaciones` (hitos 1 a 7 integr
 - ✅ Lo que `actions.disallows` prohíbe se muestra **deshabilitado** (atenuado y sin acción), y
   todo queda deshabilitado en un dispositivo con `is_restricted`. Ver `docs/03`, "`actions`":
   sigue pendiente del dueño confirmar con una respuesta real que llega `disallows`.
-- ✅ Progreso informativo: barra sin perilla ni arrastre, y VoiceOver la lee como "Progreso,
-  1:25 de 3:47" sin acción de ajuste. Tocar el tiempo de la derecha solo alterna entre la
-  duración y el tiempo restante (decisión del dueño del 2026-11-18): no adelanta ni atrasa.
+- ✅ Adelantar desde la barra y desde las letras (pedido del dueño, 2026-11-18): solo cuando
+  `actions.disallows` no prohíbe `seeking` y el dispositivo no tiene `is_restricted`, igual
+  que los −15 s y +15 s. Los comandos de la Web API ya piden Premium, y la regla de la guía
+  sobre el progreso "solo informativo" está en la sección de acciones restringidas de
+  Spotify Free. Donde no se puede adelantar, la barra queda como antes: sin perilla ni
+  arrastre, VoiceOver la lee como "Progreso, 1:25 de 3:47" sin acción de ajuste, y las letras
+  no toman el dedo. Tocar el tiempo de la derecha solo alterna entre la duración y el tiempo
+  restante (decisión del dueño del 2026-11-18): no adelanta ni atrasa.
 
 ### Podcasts
 

@@ -112,6 +112,10 @@ from LRCLIB as "Lyricsfile format").
   is true. Update the view at ~10 fps in word mode and ~2 fps in verse mode.
 - If polling detects a jump of more than 1.5 s compared to the interpolated position (someone
   skipped ahead in the song), resync.
+- **Tapping a verse** (2026-11-18) sends `PUT /me/player/seek` to the start of the verse minus
+  the "Lyrics timing" offset (never before 0), so that verse is on screen as soon as it
+  arrives. The lyrics take that position right away, without waiting for the poll. Browsing
+  the verses by dragging sends nothing. See `docs/en/02`, "Lyrics mode".
 - **Lyrics timing** (*Sincronía de las letras*) (Settings → Player, 2026-11-17): an offset of
   −3 to +3 s in 0.1 s steps that's added to the interpolated position before choosing the verse.
   Positive shows them earlier (for when Spotify's position arrives late or the audio goes over
