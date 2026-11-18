@@ -271,7 +271,8 @@ final class BackgroundPreviewTests: XCTestCase {
         let (session, recorder) = StubURLProtocol.session { [recentPath] request in
             let path = request.url?.path ?? ""
             if path == recentPath {
-                gate.wait()
+                // Bounded, so a failed or cancelled test never leaves the stub waiting.
+                _ = gate.wait(timeout: .now() + 5)
                 return (.stub(200), Self.recentJSON(artistID: "recent"))
             }
             if path == "/v1/artists/recent" { return (.stub(200), Self.artistJSON) }
@@ -283,6 +284,8 @@ final class BackgroundPreviewTests: XCTestCase {
         let preview = BackgroundPreviewModel(
             player: PlayerModel(api: api, artworkLoader: ArtworkLoader(session: session)))
         let historyRequests = { recorder.requests.filter { $0.url?.path == self.recentPath }.count }
+        // Whatever happens below, nothing stays held once the test ends.
+        defer { gate.signal(); gate.signal() }
 
         preview.prepare()
         try await waitUntil { historyRequests() == 1 }
