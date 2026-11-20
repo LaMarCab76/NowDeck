@@ -265,8 +265,8 @@ Repaso punto por punto sobre la rama `hito/08-terminaciones` (hitos 1 a 7 integr
 ### Nombre y logo de Nowdeck
 
 - ✅ Nombre visible "Nowdeck" (`CFBundleDisplayName`), sin "Spotify" ni nada parecido.
-- ⚠️ **Ícono de la app**: `AppIcon` todavía no tiene imagen. Cuando se haga: nada de círculo
-  verde ni ondas.
+- ✅ **Ícono de la app**: `AppIcon` muestra un teléfono en horizontal sobre su soporte, con una
+  barra verde sobre fondo oscuro. La silueta y la barra distinguen el ícono de la marca de Spotify.
 
 ### Política
 
