@@ -83,6 +83,7 @@ final class PlayerModel: ObservableObject {
     private struct QueuedSeekConfirmation {
         let previousItemKey: String?
         let requestedURI: String
+        var wasSuperseded = false
     }
 
     @Published private var queuedSeekConfirmation: QueuedSeekConfirmation?
@@ -344,6 +345,12 @@ final class PlayerModel: ObservableObject {
                                                         requestedURI: requestedURI)
     }
 
+    /// An accepted skip or library selection replaces the queued start. Keep seek locked
+    /// until the next valid playback read, which can now legitimately show the old item.
+    func queuedStartWasSuperseded() {
+        queuedSeekConfirmation?.wasSuperseded = true
+    }
+
     // MARK: Applying an answer
 
     private func apply(_ state: PlaybackState?, at date: Date) {
@@ -369,7 +376,8 @@ final class PlayerModel: ObservableObject {
             nowPlaying = item
         }
         if let confirmation = queuedSeekConfirmation,
-           playbackWasEmpty || item.transitionKey != confirmation.previousItemKey
+           confirmation.wasSuperseded || playbackWasEmpty
+               || item.transitionKey != confirmation.previousItemKey
                || item.playlistURI == confirmation.requestedURI {
             queuedSeekConfirmation = nil
         }

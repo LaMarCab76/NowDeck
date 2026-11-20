@@ -199,6 +199,38 @@ final class PlayerControlsModelTests: XCTestCase {
         XCTAssertTrue(h.controls.availability.seek)
     }
 
+    func testPreviousSupersedesQueuedStartOnlyAfterPlaybackIsRead() async throws {
+        let h = try await make()
+        let originalItem = try XCTUnwrap(h.model.nowPlaying)
+        await h.controls.playQueuedTrack(queuedEntry(), in: h.model.queue)
+
+        h.controls.previous()
+        try await eventually { !h.controls.isSendingCommand }
+        XCTAssertEqual(h.commands, ["PUT /me/player/play", "POST /me/player/previous"])
+        XCTAssertFalse(h.controls.availability.seek)
+
+        h.playback.value.progressMs = 1_000
+        await h.model.poll()
+        XCTAssertEqual(h.model.nowPlaying, originalItem)
+        XCTAssertEqual(h.model.playback?.progressMs, 1_000)
+        XCTAssertTrue(h.controls.availability.seek)
+
+        h.controls.seek(toMs: 5_000)
+        try await eventually { h.commands.last == "PUT /me/player/seek" }
+    }
+
+    func testFailedPreviousKeepsSeekingLockedForAnOldPlaybackRead() async throws {
+        let h = try await make()
+        await h.controls.playQueuedTrack(queuedEntry(), in: h.model.queue)
+        h.commandStatus.value = 403
+
+        h.controls.previous()
+        try await eventually { !h.controls.isSendingCommand }
+        XCTAssertEqual(h.controls.notice, .notAllowed)
+        await h.model.poll()
+        XCTAssertFalse(h.controls.availability.seek)
+    }
+
     private func queuedEntry(uri: String = "spotify:track:next") -> QueueEntry {
         QueueEntry(track: CollectionTrack(
             id: 0, number: 1, title: "Siguiente", subtitle: "Artista", durationMs: 180_000,

@@ -67,6 +67,7 @@ struct LibraryScreen: View {
             if item.playsInPlace && player.controls.isSendingCommand { return }
             switch await model.play(item, startingAt: track) {
             case .started:
+                player.queuedStartWasSuperseded()
                 // Confirm the new state soon so the mini player reflects the selected song.
                 player.refresh(after: 0.6)
                 if track == nil { dismiss() }

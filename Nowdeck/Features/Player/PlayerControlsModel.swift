@@ -192,9 +192,10 @@ final class PlayerControlsModel: ObservableObject {
                                            isPlaying: isPlaying, date: date)
     }
 
-    /// Next or previous accepted: another item, whose position only a poll can tell.
+    /// Next or previous accepted: only a poll can tell where playback landed.
     private func itemChanged() {
         confirmed = nil
+        player?.queuedStartWasSuperseded()
     }
 
     /// A failed seek is undone only once no seek is left on its way, and then back to the
