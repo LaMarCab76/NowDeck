@@ -13,7 +13,10 @@ enum Spacing {
 
     /// Player screen margins (docs/02-diseno.md, "Reproducción").
     enum Player {
-        static let top: CGFloat = 24
+        /// 24 in the mockup; 12 since the origin row sits above the artwork with a wider gap
+        /// below it (2026-11-18). Its 44 pt tap zone keeps the text about 16 pt from the edge.
+        /// Count: 12 + 44 + 14 + 210 + 20 + 94 + 20 = 414.
+        static let top: CGFloat = 12
         static let horizontal: CGFloat = 48
         static let bottom: CGFloat = 20
         /// Vertical gap between the top block and the bottom block.

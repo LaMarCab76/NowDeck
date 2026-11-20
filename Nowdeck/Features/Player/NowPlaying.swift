@@ -12,11 +12,42 @@ struct NowPlaying: Equatable {
     var artworkCacheKey: String?
     /// The item's page on Spotify (link back from the logo).
     var itemURL: URL?
+    /// The first artist with an ID (tracks only), for the background photo
+    /// (`GET /artists/{id}`).
+    var artistID: String?
+    /// The Spotify URI that can be added to a playlist (`spotify:track:…` or
+    /// `spotify:episode:…`). `nil` for local files and ads, which a playlist cannot take.
+    var playlistURI: String?
     var isAd: Bool = false
 
     /// `nil` when there is nothing to show: no item, or an item type the app doesn't know.
     init?(state: PlaybackState) {
-        switch state.item {
+        if state.item == nil, state.currentlyPlayingType == "ad" {
+            // During ads `item` is null. Keep the player on screen instead of jumping to
+            // "Nada sonando" for thirty seconds.
+            self.init(adTitle: String(localized: "Publicidad",
+                                      comment: "Player title while Spotify plays an ad"))
+            return
+        }
+        guard let item = state.item else { return nil }
+        self.init(item: item)
+    }
+
+    private init(adTitle: String) {
+        title = adTitle
+        subtitle = ""
+        isExplicit = false
+        durationMs = 0
+        artworkURL = nil
+        artworkCacheKey = nil
+        itemURL = nil
+        isAd = true
+    }
+
+    /// A track or an episode, also from the queue (`GET /me/player/queue`). `nil` for item
+    /// types the app doesn't know.
+    init?(item: PlaybackItem) {
+        switch item {
         case .track(let track):
             title = track.name
             subtitle = track.artists.map(\.name).filter { !$0.isEmpty }.joined(separator: ", ")
@@ -25,6 +56,8 @@ struct NowPlaying: Equatable {
             artworkURL = Self.bestImage(track.album?.images ?? [])
             artworkCacheKey = track.album?.id
             itemURL = Self.pageURL(externalURL: track.externalUrls?.spotify, uri: track.uri)
+            artistID = track.artists.lazy.compactMap(\.id).first { !$0.isEmpty }
+            playlistURI = track.isLocal ? nil : Self.addableURI(track.uri, kind: "track")
 
         case .episode(let episode):
             title = episode.name
@@ -35,21 +68,9 @@ struct NowPlaying: Equatable {
                                                                 : episode.images)
             artworkCacheKey = nil
             itemURL = Self.pageURL(externalURL: episode.externalUrls?.spotify, uri: episode.uri)
+            playlistURI = Self.addableURI(episode.uri, kind: "episode")
 
-        case nil where state.currentlyPlayingType == "ad":
-            // During ads `item` is null. Keep the player on screen instead of jumping to
-            // "Nada sonando" for thirty seconds.
-            title = String(localized: "Publicidad",
-                           comment: "Player title while Spotify plays an ad")
-            subtitle = ""
-            isExplicit = false
-            durationMs = 0
-            artworkURL = nil
-            artworkCacheKey = nil
-            itemURL = nil
-            isAd = true
-
-        case nil, .unsupported:
+        case .unsupported:
             return nil
         }
     }
@@ -64,6 +85,13 @@ struct NowPlaying: Equatable {
         return url
     }
 
+    /// `uri` when it is a well-formed `spotify:<kind>:<id>` URI, else `nil`.
+    static func addableURI(_ uri: String?, kind: String) -> String? {
+        guard let uri, let parsed = SpotifyURI(uri), parsed.kind == kind
+        else { return nil }
+        return uri
+    }
+
     static func pageURL(externalURL: String?, uri: String?) -> URL? {
         if let externalURL, let url = URL(string: externalURL), url.host == "open.spotify.com" {
             return url
@@ -72,7 +100,7 @@ struct NowPlaying: Equatable {
     }
 }
 
-/// Where the item plays from ("Desde la playlist …").
+/// Where the item plays from: "Reproduciendo desde" over the source's name.
 struct PlaybackOrigin: Equatable {
     enum Kind: Equatable {
         case playlist
@@ -84,11 +112,32 @@ struct PlaybackOrigin: Equatable {
     }
 
     var kind: Kind
-    /// `nil` while unknown: the player then shows only the type ("Desde una playlist").
+    /// `nil` while unknown: the player then shows only the type ("Una playlist").
     var name: String?
     var url: URL?
     /// Set for playlists: the name has to be fetched with `GET /playlists/{id}`.
     var playlistID: String?
+    /// The Web API refused the playlist's name (`403`/`404`). That happens with Spotify's own
+    /// playlists (radios, mixes, editorial ones), which apps in Development Mode can't read,
+    /// so the player says "Playlist de Spotify" instead of a generic "Una playlist".
+    var isNameUnavailable = false
+
+    /// The first line of the origin, above `displayName`.
+    static var heading: String { String(localized: "Reproduciendo desde") }
+
+    /// The second line: the name when known, or else the type.
+    var displayName: String {
+        if let name, !name.isEmpty { return name }
+        switch kind {
+        case .playlist:
+            return isNameUnavailable
+                ? String(localized: "Playlist de Spotify") : String(localized: "Una playlist")
+        case .album: return String(localized: "Un álbum")
+        case .artist: return String(localized: "Un artista")
+        case .show: return String(localized: "Un podcast")
+        case .likedSongs: return String(localized: "Tus me gusta")
+        }
+    }
 
     /// Builds the origin from the context. Album, artist and show names come from the item
     /// itself when it belongs to the context, so they cost no extra request. Unknown context

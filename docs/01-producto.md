@@ -39,43 +39,69 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
       con botón Copiar.
    3. **Client ID**: campo para pegarlo, los permisos que se van a pedir y "Conectar con Spotify".
 2. **Reproducción**: la pantalla principal.
-   - Arriba: carátula a la izquierda y, a la derecha, logo de Spotify + "Desde la playlist X",
+   - Arriba: carátula a la izquierda y, a la derecha, logo de Spotify + "Reproduciendo desde / X",
      Biblioteca, Ajustes, título, artista y "Reproduciendo en <dispositivo>".
-   - Abajo, a todo el ancho: barra de progreso (informativa, sin arrastre) y controles.
+   - Abajo, a todo el ancho: barra de progreso (arrastrable para adelantar o atrasar, si Spotify lo permite) y
+     controles.
    - Fondo: un color suave tomado de la carátula.
 3. **Modo letras**, dentro de Reproducción, activado con el botón de letras.
-   - Fila superior: "Desde la playlist / Nombre" en dos líneas a la izquierda y el logo a la
+   - Fila superior: "Reproduciendo desde / Nombre" en dos líneas a la izquierda y el logo a la
      derecha.
    - Centro: estrofa actual y estrofa siguiente, al ancho configurado (por defecto 2/3).
    - Fila inferior: carátula chica, título, artista y dispositivo.
    - Biblioteca y Ajustes se ocultan mientras está activo.
-4. **Panel de volumen**: barra horizontal flotante que baja desde arriba al tocar el botón de
-   volumen o cuando cambia el volumen (también si cambia desde otro dispositivo). Se oculta a
-   los 3 s.
+4. **Barra de volumen**: se abre hacia el costado desde el botón de volumen, dentro de la fila
+   de controles, que se corre para dejarle lugar. Se abre al tocar el botón o cuando cambia el
+   volumen (también si cambia desde otro dispositivo). Se cierra a los 3 s.
 5. **Aviso "No encontramos la letra de este tema"**: aparece arriba 3 s y el reproductor vuelve
    a la vista normal.
 6. **Biblioteca**
    - Pestañas Biblioteca y Buscar.
    - Filtros Playlists, Álbumes, Podcasts y Audiolibros.
-   - Fila horizontal de tarjetas.
+   - Fila horizontal de tarjetas. Tocar una playlist o un álbum abre su **detalle**; los
+     podcasts y audiolibros se abren en Spotify.
+   - **Detalle de playlist o álbum**: carátula, nombre, dueño o artistas, el botón
+     **Reproducir** (arranca desde el principio) y la lista de temas. Los temas no se tocan
+     para reproducir. En las playlists de otras personas Spotify no devuelve los temas: se
+     avisa y se puede reproducir igual o verla en Spotify.
    - Mini reproductor abajo, con fondo del color de la carátula y "Suena en <dispositivo>".
 7. **Buscar**: campo de búsqueda; al tocar un resultado, suena en el dispositivo activo. La
    pantalla de resultados todavía no está diseñada (ver pendientes).
 8. **Dispositivos**
    - Hoja inferior con el dispositivo actual destacado y la lista del resto.
    - Botón "¿No ves tu dispositivo?", que abre una ayuda de 3 pasos y "Actualizar lista".
-9. **Ajustes**
+9. **Cola** (agregada el 2026-11-17, a pedido del dueño)
+   - Píldora Cola en la fila superior del reproductor, a la izquierda de Biblioteca.
+   - Hoja inferior con lo que suena ahora y hasta 20 temas de "A continuación".
+   - La Web API no deja quitar, reordenar ni saltar a un tema de la cola. Desde el 2026-11-18
+     (pedido del dueño), **tocar un tema** pregunta "¿Reproducir este tema?" con
+     "Reproducir" y "Cancelar"; al confirmar, ese tema empieza a sonar (dentro de su playlist
+     o álbum cuando se puede; ver docs/03, "Cola"). Los episodios y los archivos locales no se
+     tocan. Mantener apretado un tema muestra el nombre completo y "Abrir en Spotify".
+     La lista termina con "Para quitar o reordenar temas, usá Spotify." y "ABRIR SPOTIFY".
+10. **Agregar a una playlist** (agregada el 2026-11-18, a pedido del dueño)
+   - Botón en el extremo izquierdo de los controles del reproductor y del mini reproductor de
+     la Biblioteca.
+   - Hoja con las playlists que el usuario puede editar (propias y colaborativas); tocar una
+     agrega el tema o episodio que suena. Lo agregado queda marcado. Quitar se hace en Spotify.
+   - Buscador por nombre arriba de la lista, y primero las playlists que ya tienen el tema
+     ("YA ESTÁ EN", con el check), después el resto (agregado el 2026-11-18).
+   - Pide un permiso nuevo (editar playlists): las sesiones anteriores lo dan desde la misma
+     hoja con "Dar permiso".
+11. **Ajustes**
    - **Apariencia**:
      - tema (Negro y verde, Ámbar, Azul noche, Personalizado);
      - color de resaltado (6 opciones);
      - fondo del reproductor (Negro, Gris oscuro o Según la carátula; por defecto, Según la
        carátula);
      - Exportar e Importar tema.
-   - **Reproductor**: interruptor "Mostrar letras" y "Ancho de las letras" (Mitad, 2/3 o
-     Completo; por defecto 2/3).
-10. **Importar tema**: hoja con el JSON, el resultado de la validación, advertencias, vista
+   - **Reproductor**: interruptor "Mostrar tiempo restante" (en vez de la duración, a la
+     derecha de la barra; apagado por defecto), interruptor "Mostrar letras", "Ancho de las
+     letras" (Mitad, 2/3 o Completo; por defecto 2/3) y "Estilo de las letras" (Por palabra o
+     Estrofa; por defecto Por palabra).
+12. **Importar tema**: hoja con el JSON, el resultado de la validación, advertencias, vista
     previa y los botones Aplicar y Cancelar.
-11. **Nada sonando**: estado vacío con "Elegir dispositivo" y "ABRIR SPOTIFY".
+13. **Nada sonando**: estado vacío con "Elegir dispositivo" y "ABRIR SPOTIFY".
 
 ## Flujos clave
 
@@ -86,10 +112,15 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
 - **Cambiar de dispositivo**: tocar "Reproduciendo en …" → hoja de Dispositivos → tocar un
   dispositivo → transferir la reproducción → cerrar la hoja.
 - **Letras**: tocar el botón de letras.
-  - Si hay letra con sincronía por palabra, se usa ese modo.
+  - Si hay letra con sincronía por palabra y el estilo es "Por palabra", se usa ese modo.
+  - Con el estilo "Estrofa", se muestra la estrofa completa aunque haya sincronía por palabra.
   - Si hay sincronía por línea, se muestra la estrofa completa.
   - Si no hay letra o es solo texto plano, aparece el aviso y el reproductor vuelve a la vista
     normal.
+- **Reproducir desde la Biblioteca**: tocar una playlist o un álbum → detalle con sus temas →
+  Reproducir → suena en el dispositivo activo y se vuelve a Reproducción. Si no hay
+  dispositivo activo, se abre Dispositivos. Mantener apretada una tarjeta sigue ofreciendo
+  "Reproducir" sin pasar por el detalle.
 - **Tema**: en Ajustes → Exportar, se abre la hoja de compartir con un `.nowdeck.json`.
   Importar se puede hacer desde Archivos, AirDrop o pegando el texto → hoja de importación →
   Aplicar.
@@ -98,7 +129,10 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
 
 - Reproducir audio en el iPhone (receptor de Spotify Connect, librespot).
 - Control por voz: la política de Spotify lo prohíbe.
-- Cola de reproducción y accesos rápidos (presets).
+- Editar la cola (quitar o reordenar): la Web API no lo permite. Tocar un tema de la cola lo
+  reproduce, pero no es un salto real (ver docs/03, "Cola"). Agregar a la cola
+  (`POST /me/player/queue`) sí existe, pero todavía no tiene diseño.
+- Accesos rápidos (presets).
 - Pantalla de resultados de búsqueda, pendiente de diseño.
 - Protección contra *burn-in* de OLED (atenuar brillo, desplazar píxeles): se habló como opción
   futura, sin decidir.
@@ -106,7 +140,7 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
 
 ## Decisiones pendientes del dueño
 
-- Licencia del repositorio (por ejemplo MIT o GPL-3.0).
+- ✅ Licencia del repositorio: MIT (decidido el 2026-11-18, archivo `LICENSE`).
 - Usuario u organización de GitHub y Bundle ID definitivo (sugerido
   `com.lamarcab76.nowdeck`).
 - Si los temas se editan color por color dentro de la app o alcanza con presets e importación.

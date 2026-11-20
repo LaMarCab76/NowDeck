@@ -29,6 +29,8 @@ struct LibraryEntry: Identifiable, Equatable, Sendable {
         case album
         case show
         case audiobook
+        /// A playlist folder (experimental, `PlaylistFolders.swift`). Opens in the row.
+        case folder(id: String)
     }
 
     var kind: Kind
@@ -40,16 +42,19 @@ struct LibraryEntry: Identifiable, Equatable, Sendable {
     var artworkURL: URL?
     /// The item's page on `open.spotify.com` (link back to Spotify).
     var pageURL: URL?
+    /// The line under the name on the detail screen: "De <owner> · N temas" for playlists,
+    /// "<artists> · <year>" for albums. `nil` falls back to `subtitle`.
+    var detailSubtitle: String?
 
     var id: String { uri }
 
-    /// Whether tapping the card starts playback here. `PUT /me/player/play` documents only
+    /// Whether Nowdeck can start playback of the item. `PUT /me/player/play` documents only
     /// albums, artists and playlists as a `context_uri`; podcasts and audiobooks open in
     /// Spotify instead (verified 2026-11-17).
     var playsInPlace: Bool {
         switch kind {
         case .playlist, .album: return true
-        case .show, .audiobook: return false
+        case .show, .audiobook, .folder: return false
         }
     }
 }
@@ -69,7 +74,36 @@ extension LibraryEntry {
         case nil: subtitle = String(localized: "Playlist", comment: "Library card subtitle")
         }
         self.init(kind: .playlist, uri: playlist.uri, name: playlist.name, subtitle: subtitle,
-                  images: playlist.images, externalURL: playlist.externalUrls?.spotify)
+                  images: playlist.images, externalURL: playlist.externalUrls?.spotify,
+                  detailSubtitle: Self.playlistDetailSubtitle(
+                      owner: playlist.owner?.displayName, count: playlist.itemCount))
+    }
+
+    /// A folder card. Its id is not a Spotify URI: folders have no page on Spotify and
+    /// cannot be played, only opened.
+    init(folder: PlaylistFolder) {
+        let count = folder.playlistCount
+        let subtitle = count == 1
+            ? String(localized: "Carpeta · 1 playlist", comment: "Library card subtitle: a folder")
+            : String(localized: "Carpeta · \(count) playlists",
+                     comment: "Library card subtitle: number of playlists in a folder")
+        self.init(kind: .folder(id: folder.id), uri: "nowdeck:folder:\(folder.id)",
+                  name: folder.name, subtitle: subtitle, artworkURL: nil, pageURL: nil)
+    }
+
+    /// A playlist that only the rootlist knows about: its name and length, no artwork.
+    init?(rootlistPlaylistURI uri: String, name: String, itemCount: Int?) {
+        let subtitle: String
+        switch itemCount {
+        case 1?: subtitle = String(localized: "Playlist · 1 tema",
+                                   comment: "Library card subtitle: a playlist with one track")
+        case let count?: subtitle = String(localized: "Playlist · \(count) temas",
+                                           comment: "Library card subtitle: number of tracks")
+        case nil: subtitle = String(localized: "Playlist", comment: "Library card subtitle")
+        }
+        self.init(kind: .playlist, uri: uri, name: name, subtitle: subtitle, images: [],
+                  externalURL: nil,
+                  detailSubtitle: Self.playlistDetailSubtitle(owner: nil, count: itemCount))
     }
 
     init?(album: SimplifiedAlbum) {
@@ -79,8 +113,11 @@ extension LibraryEntry {
             ? String(localized: "Álbum", comment: "Library card subtitle")
             : String(localized: "Álbum · \(artists)",
                      comment: "Library card subtitle: the album's artists, verbatim")
+        let detail = [artists, album.releaseYear ?? ""].filter { !$0.isEmpty }
+            .joined(separator: " · ")
         self.init(kind: .album, uri: album.uri, name: album.name, subtitle: subtitle,
-                  images: album.images, externalURL: album.externalUrls?.spotify)
+                  images: album.images, externalURL: album.externalUrls?.spotify,
+                  detailSubtitle: detail.isEmpty ? nil : detail)
     }
 
     /// The show's `publisher` was removed in February 2026, so the subtitle shows the
@@ -112,11 +149,30 @@ extension LibraryEntry {
     }
 
     private init?(kind: Kind, uri: String?, name: String?, subtitle: String,
-                  images: [SpotifyImage]?, externalURL: String?) {
+                  images: [SpotifyImage]?, externalURL: String?, detailSubtitle: String? = nil) {
         guard let uri, SpotifyURI(uri) != nil else { return nil }
         self.init(kind: kind, uri: uri, name: name ?? "", subtitle: subtitle,
                   artworkURL: Self.artworkURL(images ?? []),
-                  pageURL: NowPlaying.pageURL(externalURL: externalURL, uri: uri))
+                  pageURL: NowPlaying.pageURL(externalURL: externalURL, uri: uri),
+                  detailSubtitle: detailSubtitle)
+    }
+
+    /// "De Lucía · 48 temas", or the parts that are known. The owner's name comes from
+    /// Spotify and is kept verbatim.
+    private static func playlistDetailSubtitle(owner: String?, count: Int?) -> String? {
+        var parts: [String] = []
+        if let owner, !owner.isEmpty {
+            parts.append(String(localized: "De \(owner)",
+                                comment: "Playlist detail: the playlist's owner, verbatim"))
+        }
+        switch count {
+        case 1?: parts.append(String(localized: "1 tema",
+                                     comment: "Playlist detail: a playlist with one track"))
+        case let count?: parts.append(String(localized: "\(count) temas",
+                                             comment: "Playlist detail: number of tracks"))
+        case nil: break
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     /// The smallest image at least `preferredImageWidth` wide, or the largest one when all

@@ -4,16 +4,16 @@ import UIKit
 /// What lyrics mode shows around the lyrics, provided by the player (milestone 2).
 ///
 /// Texts are shown as they come: the player passes Spotify's names untouched and the source
-/// label already localized ("Desde la playlist", "Desde el álbum", …).
+/// label already localized ("Reproduciendo desde").
 struct LyricsModeContent: Equatable {
     var title: String
     /// All the artists, as the player shows them.
     var artist: String
     /// Marked like in the player (docs/06, "Explícito").
     var isExplicit = false
-    /// "Desde la playlist". `nil` hides the source.
+    /// "Reproduciendo desde". `nil` hides the source.
     var sourceLabel: String?
-    /// Name of the playlist or album.
+    /// Name of the playlist or album, or its type when the name is unknown.
     var sourceName: String?
     /// Device that is playing. `nil` hides it.
     var deviceName: String?
@@ -26,9 +26,12 @@ struct LyricsModeContent: Equatable {
 /// It replaces the player's top block, so the player gives it that block's frame (256 pt
 /// high on the reference screen). Progress and controls stay below it, owned by the player.
 ///
-/// - Top row (44): source on the left, Spotify logo on the right. Both open Spotify.
+/// - Top row (44): Spotify icon and source on the left, as in the normal view (the owner moved
+///   the logo there on 2026-11-17; the mockup had it on the right). It opens Spotify.
 /// - Center: current stanza (30 pt) and next stanza (22 pt), `width` of the usable width.
-/// - Bottom row (56): artwork, title, artist and device.
+///   Dragging up or down browses the stanzas; tapping one moves the playback there
+///   (`LyricsBrowsing`).
+/// - Bottom row (56): artwork, title, artist and device. It is the band of the track swipe.
 struct LyricsModeView: View {
     let content: LyricsModeContent
     /// `nil` while the lyrics of a new track load: the center stays empty.
@@ -36,6 +39,10 @@ struct LyricsModeView: View {
     let playback: LyricsPlayback
     /// "Ancho de las letras" (Ajustes → Reproductor, stored in the theme).
     var width: Theme.LyricsWidth = .twoThirds
+    /// "Sincronía de las letras" (Ajustes → Reproductor). Positive shows them earlier.
+    var offsetMs: Int = 0
+    /// "Estilo de las letras" (Ajustes → Reproductor). Stanza style drops the word highlight.
+    var style: LyricsStyle = .byWord
     /// The track's artwork, already loaded by the player. Shown as is, never cropped.
     var artwork: Image?
     /// Opens the playlist or album in Spotify (milestone 2).
@@ -44,12 +51,22 @@ struct LyricsModeView: View {
     var onOpenSpotify: () -> Void = {}
     /// Opens the devices sheet (milestone 4).
     var onShowDevices: () -> Void = {}
+    /// Moves the playback to a position in ms: tapping a stanza (`LyricsBrowsing`). `nil`
+    /// where Spotify forbids seeking: the lyrics then take no touches.
+    var onSeek: ((Int) -> Void)?
+    /// The track swipe works on the bottom row only, never on the lyrics: the row follows
+    /// the finger and the next or previous item's row comes in from the side.
+    var swipe: TrackSwipePhase = .idle
+    var pageWidth: CGFloat = 0
+    var upNext: TrackPreview?
+    var previousTrack: TrackPreview?
 
     var body: some View {
         VStack(spacing: 0) {
             header
                 .frame(height: Metrics.Lyrics.headerHeight)
-            LyricsStanzasView(lyrics: lyrics, playback: playback, width: width)
+            LyricsStanzasView(lyrics: lyrics?.displayed(as: style), playback: playback, width: width,
+                              offsetMs: offsetMs, onSeek: onSeek)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             footer
                 .frame(height: Metrics.Lyrics.footerHeight)
@@ -59,33 +76,95 @@ struct LyricsModeView: View {
     // MARK: - Top row
 
     private var header: some View {
-        HStack(spacing: Metrics.Lyrics.headerSpacing) {
+        HStack(spacing: 0) {
             if let sourceName = content.sourceName {
                 LyricsSourceButton(label: content.sourceLabel, name: sourceName, action: onOpenSource)
+            } else {
+                Button(action: onOpenSpotify) {
+                    SpotifyLogoImage(variant: .icon)
+                        .frame(height: Metrics.minTouchTarget)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Abrir en Spotify"))
             }
             Spacer(minLength: 0)
-            Button(action: onOpenSpotify) {
-                SpotifyLogoSlot()
-                    .frame(height: Metrics.minTouchTarget)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text("Abrir en Spotify"))
         }
     }
 
     // MARK: - Bottom row
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @EnvironmentObject private var theme: ThemeStore
+
+    /// Changes with the track, for the footer's animations.
+    private var trackKey: String { content.title + "|" + content.artist }
+
     private var footer: some View {
-        HStack(spacing: Metrics.Lyrics.footerSpacing) {
-            LyricsArtwork(image: artwork)
-            LyricsTrackLabels(title: content.title, artist: content.artist,
-                              isExplicit: content.isExplicit)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            if let deviceName = content.deviceName {
-                LyricsDeviceButton(name: deviceName, type: content.deviceType ?? "",
-                                   action: onShowDevices)
+        ZStack(alignment: .leading) {
+            currentFooter
+                .offset(x: swipe.offset(pageWidth: pageWidth))
+            if let edge = swipe.edge {
+                previewFooter(edge: edge)
+                    .offset(x: swipe.previewOffset(pageWidth: pageWidth))
             }
+        }
+        .trackSwipeBand()
+    }
+
+    /// While a swiped-in item settles, the row swaps to it without animation (see
+    /// `PlayerView.animatesTrackChange`).
+    private var animatesTrackChange: Bool { !swipe.isLanding }
+
+    private var currentFooter: some View {
+        HStack(spacing: Metrics.Lyrics.footerSpacing) {
+            ZStack {
+                LyricsArtwork(image: artwork)
+                    .id(trackKey)
+                    .transition(.opacity)
+            }
+            .animation(animatesTrackChange ? Motion.artworkCrossfade : nil, value: trackKey)
+            ZStack(alignment: .leading) {
+                LyricsTrackLabels(title: content.title, artist: content.artist,
+                                  isExplicit: content.isExplicit)
+                    .id(trackKey)
+                    .transition(Motion.rise(Motion.trackRise, reduceMotion: reduceMotion))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .animation(animatesTrackChange ? Motion.trackChange : nil, value: trackKey)
+            deviceButton(action: onShowDevices)
+        }
+    }
+
+    private func previewFooter(edge: TrackSwipe.Edge) -> some View {
+        let preview: TrackPreview?
+        switch swipe {
+        case .landing(_, let frozen, _): preview = frozen
+        default: preview = edge == .right ? upNext : previousTrack
+        }
+        return HStack(spacing: Metrics.Lyrics.footerSpacing) {
+            LyricsArtwork(image: preview?.artwork.map(Image.init(uiImage:)))
+            Group {
+                if let item = preview?.item {
+                    LyricsTrackLabels(title: item.title, artist: item.subtitle,
+                                      isExplicit: item.isExplicit)
+                } else {
+                    Text(edge == .right ? "Siguiente" : "Anterior")
+                        .textStyle(.lyricsTrackTitle)
+                        .foregroundColor(theme.palette.secondaryText.color)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            deviceButton(action: {})
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private func deviceButton(action: @escaping () -> Void) -> some View {
+        if let deviceName = content.deviceName {
+            LyricsDeviceButton(name: deviceName, type: content.deviceType ?? "", action: action)
         }
     }
 }
@@ -94,35 +173,128 @@ struct LyricsModeView: View {
 
 /// The current and next stanza, refreshed from the interpolated playback position: about 10
 /// times a second in word mode and twice a second in stanza mode (docs/04-letras.md).
+///
+/// With `onSeek`, the stanzas can be browsed and tapped (`LyricsBrowsing`).
 private struct LyricsStanzasView: View {
     let lyrics: SyncedLyrics?
     let playback: LyricsPlayback
     let width: Theme.LyricsWidth
+    let offsetMs: Int
+    let onSeek: ((Int) -> Void)?
 
     /// The snapshot used for interpolation. Polls closer than 1.5 s to it are ignored so the
     /// lyrics do not jitter (see `LyricsPlayback.reconciled(with:)`).
     @State private var anchor: LyricsPlayback?
+    /// The stanza the user browsed to, shown instead of the playback's; `nil` follows the
+    /// playback.
+    @State private var browseIndex: Int?
+    /// The stanza the current drag started from.
+    @State private var dragStartIndex: Int?
+    /// Changes with every browsing touch, to restart the idle timeout.
+    @State private var browseTouches = 0
+    @GestureState private var isDragging = false
     @EnvironmentObject private var theme: ThemeStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         GeometryReader { proxy in
             if let lyrics {
                 TimelineView(.periodic(from: .now, by: refreshInterval(for: lyrics))) { context in
-                    let position = (anchor ?? playback).positionMs(at: context.date)
-                    if let frame = LyricsTimeline.frame(for: lyrics, atMs: position) {
-                        stanzas(lyrics, frame: frame, width: proxy.size.width * width.fraction)
-                            .frame(width: proxy.size.width, height: proxy.size.height)
+                    let frame = browseIndex.flatMap { LyricsBrowsing.frame(browsing: $0, in: lyrics) }
+                        ?? LyricsTimeline.frame(for: lyrics, atMs: position(at: context.date))
+                    // The ZStack keeps its identity between ticks, so when the stanza index
+                    // changes the old stanzas rise away and the new ones come in. While
+                    // browsing they cross-fade instead: rising would look wrong going back.
+                    ZStack {
+                        if let frame {
+                            stanzas(lyrics, frame: frame, width: proxy.size.width * width.fraction)
+                                .frame(width: proxy.size.width, height: proxy.size.height)
+                                .id(frame.primaryIndex)
+                                .transition(browseIndex == nil
+                                    ? Motion.rise(Motion.stanzaRise, reduceMotion: reduceMotion)
+                                    : .opacity)
+                        }
                     }
+                    .animation(Motion.stanzaChange, value: frame?.primaryIndex)
                 }
+                .transition(.opacity)
+                // The whole lyrics area, also when no stanza is shown (after the last one):
+                // an empty ZStack has no size and would take no touches.
+                .frame(width: proxy.size.width, height: proxy.size.height)
+                .contentShape(Rectangle())
+                .simultaneousGesture(onSeek == nil ? nil : browseGesture(lyrics))
             }
         }
+        // New lyrics (another track) fade in instead of popping.
+        .animation(Motion.modeChange, value: lyrics == nil)
         .onAppear { anchor = playback }
         .onChange(of: playback) { polled in
             anchor = (anchor ?? polled).reconciled(with: polled)
         }
         .onChange(of: lyrics) { _ in
             anchor = playback
+            browseIndex = nil
         }
+        .onChange(of: isDragging) { dragging in
+            // Every drag that ends, also one the system cancels (when `onEnded` is not
+            // called), forgets where it started and restarts the idle timeout. Otherwise a
+            // cancelled first drag would leave the lyrics on the browsed stanza for good.
+            guard !dragging else { return }
+            dragStartIndex = nil
+            browseTouches += 1
+        }
+        .onChange(of: onSeek == nil) { forbidden in
+            if forbidden { browseIndex = nil }
+        }
+        .task(id: browseTouches) {
+            guard browseIndex != nil else { return }
+            try? await Task.sleep(nanoseconds: UInt64(LyricsBrowsing.idleTimeout * 1_000_000_000))
+            guard !Task.isCancelled, !isDragging else { return }
+            withAnimation(Motion.lyricsBrowseEnd) { browseIndex = nil }
+        }
+    }
+
+    private func position(at date: Date) -> Int {
+        (anchor ?? playback).lyricsPositionMs(at: date, offsetMs: offsetMs)
+    }
+
+    // MARK: Browsing and seeking
+
+    private func browseGesture(_ lyrics: SyncedLyrics) -> some Gesture {
+        DragGesture(minimumDistance: LyricsBrowsing.dragMinimumDistance)
+            .updating($isDragging) { _, dragging, _ in dragging = true }
+            .onChanged { drag in
+                let start = dragStartIndex ?? browseIndex
+                    ?? LyricsBrowsing.startIndex(for: lyrics, atMs: position(at: Date()))
+                dragStartIndex = start
+                let index = LyricsBrowsing.index(from: start, translation: drag.translation.height,
+                                                 count: lyrics.stanzas.count)
+                if index != browseIndex {
+                    // Each stanza passing under the finger is felt, like a picker's notches.
+                    if browseIndex != nil || index != start {
+                        UISelectionFeedbackGenerator().selectionChanged()
+                    }
+                    browseIndex = index
+                }
+            }
+    }
+
+    /// Moves the playback to where `index` starts and follows the playback again.
+    private func seek(to index: Int, in lyrics: SyncedLyrics) {
+        guard let onSeek, lyrics.stanzas.indices.contains(index) else { return }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        let target = LyricsBrowsing.seekTarget(for: lyrics.stanzas[index], offsetMs: offsetMs)
+        onSeek(target)
+        // The new position reaches `playback` only on the next render; anchoring it now
+        // keeps the old stanza from flashing between the browsed one and the playback.
+        anchor = LyricsPlayback(progressMs: target, isPlaying: (anchor ?? playback).isPlaying,
+                                timestamp: Date())
+        browseIndex = nil
+    }
+
+    /// When a stanza starts, in the playback's time, for the label shown while browsing.
+    private func startLabel(for stanza: LyricsStanza) -> String {
+        PlaybackProgress.formatted(ms: LyricsBrowsing.seekTarget(for: stanza, offsetMs: offsetMs))
     }
 
     private func refreshInterval(for lyrics: SyncedLyrics) -> TimeInterval {
@@ -139,6 +311,14 @@ private struct LyricsStanzasView: View {
         let next = frame.nextIndex.map { lyrics.stanzas[$0] }
 
         return VStack(spacing: Metrics.Lyrics.stanzaSpacing) {
+            if browseIndex != nil {
+                // Where a tap on the stanza below jumps to.
+                Label(startLabel(for: primary), systemImage: "play.fill")
+                    .textStyle(.lyricsBrowseTime)
+                    .foregroundColor(theme.palette.accent.color)
+                    .accessibilityHidden(true)
+            }
+
             primaryText(primary, sync: lyrics.sync, frame: frame)
                 .textStyle(.currentStanza)
                 .multilineTextAlignment(.center)
@@ -148,15 +328,24 @@ private struct LyricsStanzasView: View {
                 .minimumScaleFactor(0.6)
                 .frame(width: width)
                 .layoutPriority(1)
+                .contentShape(Rectangle())
+                .onTapGesture { seek(to: frame.primaryIndex, in: lyrics) }
+                .allowsHitTesting(onSeek != nil)
                 .accessibilityLabel(Text(verbatim: primary.text))
+                .modifier(SeekToStanzaAction(isEnabled: onSeek != nil) {
+                    seek(to: frame.primaryIndex, in: lyrics)
+                })
 
-            if let next {
+            if let next, let nextIndex = frame.nextIndex {
                 Text(verbatim: next.text)
                     .textStyle(.nextStanza)
                     .foregroundColor(theme.palette.pendingLyric.color)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .frame(width: width)
+                    .contentShape(Rectangle())
+                    .onTapGesture { seek(to: nextIndex, in: lyrics) }
+                    .allowsHitTesting(onSeek != nil)
                     .accessibilityHidden(true)
             }
         }
@@ -187,6 +376,20 @@ private struct LyricsStanzasView: View {
     }
 }
 
+/// VoiceOver: "Reproducir desde acá" on the current stanza, where seeking is allowed.
+private struct SeekToStanzaAction: ViewModifier {
+    var isEnabled: Bool
+    var action: () -> Void
+
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content.accessibilityAction(named: Text("Reproducir desde acá"), action)
+        } else {
+            content
+        }
+    }
+}
+
 private extension String {
     var trimmingTrailingWhitespace: String {
         var result = self
@@ -197,7 +400,8 @@ private extension String {
 
 // MARK: - Pieces
 
-/// Music-list icon, "Desde la playlist" and the name in two lines.
+/// Spotify icon, "Reproduciendo desde" and the name in two lines. All of it opens the source in
+/// Spotify.
 private struct LyricsSourceButton: View {
     let label: String?
     let name: String
@@ -206,12 +410,8 @@ private struct LyricsSourceButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: Metrics.Lyrics.headerIconSpacing) {
-                Image(systemName: "music.note.list")
-                    .font(.system(size: 15, weight: .medium))
-                    .frame(width: Metrics.Lyrics.headerIconSize, height: Metrics.Lyrics.headerIconSize)
-                    .foregroundColor(theme.palette.secondaryText.color)
-                    .accessibilityHidden(true)
+            HStack(spacing: Metrics.Player.iconClearSpace) {
+                SpotifyLogoImage(variant: .icon)
                 VStack(alignment: .leading, spacing: 0) {
                     if let label {
                         Text(verbatim: label)
@@ -229,33 +429,6 @@ private struct LyricsSourceButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityHint(Text("Abre en Spotify"))
-    }
-}
-
-/// The official Spotify logo, if the asset is in the catalog (`SpotifyLogo`, downloaded from
-/// Spotify's Design Resources, never drawn by hand: docs/06-cumplimiento.md). Until then, the
-/// mockup's dashed placeholder.
-private struct SpotifyLogoSlot: View {
-    static let assetName = "SpotifyLogo"
-    @EnvironmentObject private var theme: ThemeStore
-
-    var body: some View {
-        if let logo = UIImage(named: Self.assetName) {
-            Image(uiImage: logo)
-                .resizable()
-                .scaledToFit()
-                .frame(width: Metrics.Lyrics.logoSize.width, height: Metrics.Lyrics.logoSize.height)
-        } else {
-            Text(verbatim: "LOGO SPOTIFY")
-                .font(.system(size: 10, design: .monospaced))
-                .tracking(0.6)
-                .foregroundColor(theme.palette.secondaryText.color)
-                .frame(width: Metrics.Lyrics.logoSize.width, height: Metrics.Lyrics.logoSize.height)
-                .overlay(
-                    RoundedRectangle(cornerRadius: Radius.artwork)
-                        .strokeBorder(Color.white.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
-                )
-        }
     }
 }
 

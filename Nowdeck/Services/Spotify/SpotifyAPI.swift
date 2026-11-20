@@ -94,6 +94,44 @@ final class SpotifyAPI: Sendable {
         return try Self.decode(PlaylistName.self, from: data).name
     }
 
+    /// `GET /artists/{id}`, only for the artist's photos, widest first.
+    ///
+    /// Verified on 2026-11-17: "Get Artist" is in the "Endpoints still available" list of the
+    /// February 2026 changelog (Development Mode). That change removed `followers` and
+    /// `popularity` from artists, not `images` ("Images of the artist in various sizes, widest
+    /// first"). The reference lists no scope.
+    func artistImages(id: String) async throws -> [SpotifyImage] {
+        let (data, _) = try await send(Request(path: "/artists/\(Self.pathComponent(id))"))
+        return try Self.decode(ArtistImages.self, from: data).images ?? []
+    }
+
+    /// `GET /me`, only for the user's `id` (the experimental playlist folders need it). The
+    /// reference lists scopes for the email and the subscription fields, not for `id`.
+    func currentUserID() async throws -> String {
+        let (data, _) = try await send(Request(path: "/me"))
+        return try Self.decode(CurrentUser.self, from: data).id
+    }
+
+    /// A GET outside the Web API with the same bearer token, for the experimental playlist
+    /// folders (`PlaylistFolderClient`). On purpose it does none of `send(_:)`'s work: no
+    /// refresh after a `401` (that service may reject a valid token, and refreshing would not
+    /// help), no retries, and no rate-limit gate. Every status goes back to the caller.
+    func getOutsideWebAPI(_ url: URL) async throws -> (Data, Int) {
+        let token = try await tokens.validAccessToken()
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        do {
+            let (data, response) = try await session.data(for: request)
+            guard let http = response as? HTTPURLResponse else {
+                throw SpotifyAPIError.invalidResponse
+            }
+            return (data, http.statusCode)
+        } catch let error as URLError {
+            if error.code == .cancelled { throw CancellationError() }
+            throw SpotifyAPIError.network(error.code)
+        }
+    }
+
     // MARK: Transport
 
     /// Sends a request with the rules described on the type. Returns the body and the status
@@ -214,12 +252,20 @@ final class SpotifyAPI: Sendable {
 
     /// IDs come from Spotify URIs; percent-encode them anyway so a malformed one cannot
     /// change the path.
-    private static func pathComponent(_ id: String) -> String {
+    static func pathComponent(_ id: String) -> String {
         id.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? ""
     }
 
     private struct PlaylistName: Decodable {
         let name: String
+    }
+
+    private struct ArtistImages: Decodable {
+        let images: [SpotifyImage]?
+    }
+
+    private struct CurrentUser: Decodable {
+        let id: String
     }
 }
 

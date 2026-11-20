@@ -22,7 +22,8 @@ final class SpotifyAuthorizationTests: XCTestCase {
         XCTAssertEqual(items["scope"], """
             user-read-playback-state user-modify-playback-state user-read-currently-playing \
             playlist-read-private playlist-read-collaborative user-library-read \
-            user-read-playback-position
+            user-read-playback-position user-read-recently-played \
+            playlist-modify-public playlist-modify-private
             """)
         XCTAssertEqual(items.count, 7)
     }

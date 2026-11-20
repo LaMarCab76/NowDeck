@@ -7,8 +7,16 @@ struct NowdeckApp: App {
 
     @StateObject private var appState = AppState()
     /// Saved in Application Support; see `ThemeStorage`.
-    @StateObject private var themeStore = ThemeStore(storage: .applicationSupport())
+    @StateObject private var themeStore = ThemeStore(storage: NowdeckApp.themeStorage())
     @StateObject private var themeImport = ThemeImportCoordinator()
+
+    private static func themeStorage() -> ThemeStorage {
+        #if DEBUG
+        // The demo keeps its themes apart from the real ones (`DemoMode`).
+        if DemoMode.isEnabled { return DemoMode.themeStorage() }
+        #endif
+        return .applicationSupport()
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -20,6 +28,7 @@ struct NowdeckApp: App {
                 // The import sheet waits while onboarding (portrait) is on screen.
                 .themeImportPresenter(isEnabled: appState.route == .player)
                 .environmentObject(appState)
+                .environmentObject(appState.preferences)
                 .environmentObject(themeStore)
                 .environmentObject(themeImport)
                 .preferredColorScheme(.dark)

@@ -10,7 +10,7 @@ Romper estas reglas puede hacer que Spotify revoque el acceso a la API.
 ## Checklist por pantalla
 
 - [ ] **Atribución**: toda pantalla con contenido de Spotify (Reproducción, modo letras,
-  Biblioteca, mini reproductor) muestra el **logo oficial de Spotify**.
+  Biblioteca, mini reproductor, Cola) muestra el **logo oficial de Spotify**.
   - Logo completo: 70 px de mínimo digital. Ícono solo: 21 px de mínimo.
   - Zona de exclusión igual a la mitad del alto del ícono.
   - Sobre fondos oscuros, logo blanco. El verde, solo sobre negro o blanco.
@@ -31,7 +31,12 @@ Romper estas reglas puede hacer que Spotify revoque el acceso a la API.
 - [ ] **Controles**: deshabilitar u ocultar lo que `actions.disallows` prohíba. Las guidelines:
   "Play controls must either have a disabled state to indicate that they are restricted or
   they should not be displayed at all". Nowdeck los deshabilita (ver `docs/03`, "`actions`").
-- [ ] **Progreso**: informativo, sin ningún indicio de que se pueda adelantar.
+- [ ] **Progreso**: donde Spotify no deja adelantar, informativo, sin ningún indicio de que se
+  pueda adelantar. La frase de la guía ("Make clear that the track progress bar is for
+  information only - there should be no indication that the user can seek") está en la
+  sección *Handling Spotify Free restricted actions in your companion app* (releído el
+  2026-11-18): es para las acciones restringidas, no prohíbe adelantar donde Spotify lo
+  permite.
 - [ ] **Podcasts**: mostrar el título del episodio y el nombre del podcast. Saltos de ±15 s para
   episodios: **aplica** (verificado el 2026-11-17 en *Design & Branding Guidelines* → "Playing
   views"). La sección empieza con "If you choose to show play controls in your app, the
@@ -66,7 +71,47 @@ Romper estas reglas puede hacer que Spotify revoque el acceso a la API.
 - **Client ID propio por usuario**: Spotify no lo prohíbe ni lo avala por escrito. Es la única
   forma práctica de distribuir una app abierta con el límite de 5 usuarios.
 - **Letras de LRCLIB**: la política prohíbe productos integrados con contenido de otro servicio.
-  Por eso la función está apagada por defecto y explicada.
+  Por eso la función está explicada y se puede apagar en Ajustes. Arranca prendida, por
+  decisión del dueño del 2026-11-18 (ver "Zonas grises" en la revisión, más abajo).
+
+- **Carpetas de playlists (experimental, opcional)**: decisión del dueño del 2026-11-17. La Web
+  API no da las carpetas; con la opción activa, Nowdeck lee el *rootlist* del servicio interno
+  de playlists de Spotify (`spclient.wg.spotify.com`), que no está documentado ni aprobado
+  para apps de terceros y choca con los Developer Terms. Por eso:
+  - está **apagada por defecto** y se ofrece con los riesgos explicados (paso opcional de la
+    configuración y Ajustes → Reproductor);
+  - solo manda el token de la Web API del usuario: **no** imita al cliente de Spotify (nada de
+    `client-token` ni token del reproductor web);
+  - si el servicio rechaza el pedido, la biblioteca muestra la lista plana con un aviso.
+  Nadie lo probó todavía con una cuenta real; lo más probable es que Spotify rechace ese token.
+
+- **Foto del artista de fondo**: decisión del dueño del 2026-11-17, para parecerse a la app de
+  TV de Spotify. La referencia de *Get Artist* dice "Spotify visual content must be kept in its
+  original form, e.g. you can not crop album artwork, overlay images on album artwork…". La
+  foto se muestra recortada para llenar la pantalla y, desde el 2026-11-18, sola y
+  oscurecida por una capa negra configurable ("Oscurecer"), así que esto choca con la letra de
+  esa frase. Las reglas de la guía de diseño
+  ("Artwork must be kept in its original form… This includes applying overlays and blurring")
+  están bajo "For album and podcast artwork" y no nombran las fotos de artistas. El dueño lo
+  considera aceptable porque es uso personal, sin distribución. Para limitar el riesgo:
+  - la **carátula** sigue intacta (sin recortar ni tapar); la foto va solo en el fondo;
+  - es una opción de Ajustes → Apariencia → FONDO DEL REPRODUCTOR, no viene activada (el
+    fondo por defecto sigue siendo "Según la carátula"), y con otra opción no se pide;
+  - los deslizadores "Desenfoque" y "Oscurecer" la difuminan y oscurecen más (la guía nombra
+    el *blurring* y los *overlays* entre lo que no se hace con las carátulas; acá, de nuevo,
+    es la foto del artista, no la carátula);
+  - el contenido sigue atribuido (ícono de Spotify y enlace de vuelta en la fila superior; en
+    la vista previa de Ajustes, el ícono aparece en el mismo lugar mientras se ve la foto y
+    abre al artista de esa foto).
+  El Canvas (video en loop) no está en la Web API y no se trae.
+- **Deslizar entre temas** (2026-11-17): mientras se arrastra, la carátula del tema actual y
+  la del siguiente o anterior se mueven enteras, una al lado de la otra; un borde puede quedar
+  fuera de la pantalla por un momento, como en cualquier carrusel. Nunca se recortan para
+  encajar, nunca se superponen y nada se dibuja encima. Cuando el ítem no se conoce, el
+  cuadrado vacío con un ícono no es una carátula.
+- **Controles "parecidos al Car Thing"** (pedido del dueño del 2026-11-17): se tomó solo la
+  idea de una fila centrada con más aire entre los botones. Los botones, colores y medidas
+  siguen siendo los de Nowdeck: no se copió la pantalla del Car Thing.
 
 ## App Store (si algún día se publica)
 
@@ -82,6 +127,12 @@ Repaso punto por punto sobre la rama `hito/08-terminaciones` (hitos 1 a 7 integr
 
 ### Atribución
 
+- ✅ **Logo oficial (2026-11-17)**: el dueño trajo los archivos de *Design Resources* (kit
+  2024). `SpotifyIcon` (ícono blanco) va junto al origen en Reproducción y en el modo letras;
+  `SpotifyLogo` (logo completo blanco) en Biblioteca. Los SVG oficiales solo se volvieron a
+  guardar con el relleno blanco escrito en cada trazo, porque el catálogo de assets no lee los
+  bloques `<style>`. Ícono de 24 pt (mínimo 21) con 12 libres (la mitad del alto). Lo que
+  sigue de este punto es el estado anterior.
 - ⚠️ **Logo oficial**: el lugar está en Reproducción (108×30 en una zona de 44, a la izquierda
   de la fila superior), modo letras (arriba a la derecha) y Biblioteca (fila de pestañas, que
   también cubre el mini reproductor). El asset `SpotifyLogo` está **vacío a propósito**: falta
@@ -96,25 +147,34 @@ Repaso punto por punto sobre la rama `hito/08-terminaciones` (hitos 1 a 7 integr
 ### Enlace de vuelta
 
 - ✅ El logo abre el contenido en Spotify (el contexto o el tema; en Biblioteca, la portada de
-  Spotify). El nombre de la playlist o el álbum también ("Desde la playlist …" en Reproducción,
+  Spotify). El nombre de la playlist o el álbum también ("Reproduciendo desde …" en Reproducción,
   el nombre en el modo letras, y "Abrir en Spotify" en el menú de cada tarjeta).
 - ✅ Enlace universal `open.spotify.com` con `universalLinksOnly`; si Spotify no está
   instalado, se abre su página en la App Store (`SpotifyLink`). Solo se abren URLs de
   `https://open.spotify.com`.
 - ✅ Texto visible "ABRIR SPOTIFY ↗" en Biblioteca y en Nada sonando, además de la tarjeta "Ver
   más en Spotify" al final de cada fila.
+- ✅ Cola (2026-11-17): logo completo en la cabecera (enlace al tema que suena), hasta 20
+  temas, marca de explícito, nombres completos al mantener apretado y "ABRIR SPOTIFY ↗" al
+  final de la lista.
+- ✅ Agregar a una playlist (2026-11-18): logo completo en la cabecera (enlace al tema),
+  marca de explícito, título y artistas con marquesina, y "ABRIR SPOTIFY ↗" al final.
+- ⚠️ Agregar a una playlist muestra **todas** las playlists editables, sin cortar en 20: se
+  interpretó que no es una fila de contenido sino un selector de destino (mismo criterio que
+  la lista de temas del detalle).
 
 ### Carátulas
 
 - ✅ Se muestran tal cual (`.fit`, sin recortar), con radio de 4 pt, sin texto, controles ni
-  logos encima, en Reproducción, modo letras, mini reproductor y tarjetas.
+  logos encima, en Reproducción, modo letras, mini reproductor, tarjetas, Cola y Agregar a una
+  playlist.
 - ✅ Corregido en este hito: mientras arranca una tarjeta se atenuaba la tarjeta entera,
   carátula incluida. Ahora se atenúan solo los textos.
-- ⚠️ **Superposiciones pasajeras**: el panel de volumen (520×64, centrado arriba, como en
-  `Volumen.dc.html`) y los avisos (píldora centrada arriba) quedan unos segundos sobre la
-  esquina superior derecha de la carátula. Es el diseño de los mockups y no tapa nada de forma
-  permanente, pero la guía dice "sin superponerle controles". Opciones: dejarlo así, o centrar
-  el panel y los avisos sobre la columna de texto en lugar de la pantalla. No se cambió.
+- ⚠️ **Superposiciones pasajeras**: los avisos (píldora centrada arriba) quedan unos segundos
+  sobre la esquina superior derecha de la carátula. Es el diseño de los mockups y no tapa nada
+  de forma permanente, pero la guía dice "sin superponerle controles". Opciones: dejarlo así, o
+  centrar los avisos sobre la columna de texto en lugar de la pantalla. No se cambió. El volumen
+  ya no se superpone: desde el 2026-11-18 se abre dentro de la fila de controles.
 
 ### Metadatos
 
@@ -125,17 +185,17 @@ Repaso punto por punto sobre la rama `hito/08-terminaciones` (hitos 1 a 7 integr
   casi todos los textos que se pueden cortar ya son botones (el origen abre Spotify, el
   dispositivo abre la hoja), así que "tocar para ver completo" chocaba con esas acciones.
   - Se desplazan, solo si no entran: título (dos líneas; si no alcanzan, una línea que se
-    desplaza), artista, "Desde la playlist …" y "Reproduciendo en …" en Reproducción; nombre
+    desplaza), artista, el nombre del origen y "Reproduciendo en …" en Reproducción; nombre
     del origen, título, artista y dispositivo en el modo letras; título · artista y "Suena en
     …" en el mini reproductor. Pausa de 3 s al inicio, 30 pt/s, borde derecho desvanecido. Con
     *Reducir movimiento* hace una sola pasada cada vez que cambia el texto.
   - Las tarjetas de Biblioteca no se desplazan: tocarlas reproduce, y mantenerlas apretadas
     muestra el nombre completo (vista previa del menú contextual).
   - VoiceOver siempre lee el texto completo.
-- ⚠️ **25 caracteres para la playlist o el álbum en Reproducción**: la fila superior deja poco
-  lugar a "Desde la playlist **Nombre**" (unos 13 caracteres del nombre en 896 pt y casi nada en
-  736 pt). Con la marquesina el nombre se puede leer entero, pero no hay lugar *visible* para
-  25 caracteres. Pendiente de la decisión de diseño del dueño.
+- ✅ **25 caracteres para la playlist o el álbum en Reproducción**: desde el 2026-11-18 el
+  origen va en dos líneas ("Reproduciendo desde" arriba y el nombre abajo, ver `docs/02`), y
+  con la fila a todo el ancho el nombre tiene lugar visible para más de 25 caracteres. Si no
+  entra, se desplaza.
 - ⚠️ **25 caracteres en las tarjetas de Biblioteca**: el nombre va en una línea de 150 pt a
   16 pt semibold (como el mockup), donde entran unos 17 caracteres. El nombre completo se ve
   manteniendo apretada la tarjeta. Si hace falta cumplir la regla al pie de la letra, la
@@ -144,13 +204,40 @@ Repaso punto por punto sobre la rama `hito/08-terminaciones` (hitos 1 a 7 integr
   de ~512 pt (896) o ~388 pt (736), y el título dos líneas de 40 pt: entran de sobra en los dos
   tamaños. En el modo letras y el mini reproductor también.
 
+### Detalle de playlist o álbum (agregado el 2026-11-17)
+
+- ✅ **Atribución y enlace de vuelta**: el logo y "ABRIR EN SPOTIFY ↗" de la fila superior
+  abren la playlist o el álbum en Spotify; en una playlist de otra persona también "Ver en
+  Spotify". Mantener apretado un tema ofrece "Abrir en Spotify" con la página del tema.
+- ✅ **Carátula**: 150×150, `.fit`, radio 4, sin nada encima; "Reproducir" va debajo.
+- ✅ **Explícito**: la lista marca con "E" los temas con `explicit: true`.
+- ✅ **Nombres truncados legibles**: el nombre y el subtítulo de la columna izquierda usan la
+  marquesina; en la lista, mantener apretado un tema muestra el título y los artistas
+  completos. VoiceOver lee todo.
+- ⚠️ **25 caracteres para el nombre de la playlist o el álbum**: la columna de 170 pt a 18 pt
+  bold deja unos 17 caracteres visibles. Mismo caso que las tarjetas: se lee entero con la
+  marquesina, pero no hay lugar *visible* para 25. Pasarlo a dos líneas no entra en los 252
+  pt del bloque junto con "Reproducir".
+- ✅ **23 caracteres de tema y 18 de artista** en la lista: el título tiene unos 510 pt en
+  896 y unos 350 en 736.
+- ⚠️ **Máximo de 20 ítems por fila**: se interpretó que no se aplica a la lista de temas, que
+  no es una fila de contenido sino el contenido de una playlist o un álbum. Se carga completa,
+  de a 50. Propuesto al dueño el 2026-11-17, falta su confirmación. La alternativa es cortar
+  en 20 y terminar con "Ver todo en Spotify".
+
 ### Controles
 
 - ✅ Lo que `actions.disallows` prohíbe se muestra **deshabilitado** (atenuado y sin acción), y
   todo queda deshabilitado en un dispositivo con `is_restricted`. Ver `docs/03`, "`actions`":
   sigue pendiente del dueño confirmar con una respuesta real que llega `disallows`.
-- ✅ Progreso informativo: barra sin perilla ni arrastre, y VoiceOver la lee como "Progreso,
-  1:25 de 3:47" sin acción de ajuste.
+- ✅ Adelantar desde la barra y desde las letras (pedido del dueño, 2026-11-18): solo cuando
+  `actions.disallows` no prohíbe `seeking` y el dispositivo no tiene `is_restricted`, igual
+  que los −15 s y +15 s. Los comandos de la Web API ya piden Premium, y la regla de la guía
+  sobre el progreso "solo informativo" está en la sección de acciones restringidas de
+  Spotify Free. Donde no se puede adelantar, la barra queda como antes: sin perilla ni
+  arrastre, VoiceOver la lee como "Progreso, 1:25 de 3:47" sin acción de ajuste, y las letras
+  no toman el dedo. Tocar el tiempo de la derecha solo alterna entre la duración y el tiempo
+  restante (decisión del dueño del 2026-11-18): no adelanta ni atrasa.
 
 ### Podcasts
 
@@ -192,13 +279,12 @@ Repaso punto por punto sobre la rama `hito/08-terminaciones` (hitos 1 a 7 integr
 ### Zonas grises
 
 - ✅ Documentadas en el README (Client ID propio, letras de LRCLIB).
-- ⚠️ **Letras apagadas por defecto**: esta guía y `docs/04` piden que la función de letras
-  arranque **apagada**, pero `docs/05` define que el tema por defecto incluye `"letras"` en
-  `reproductor.controles`, y "Mostrar letras" se guarda en el tema (decisión de la
-  integración). Hoy el botón de letras aparece en una instalación nueva y en los cuatro
-  temas preestablecidos. No se cambió porque toca el formato de los temas y los archivos de
-  `themes/`. Propuesta: sacar `"letras"` de los controles por defecto y de los temas de
-  ejemplo, y que "Mostrar letras" lo agregue al activarse.
+- ✅ **Letras prendidas por defecto**: esta guía y `docs/04` pedían que la función de letras
+  arrancara **apagada**, pero `docs/05` define que el tema por defecto incluye `"letras"` en
+  `reproductor.controles`, así que el botón de letras aparece en una instalación nueva y en
+  los cuatro temas preestablecidos. El dueño decidió el 2026-11-18 dejarlo así: las letras
+  arrancan prendidas y se pueden apagar en Ajustes → Reproductor → "Mostrar letras". El
+  README y la nota de Ajustes explican de dónde salen.
 
 ### Otros pendientes del dueño relacionados
 

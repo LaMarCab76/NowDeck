@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The three options of Ajustes → Apariencia → FONDO DEL REPRODUCTOR and how they map to the
+/// The four options of Ajustes → Apariencia → FONDO DEL REPRODUCTOR and how they map to the
 /// theme (docs/05, "Correspondencia con Ajustes").
 enum PlayerBackgroundOption: CaseIterable, Sendable {
     /// `fondoReproductor: "solido"` with `fondo: #000000`.
@@ -9,6 +9,8 @@ enum PlayerBackgroundOption: CaseIterable, Sendable {
     case darkGray
     /// `fondoReproductor: "caratula"`. The default.
     case artwork
+    /// `fondoReproductor: "artista"`: the artist's photo over the artwork color.
+    case artistPhoto
 
     static let blackHex = "#000000"
     static let darkGrayHex = "#121212"
@@ -59,6 +61,16 @@ final class ThemeStore: ObservableObject {
         theme.playerBackground ?? .artwork
     }
 
+    /// "Desenfoque" of the artist's photo, 0 to 100.
+    var backgroundBlur: Int {
+        theme.backgroundBlur ?? Theme.defaultBackgroundBlur
+    }
+
+    /// "Oscurecer" of the artist's photo, 0 to 100.
+    var backgroundDim: Int {
+        theme.backgroundDim ?? Theme.defaultBackgroundDim
+    }
+
     /// The optional controls, in the theme's order.
     var playerControls: [Theme.PlayerControl] {
         theme.player?.controls ?? Theme.PlayerControl.allCases
@@ -87,7 +99,11 @@ final class ThemeStore: ObservableObject {
     /// `nil` when the background is solid with a color that is neither black nor dark gray
     /// (for example the "Ámbar" preset): then no option is highlighted.
     var backgroundOption: PlayerBackgroundOption? {
-        if playerBackground == .artwork { return .artwork }
+        switch playerBackground {
+        case .artwork: return .artwork
+        case .artistPhoto: return .artistPhoto
+        case .solid: break
+        }
         switch palette.background.hexString {
         case PlayerBackgroundOption.blackHex: return .black
         case PlayerBackgroundOption.darkGrayHex: return .darkGray
@@ -104,6 +120,8 @@ final class ThemeStore: ObservableObject {
         next.name = preset.theme.name
         next.colors = preset.theme.colors
         next.playerBackground = preset.theme.playerBackground
+        next.backgroundBlur = preset.theme.backgroundBlur
+        next.backgroundDim = preset.theme.backgroundDim
         commit(next)
     }
 
@@ -115,6 +133,8 @@ final class ThemeStore: ObservableObject {
         next.name = customTheme.name
         next.colors = customTheme.colors
         next.playerBackground = customTheme.playerBackground
+        next.backgroundBlur = customTheme.backgroundBlur
+        next.backgroundDim = customTheme.backgroundDim
         commit(next)
     }
 
@@ -135,7 +155,21 @@ final class ThemeStore: ObservableObject {
             next.colors?.background = PlayerBackgroundOption.darkGrayHex
         case .artwork:
             next.playerBackground = .artwork
+        case .artistPhoto:
+            next.playerBackground = .artistPhoto
         }
+        commitEdit(next)
+    }
+
+    func setBackgroundBlur(_ value: Int) {
+        var next = theme
+        next.backgroundBlur = value
+        commitEdit(next)
+    }
+
+    func setBackgroundDim(_ value: Int) {
+        var next = theme
+        next.backgroundDim = value
         commitEdit(next)
     }
 

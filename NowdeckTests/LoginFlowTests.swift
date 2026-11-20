@@ -28,18 +28,26 @@ final class FakeWebAuthenticator: WebAuthenticating {
 final class LoginFlowTests: XCTestCase {
     private let clientID = "0123456789abcdef0123456789abcdef"
 
-    /// Routes token requests and the access check to separate answers.
+    /// Routes token requests and the access check to separate answers. `GET /me` answers
+    /// `user-a` for the stored token ("old") and `newUserID` for the new login's ("access").
     private func session(
         tokenStatus: Int = 200,
         tokenError: String = "invalid_client",
-        playerStatus: Int = 204
+        playerStatus: Int = 204,
+        newUserID: String = "user-a",
+        grantedScope: String = "user-read-playback-state"
     ) -> (URLSession, StubRecorder) {
         StubURLProtocol.session { request in
             if request.url?.host == "accounts.spotify.com" {
                 let body = tokenStatus == 200
-                    ? tokenJSON(access: "access", refresh: "refresh")
+                    ? tokenJSON(access: "access", refresh: "refresh", scope: grantedScope)
                     : tokenErrorJSON(tokenError)
                 return (.stub(tokenStatus), body)
+            }
+            if request.url?.path == "/v1/me" {
+                let isOld = request.value(forHTTPHeaderField: "Authorization") == "Bearer old"
+                let id = isOld ? "user-a" : newUserID
+                return (.stub(200), try JSONSerialization.data(withJSONObject: ["id": id]))
             }
             return (.stub(playerStatus), Data())
         }
@@ -50,15 +58,56 @@ final class LoginFlowTests: XCTestCase {
         web: FakeWebAuthenticator = .approving(),
         tokenStatus: Int = 200,
         tokenError: String = "invalid_client",
-        playerStatus: Int = 204
+        playerStatus: Int = 204,
+        newUserID: String = "user-a",
+        grantedScope: String = "user-read-playback-state"
     ) -> (AppState, CredentialStore, StubRecorder) {
         let (session, recorder) = session(tokenStatus: tokenStatus, tokenError: tokenError,
-                                          playerStatus: playerStatus)
+                                          playerStatus: playerStatus, newUserID: newUserID,
+                                          grantedScope: grantedScope)
         let appState = AppState(credentials: credentials,
                                 accounts: SpotifyAccountsClient(session: session),
                                 accessCheck: SpotifyAccessCheck(session: session),
-                                webAuthenticator: web)
+                                webAuthenticator: web,
+                                preferences: AppPreferences(defaults: Self.freshDefaults()))
         return (appState, credentials, recorder)
+    }
+
+    private static func freshDefaults() -> UserDefaults {
+        let name = "LoginFlowTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+        return defaults
+    }
+
+    func testFoldersAnswerLeadsToDoneThenPlayer() async throws {
+        let (appState, _, _) = makeAppState()
+        appState.showOnboardingStep(.clientID)
+        await appState.connect(clientID: clientID)
+
+        appState.answerPlaylistFolders(enabled: true)
+        XCTAssertEqual(appState.route, .onboarding(.connected))
+        XCTAssertTrue(appState.preferences.usesPlaylistFolders)
+        XCTAssertTrue(appState.preferences.hasAnsweredPlaylistFolders)
+
+        appState.finishOnboarding()
+        XCTAssertEqual(appState.route, .player)
+    }
+
+    func testFoldersStepIsSkippedOnceAnswered() async throws {
+        let (appState, _, _) = makeAppState()
+        appState.preferences.answerPlaylistFolders(enabled: false)
+        appState.showOnboardingStep(.clientID)
+
+        await appState.connect(clientID: clientID)
+
+        XCTAssertEqual(appState.route, .onboarding(.connected))
+    }
+
+    func testFinishOnboardingDoesNothingBeforeLoggingIn() {
+        let (appState, _, _) = makeAppState()
+        appState.finishOnboarding()
+        XCTAssertEqual(appState.route, .onboarding(.welcome))
     }
 
     // MARK: SpotifyLogin
@@ -118,15 +167,97 @@ final class LoginFlowTests: XCTestCase {
         XCTAssertNotNil(appState.tokenManager)
     }
 
+    // MARK: Playlist editing (2026-11-18)
+
+    private func loggedInAppState(scope: String, web: FakeWebAuthenticator = .approving(),
+                                  playerStatus: Int = 204,
+                                  newUserID: String = "user-a",
+                                  grantedScope: String = "user-read-playback-state playlist-modify-public playlist-modify-private"
+    ) throws -> (AppState, CredentialStore) {
+        let credentials = CredentialStore(store: InMemorySecureStore())
+        try credentials.setClientID(clientID)
+        try credentials.setTokens(OAuthTokens(accessToken: "old", refreshToken: "r",
+                                              expiresAt: .distantFuture, scope: scope))
+        let (appState, _, _) = makeAppState(credentials: credentials, web: web,
+                                            playerStatus: playerStatus, newUserID: newUserID,
+                                            grantedScope: grantedScope)
+        return (appState, credentials)
+    }
+
+    func testPlaylistEditingNeedsBothModifyScopes() throws {
+        XCTAssertEqual(try loggedInAppState(scope: "user-read-playback-state").0
+            .playlistEditingGrant(), .missing)
+        XCTAssertEqual(try loggedInAppState(scope: "playlist-modify-public").0
+            .playlistEditingGrant(), .missing)
+        XCTAssertEqual(try loggedInAppState(
+            scope: "user-read-playback-state playlist-modify-public playlist-modify-private")
+            .0.playlistEditingGrant(), .granted)
+    }
+
+    func testEmptyGrantedScopesAreUnknown() throws {
+        XCTAssertEqual(try loggedInAppState(scope: "").0.playlistEditingGrant(), .unknown)
+    }
+
+    func testRequestingPlaylistEditingFailsWhenSpotifyGrantsFewerScopes() async throws {
+        let (appState, credentials) = try loggedInAppState(
+            scope: "x", grantedScope: "user-read-playback-state playlist-modify-public")
+
+        let failure = await appState.requestPlaylistEditing()
+
+        XCTAssertEqual(failure, .denied)
+        XCTAssertEqual(try credentials.tokens()?.accessToken, "old")
+    }
+
+    func testRequestingPlaylistEditingWithADifferentAccountIsRejected() async throws {
+        let (appState, credentials) = try loggedInAppState(scope: "x", newUserID: "user-b")
+
+        let failure = await appState.requestPlaylistEditing()
+
+        XCTAssertEqual(failure, .differentAccount)
+        XCTAssertEqual(try credentials.tokens()?.accessToken, "old")
+    }
+
+    func testRequestingPlaylistEditingStoresNewTokensAndStaysOnThePlayer() async throws {
+        let (appState, credentials) = try loggedInAppState(scope: "user-read-playback-state")
+        let manager = appState.tokenManager
+
+        let failure = await appState.requestPlaylistEditing()
+
+        XCTAssertNil(failure)
+        XCTAssertEqual(try credentials.tokens()?.accessToken, "access")
+        XCTAssertEqual(appState.route, .player)
+        // Same token manager: it reads the Keychain on every request.
+        XCTAssertTrue(appState.tokenManager === manager)
+    }
+
+    func testRequestingPlaylistEditingReportsACancelledLogin() async throws {
+        let web = FakeWebAuthenticator { _ in throw AuthError.cancelled }
+        let (appState, credentials) = try loggedInAppState(scope: "x", web: web)
+
+        let failure = await appState.requestPlaylistEditing()
+
+        XCTAssertEqual(failure, .cancelled)
+        XCTAssertEqual(try credentials.tokens()?.accessToken, "old")
+    }
+
+    func testRequestingPlaylistEditingWithAnotherAccountKeepsTheOldSession() async throws {
+        let (appState, credentials) = try loggedInAppState(scope: "x", playerStatus: 403)
+
+        let failure = await appState.requestPlaylistEditing()
+
+        XCTAssertEqual(failure, .notAllowlisted)
+        XCTAssertEqual(try credentials.tokens()?.accessToken, "old")
+    }
+
     // MARK: AppState.connect
 
-    func testSuccessfulConnectStoresEverythingAndOpensPlayer() async throws {
+    func testSuccessfulConnectStoresEverythingAndAsksAboutFolders() async throws {
         let (appState, credentials, _) = makeAppState()
         appState.showOnboardingStep(.clientID)
 
         await appState.connect(clientID: " \(clientID)\n")
 
-        XCTAssertEqual(appState.route, .player)
+        XCTAssertEqual(appState.route, .onboarding(.folders))
         XCTAssertNil(appState.notice)
         XCTAssertEqual(try credentials.clientID(), clientID)
         XCTAssertEqual(try credentials.tokens()?.refreshToken, "refresh")

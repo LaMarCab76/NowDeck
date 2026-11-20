@@ -93,6 +93,40 @@ final class ThemeStoreTests: XCTestCase {
         store.setBackgroundOption(.artwork)
         XCTAssertEqual(store.theme.playerBackground, .artwork)
         XCTAssertEqual(store.backgroundOption, .artwork)
+
+        store.setBackgroundOption(.artistPhoto)
+        XCTAssertEqual(store.theme.playerBackground, .artistPhoto)
+        XCTAssertEqual(store.backgroundOption, .artistPhoto)
+        XCTAssertTrue(store.playerBackground.usesArtworkColor, "The photo sits on the cover color")
+    }
+
+    func testBackgroundBlurIsSavedInTheTheme() throws {
+        let store = ThemeStore(storage: storage)
+        XCTAssertEqual(store.backgroundBlur, Theme.defaultBackgroundBlur)
+        XCTAssertEqual(Theme.defaultBackgroundBlur, 40)
+        XCTAssertNil(store.theme.backgroundBlur, "The default is not written into the theme")
+        store.setBackgroundOption(.artistPhoto)
+        store.setBackgroundBlur(35)
+        XCTAssertEqual(store.theme.backgroundBlur, 35)
+        let restarted = ThemeStore(storage: storage)
+        XCTAssertEqual(restarted.backgroundBlur, 35)
+        XCTAssertEqual(restarted.backgroundOption, .artistPhoto)
+        let exported = String(decoding: try ThemeFile.encode(restarted.theme), as: UTF8.self)
+        XCTAssertTrue(exported.contains("\"desenfoqueFondo\" : 35")
+                      || exported.contains("\"desenfoqueFondo\":35"), "Exported with the theme")
+    }
+
+    func testBackgroundDimDefaultsTo60AndIsSavedInTheTheme() throws {
+        let store = ThemeStore(storage: storage)
+        XCTAssertEqual(store.backgroundDim, Theme.defaultBackgroundDim)
+        XCTAssertEqual(Theme.defaultBackgroundDim, 60)
+        store.setBackgroundOption(.artistPhoto)
+        store.setBackgroundDim(45)
+        let restarted = ThemeStore(storage: storage)
+        XCTAssertEqual(restarted.backgroundDim, 45)
+        let exported = String(decoding: try ThemeFile.encode(restarted.theme), as: UTF8.self)
+        XCTAssertTrue(exported.contains("\"oscurecerFondo\" : 45")
+                      || exported.contains("\"oscurecerFondo\":45"), "Exported with the theme")
     }
 
     func testSolidThemeBackgroundHighlightsNoOption() throws {

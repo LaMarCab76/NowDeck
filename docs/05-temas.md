@@ -34,7 +34,9 @@ como archivo **`.nowdeck.json`**. Esquema: `schemas/nowdeck.tema.v1.schema.json`
 | `formato` | `"nowdeck.tema/1"` (obligatorio) | — |
 | `nombre` | texto de 1 a 40 caracteres (obligatorio) | — |
 | `colores.*` | `#RRGGBB` | los del tema "Negro y verde" |
-| `fondoReproductor` | `solido` (usa `colores.fondo`) · `caratula` | `caratula` |
+| `fondoReproductor` | `solido` (usa `colores.fondo`) · `caratula` · `artista` (foto del artista a pantalla completa; mientras carga, o si el artista no tiene foto, el color de la carátula) | `caratula` |
+| `desenfoqueFondo` | entero de 0 (nítida) a 100; solo se usa con `artista` | `40` |
+| `oscurecerFondo` | entero de 0 (la foto tal cual) a 100; solo se usa con `artista` | `60` |
 | `reproductor.caratula` | `izquierda` · `derecha` | `izquierda` |
 | `reproductor.controles` | subconjunto ordenado de `aleatorio`, `repetir`, `letras`, `volumen` | los cuatro |
 | `letras.ancho` | `mitad` · `dos-tercios` · `completo` | `dos-tercios` |
@@ -46,6 +48,10 @@ Correspondencia con Ajustes → Apariencia → Fondo del reproductor:
 | Negro | `fondoReproductor: "solido"` con `fondo: #000000` |
 | Gris oscuro | `fondoReproductor: "solido"` con `fondo: #121212` |
 | Según la carátula | `fondoReproductor: "caratula"` |
+| Foto del artista | `fondoReproductor: "artista"`; sus deslizadores "Desenfoque" y "Oscurecer" son `desenfoqueFondo` y `oscurecerFondo` |
+
+En el iPhone 8 Plus las cuatro opciones no entran con su nombre completo: ahí se muestran
+"Negro", "Gris", "Carátula" y "Artista".
 
 `reproductor.caratula: "derecha"` está en el formato, pero **no tiene diseño todavía**. Por
 ahora, ignorarlo con una advertencia en la importación.

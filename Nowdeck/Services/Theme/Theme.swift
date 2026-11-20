@@ -17,6 +17,13 @@ struct Theme: Codable, Equatable, Sendable {
     var name: String
     var colors: Colors?
     var playerBackground: PlayerBackground?
+    /// How blurred the artist's photo is (`fondoReproductor: "artista"`), 0 to 100. Missing
+    /// means `defaultBackgroundBlur`; it is not filled in by the merge, so themes that never
+    /// touched it (the presets) do not grow the field.
+    var backgroundBlur: Int?
+    /// How much the artist's photo is darkened (`oscurecerFondo`), 0 to 100. Missing means
+    /// `defaultBackgroundDim`; like the blur, the merge does not fill it in.
+    var backgroundDim: Int?
     var player: Player?
     var lyrics: Lyrics?
 
@@ -25,6 +32,8 @@ struct Theme: Codable, Equatable, Sendable {
         case name = "nombre"
         case colors = "colores"
         case playerBackground = "fondoReproductor"
+        case backgroundBlur = "desenfoqueFondo"
+        case backgroundDim = "oscurecerFondo"
         case player = "reproductor"
         case lyrics = "letras"
     }
@@ -52,7 +61,22 @@ struct Theme: Codable, Equatable, Sendable {
         case solid = "solido"
         /// Uses a soft color taken from the artwork.
         case artwork = "caratula"
+        /// The artist's photo, alone (owner's request, 2026-11-17; since 2026-11-18 it covers
+        /// the whole screen, without the artwork color around it).
+        case artistPhoto = "artista"
+
+        /// `caratula`, and `artista` while its photo loads or when the artist has none.
+        var usesArtworkColor: Bool { self != .solid }
     }
+
+    /// `desenfoqueFondo`: 0 (sharp) to 100.
+    static let backgroundBlurRange = 0...100
+    /// `oscurecerFondo`: 0 (the photo as is) to 100.
+    static let backgroundDimRange = 0...100
+    /// What "Foto del artista" starts with unless the theme says otherwise (owner,
+    /// 2026-11-18): blurred and darkened enough for the title to read well on any photo.
+    static let defaultBackgroundBlur = 40
+    static let defaultBackgroundDim = 60
 
     struct Player: Codable, Equatable, Sendable {
         var artworkPosition: ArtworkPosition?
@@ -133,6 +157,8 @@ extension Theme {
                 textOnAccent: colors?.textOnAccent ?? baseColors.textOnAccent
             ),
             playerBackground: playerBackground ?? base.playerBackground,
+            backgroundBlur: backgroundBlur,
+            backgroundDim: backgroundDim,
             player: Player(
                 artworkPosition: player?.artworkPosition ?? base.player?.artworkPosition,
                 controls: player?.controls ?? base.player?.controls

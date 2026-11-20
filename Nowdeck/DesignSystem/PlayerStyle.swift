@@ -7,29 +7,45 @@ import SwiftUI
 extension Metrics {
     /// Player screen (`Main.dc.html`). Margins are in `Spacing.Player`.
     enum Player {
-        /// Height of the top block (artwork and text column).
-        static let topBlockHeight: CGFloat = 256
-        static let artworkSize: CGFloat = 256
+        /// Row across the whole width, at the top: the Spotify icon and "Reproduciendo desde …"
+        /// at the left, Biblioteca at the right (owner's request, 2026-11-17: the origin
+        /// always in the top-left corner; Ajustes moved to the library).
+        static let topRowHeight: CGFloat = 44
+        /// Between the top row and the artwork row. The row's 44 pt hold the 36 pt of the
+        /// two-line origin, so the visible gap is about 18 pt (owner's request, 2026-11-18:
+        /// it was 4 under the origin pill).
+        static let topRowBottomGap: CGFloat = 14
+        /// Height of the artwork row (artwork and text column). Was 256 before the top row
+        /// moved above it, and 216 before the wider gap above; the cover shrinks so
+        /// everything still fits in 414 pt.
+        static let topBlockHeight: CGFloat = 210
+        static let artworkSize: CGFloat = 210
+        /// The whole upper area (top row and artwork row). Lyrics mode replaces all of it.
+        static let upperAreaHeight: CGFloat = topRowHeight + topRowBottomGap + topBlockHeight
         /// Between the artwork and the text column.
         static let artworkGap: CGFloat = 32
         /// Artwork side on narrow screens: `min(top block height, screen width × 0.3)`
         /// (docs/02-diseno.md, "Adaptación al iPhone 8 Plus").
         static let artworkWidthFraction: CGFloat = 0.3
 
-        /// Row with the logo, origin, Biblioteca and Ajustes.
-        static let topRowHeight: CGFloat = 44
-        static let topRowGap: CGFloat = 12
-        /// Spotify logo: 108×30 inside a 44 pt tap zone.
+        /// Between the origin, Cola and Biblioteca. Wider than the 12 of the old pills: without
+        /// a background, the buttons need the space to read as two.
+        static let topRowGap: CGFloat = 24
+        /// Full Spotify logo (Biblioteca): 108×30 inside a 44 pt tap zone.
         static let logoSize = CGSize(width: 108, height: 30)
-        /// Space between the logo and "Desde la playlist". The mockup has 10, but Spotify's
-        /// guidelines ask for a clear space of half the logo height (15): see docs/06.
-        static let logoClearSpace: CGFloat = 15
-        static let topButtonsGap: CGFloat = 6
+        /// Spotify icon next to the origin (owner's decision, 2026-11-17: the icon
+        /// instead of the full logo, in the normal view and in lyrics mode). Spotify's minimum
+        /// for the icon alone is 21 px.
+        static let iconSize: CGFloat = 24
+        /// Space between the icon and the origin: half the icon height, as Spotify's
+        /// guidelines ask for the clear space (docs/06).
+        static let iconClearSpace: CGFloat = 12
         static let libraryPillLeadingPadding: CGFloat = 12
         static let libraryPillTrailingPadding: CGFloat = 16
         static let libraryPillIconGap: CGFloat = 8
         static let libraryIconSize: CGFloat = 20
-        static let settingsIconSize: CGFloat = 22
+        /// The symbol on the empty cover of a swipe preview (next or previous unknown).
+        static let previewSymbolSize: CGFloat = 40
 
         static let titleArtistGap: CGFloat = 6
         static let titleLineLimit = 2
@@ -43,22 +59,31 @@ extension Metrics {
         static let progressRowHeight: CGFloat = 16
         static let progressRowGap: CGFloat = 14
         static let progressTimeWidth: CGFloat = 36
+        /// Extra tappable margin around the time on the right (16 pt row + 2 × 14 ≈ 44 pt).
+        static let progressTimeTapOutset: CGFloat = 14
         static let progressBarHeight: CGFloat = 4
+        /// The bar while a finger drags on it.
+        static let progressBarScrubbingHeight: CGFloat = 8
+        /// The bar takes the finger this far above and below its 16 pt row (16 + 2 × 14 ≈
+        /// 44 pt, the minimum touch target).
+        static let progressBarTouchOutset: CGFloat = 14
 
         static let controlsHeight: CGFloat = 64
-        /// Width of the side groups (shuffle/repeat and lyrics/volume).
-        static let sideGroupWidth: CGFloat = 200
-        /// …on screens narrower than `narrowScreenWidth` (iPhone 8 Plus: 736).
-        static let narrowSideGroupWidth: CGFloat = 160
-        static let narrowScreenWidth: CGFloat = 800
+        /// One centered row with the same gap between every button (owner's request,
+        /// 2026-11-17), instead of the mockup's three groups pinned to the edges. With the
+        /// default seven buttons the row is 584 pt wide: it fits the 640 pt of the 8 Plus.
+        static let controlsGap: CGFloat = 36
+        /// The gap shrinks toward this on narrow screens, where Agregar a una playlist would
+        /// not fit with 36 (`PlayerControlLayout.gap(forWidth:)`).
+        static let controlsMinimumGap: CGFloat = 12
         static let sideButtonSize: CGFloat = 48
-        static let sideButtonGap: CGFloat = 4
         static let sideIconSize: CGFloat = 22
-        static let centerGap: CGFloat = 20
         static let skipButtonSize: CGFloat = 56
         static let skipIconSize: CGFloat = 28
         static let playButtonSize: CGFloat = 64
         static let playIconSize: CGFloat = 26
+        /// previous · play/pause · next (or −15 s · play/pause · +15 s), without the gaps.
+        static let centerGroupWidth: CGFloat = skipButtonSize + playButtonSize + skipButtonSize
     }
 
     /// "Nada sonando" (`SinReproduccion.dc.html`).
@@ -92,10 +117,12 @@ extension Palette {
 }
 
 extension TextStyle {
-    /// "Desde la playlist" (13 pt, medium) and the name (13 pt, bold).
-    static let originPrefix = TextStyle(size: 13, weight: .medium, scalesWithDynamicType: false)
-    static let originName = TextStyle(size: 13, weight: .bold, scalesWithDynamicType: false)
-    /// The "Biblioteca" pill.
+    /// "Reproduciendo desde" over the source's name, in two lines and without a pill
+    /// (2026-11-18). The same sizes as the source in lyrics mode (12/16 medium, 15/20 bold),
+    /// so both views match; 36 pt in all.
+    static let originHeading = lyricsSourceLabel
+    static let originName = lyricsSourceName
+    /// "Biblioteca" and "Cola".
     static let libraryPill = TextStyle(size: 15, weight: .semibold, scalesWithDynamicType: false)
     /// "Reproduciendo en" (medium) and the device name (bold), 15 pt.
     static let devicePrefix = TextStyle(size: 15, weight: .medium, scalesWithDynamicType: false)

@@ -10,9 +10,12 @@ colores, tamaños, márgenes, radios, textos y estados.
 | `Main.dc.html` | Reproducción. Incluye el modo letras, el panel de volumen y el aviso, según su estado |
 | `Letras.dc.html` / `LetrasEstrofa.dc.html` | Modo letras por palabra y por estrofa |
 | `SinLetra.dc.html` | Aviso "No encontramos la letra" |
-| `Volumen.dc.html` | Panel de volumen visible |
+| `Volumen.dc.html` | Panel de volumen visible (reemplazado por `VolumenLateral.html`) |
+| `VolumenLateral.html` | Barra de volumen que se abre hacia el costado desde el parlante, interactiva. Hecho a mano el 2026-11-18 y aprobado por el dueño; se ve en un navegador sin `support.js` |
 | `Biblioteca.dc.html` | Biblioteca y Buscar, con filtros y mini reproductor |
+| `Detalle.dc.html` | Detalle de una playlist o un álbum: propia, álbum y playlist de otra persona |
 | `Dispositivos.dc.html` | Hoja de dispositivos y ayuda |
+| `Cola.html` | Hoja de Cola: con temas, fin de la lista y cola vacía. Hecho a mano (no en el lienzo) el 2026-11-17 y aprobado por el dueño; se ve en un navegador sin `support.js` |
 | `Ajustes.dc.html` / `AjustesReproductor.dc.html` | Ajustes: Apariencia y Reproductor |
 | `TemaImportar.dc.html` | Importar tema |
 | `SinReproduccion.dc.html` | Nada sonando |

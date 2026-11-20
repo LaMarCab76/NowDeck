@@ -119,4 +119,53 @@ final class ControlAvailabilityTests: XCTestCase {
         XCTAssertEqual(layout.trailing, [.repeatMode])
         XCTAssertFalse(store.showsLyricsButton)
     }
+
+    // MARK: Volume bar opening sideways (2026-11-18)
+
+    func testVolumeOpensFromTheSpeakerOnTheElevenProMax() {
+        let layout = PlayerControlLayout(controls: [.shuffle, .repeatMode, .lyrics, .volume])
+        // 896 − 2 × 48. Sides: (800 − 176 − 4 × 36) / 2 = 240.
+        let expansion = layout.volumeExpansion(forWidth: 800, gap: 36)
+        XCTAssertEqual(expansion.shift, 276, "Previous lands on the left edge")
+        XCTAssertEqual(expansion.speakerX, 644, "Volumen, after Letras")
+        XCTAssertEqual(expansion.barAreaWidth, 384)
+        XCTAssertTrue(expansion.usesRowSpeaker)
+        XCTAssertEqual(expansion.keptTrailingCount, 1, "Letras stays")
+        XCTAssertEqual(expansion.speakerX - expansion.shift + 48 + expansion.barAreaWidth, 800,
+                       "The bar ends at the end of the row")
+    }
+
+    func testVolumeOpensFromTheSpeakerOnTheEightPlus() {
+        let layout = PlayerControlLayout(controls: [.shuffle, .repeatMode, .lyrics, .volume])
+        let gap = layout.gap(forWidth: 640)
+        let expansion = layout.volumeExpansion(forWidth: 640, gap: gap)
+        XCTAssertEqual(expansion.shift, 210)
+        XCTAssertEqual(expansion.speakerX, 522)
+        XCTAssertEqual(expansion.barAreaWidth, 280)
+    }
+
+    func testControlsAfterTheSpeakerMakeRoom() {
+        let layout = PlayerControlLayout(controls: [.shuffle, .repeatMode, .volume, .lyrics])
+        let expansion = layout.volumeExpansion(forWidth: 800, gap: 36)
+        XCTAssertEqual(expansion.speakerX, 560, "Volumen opens the right group")
+        XCTAssertEqual(expansion.keptTrailingCount, 0, "Letras would sit under the bar")
+        XCTAssertEqual(expansion.barAreaWidth, 468)
+    }
+
+    func testVolumeOnTheLeftBringsItsOwnSpeaker() {
+        let layout = PlayerControlLayout(controls: [.volume, .shuffle])
+        let expansion = layout.volumeExpansion(forWidth: 800, gap: 36)
+        XCTAssertFalse(expansion.usesRowSpeaker, "The left group fades out, Volumen with it")
+        XCTAssertEqual(expansion.speakerX, 644, "After Aleatorio")
+        XCTAssertEqual(expansion.keptTrailingCount, 1)
+    }
+
+    func testThemeWithoutVolumeStillHasRoomForTheBar() {
+        // A poll can open the bar even if the theme has no Volumen button.
+        let layout = PlayerControlLayout(controls: [.shuffle])
+        let expansion = layout.volumeExpansion(forWidth: 800, gap: 36)
+        XCTAssertFalse(expansion.usesRowSpeaker)
+        XCTAssertEqual(expansion.speakerX, 560)
+        XCTAssertEqual(expansion.barAreaWidth, 468)
+    }
 }

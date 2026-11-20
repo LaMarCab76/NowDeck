@@ -3,40 +3,56 @@ import SwiftUI
 /// Biblioteca (`Biblioteca.dc.html`): tabs Biblioteca / Buscar, filters, a row of cards and
 /// the mini player.
 ///
-/// The player presents it full screen. Tapping a card plays it on the active device and
-/// goes back to the player; tapping the mini player goes back too.
+/// The player presents it full screen. Tapping a playlist or an album opens its detail
+/// (`CollectionDetailView`), whose "Reproducir" plays it on the active device and goes back
+/// to the player; podcasts and audiobooks open in Spotify. Tapping the mini player goes
+/// back too.
 ///
 /// Two actions belong to other milestones and come in as closures:
 /// - `onShowDevices`: the devices sheet (milestone 4). Called by "Suena en …" and when
 ///   playing a card fails because there is no active device.
 /// - `onPlayPause`: play/pause (milestone 3).
+/// - `onAddToPlaylist`: Agregar a una playlist, from the mini player (2026-11-18).
 struct LibraryScreen: View {
     @StateObject private var model: LibraryModel
     @ObservedObject var player: PlayerModel
     var onPlayPause: () -> Void
     var onShowDevices: () -> Void
+    var onAddToPlaylist: () -> Void
 
     @State private var tab: LibraryContent.Tab = .library
+    /// Ajustes lives here since 2026-11-17, so it is not always visible on the player.
+    @State private var showsSettings = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var theme: ThemeStore
+    @EnvironmentObject private var preferences: AppPreferences
 
     init(model: @autoclosure @escaping () -> LibraryModel, player: PlayerModel,
-         onPlayPause: @escaping () -> Void, onShowDevices: @escaping () -> Void) {
+         onPlayPause: @escaping () -> Void, onShowDevices: @escaping () -> Void,
+         onAddToPlaylist: @escaping () -> Void = {}) {
         _model = StateObject(wrappedValue: model())
         self.player = player
         self.onPlayPause = onPlayPause
         self.onShowDevices = onShowDevices
+        self.onAddToPlaylist = onAddToPlaylist
     }
 
     var body: some View {
         LibraryContent(model: model, player: player, controls: player.controls, tab: $tab,
                        onPlay: play, onOpenPlayer: { dismiss() },
-                       onPlayPause: onPlayPause, onShowDevices: onShowDevices)
-            .orientationLock(.landscape)
+                       onPlayPause: onPlayPause, onShowDevices: onShowDevices,
+                       onOpenSettings: { showsSettings = true },
+                       onAddToPlaylist: onAddToPlaylist)
             .statusBarHidden(true)
             .persistentSystemOverlays(.hidden)
             .task { await model.open() }
+            .fullScreenCover(isPresented: $showsSettings) {
+                SettingsView(player: player)
+                    // Passed explicitly: a cover is a new view hierarchy.
+                    .environmentObject(theme)
+                    .environmentObject(preferences)
+            }
             // The mini player needs fresh data. `start()` does nothing if the player is
             // already polling, so this is safe whatever the presenting screen does.
             .onAppear { if scenePhase == .active { player.start() } }
@@ -57,7 +73,7 @@ struct LibraryScreen: View {
                 SpotifyLink.open(url)
             case .noActiveDevice:
                 onShowDevices()
-            case .failed, .ignored:
+            case .failed, .ignored, .openedFolder:
                 break
             }
         }
@@ -82,6 +98,8 @@ struct LibraryContent: View {
     var onOpenPlayer: () -> Void
     var onPlayPause: () -> Void
     var onShowDevices: () -> Void
+    var onOpenSettings: () -> Void = {}
+    var onAddToPlaylist: () -> Void = {}
 
     @EnvironmentObject private var theme: ThemeStore
     private typealias Layout = Metrics.Library
@@ -98,23 +116,39 @@ struct LibraryContent: View {
             let trailing = max(Layout.horizontal, insets.trailing)
 
             VStack(alignment: .leading, spacing: 0) {
-                header
-                Spacer(minLength: 0)
-                switch tab {
-                case .library:
-                    LibraryFilterBar(filters: model.filters, selected: model.filter) { filter in
-                        Task { await model.select(filter) }
-                    }
+                if let detail = model.detail {
+                    CollectionDetailHeader(pageURL: detail.entry.pageURL,
+                                           onBack: { model.closeDetail() })
                     Spacer(minLength: 0)
-                    LibraryRow(state: model.state(of: model.filter),
-                               startingURI: model.startingURI,
-                               trailingMargin: trailing,
-                               onPlay: onPlay,
-                               onRetry: { Task { await model.retry() } })
-                        // The row slides under the right margin up to the screen edge.
-                        .padding(.trailing, -trailing)
-                case .search:
-                    LibrarySearchView()
+                    CollectionDetailView(model: detail,
+                                         isStarting: model.startingURI == detail.entry.uri,
+                                         onPlay: { onPlay(detail.entry) })
+                } else {
+                    header
+                    Spacer(minLength: 0)
+                    switch tab {
+                    case .library:
+                        if model.filter == .playlists, let folder = model.folderPath.last {
+                            FolderBackBar(folderName: folder.name) {
+                                withAnimation(.easeInOut(duration: 0.2)) { model.closeFolder() }
+                            }
+                        } else {
+                            LibraryFilterBar(filters: model.filters, selected: model.filter) { filter in
+                                Task { await model.select(filter) }
+                            }
+                        }
+                        Spacer(minLength: 0)
+                        LibraryRow(state: model.state(of: model.filter),
+                                   startingURI: model.startingURI,
+                                   trailingMargin: trailing,
+                                   onOpen: open,
+                                   onPlay: onPlay,
+                                   onRetry: { Task { await model.retry() } })
+                            // The row slides under the right margin up to the screen edge.
+                            .padding(.trailing, -trailing)
+                    case .search:
+                        LibrarySearchView()
+                    }
                 }
                 Spacer(minLength: 0)
                 MiniPlayerView(item: player.nowPlaying,
@@ -124,7 +158,8 @@ struct LibraryContent: View {
                                isPlaying: player.playback?.isPlaying == true,
                                onOpenPlayer: onOpenPlayer,
                                onShowDevices: onShowDevices,
-                               onPlayPause: onPlayPause)
+                               onPlayPause: onPlayPause,
+                               onAddToPlaylist: onAddToPlaylist)
             }
             .padding(.top, max(Layout.top, insets.top))
             // The home indicator is hidden here too: the mockup's 10 pt are enough.
@@ -151,11 +186,32 @@ struct LibraryContent: View {
         .animation(.easeInOut(duration: 0.2), value: controls.notice)
     }
 
+    /// Playlists and albums open their detail. The model handles folders, podcasts and
+    /// audiobooks through `onPlay`.
+    private func open(_ item: LibraryEntry) {
+        if item.playsInPlace {
+            model.showDetail(of: item)
+        } else {
+            onPlay(item)
+        }
+    }
+
     private var header: some View {
         HStack(spacing: Layout.rowGap) {
             LibraryTabs(tab: $tab)
             Spacer(minLength: 0)
-            SpotifyLogoLink(url: SpotifyLink.home)
+            Button(action: onOpenSettings) {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: Layout.settingsIconSize, weight: .medium))
+                    .foregroundStyle(theme.palette.tertiaryText.color)
+                    .frame(width: Metrics.minTouchTarget, height: Metrics.minTouchTarget)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Ajustes"))
+            // Clear space before the logo: half its height, as Spotify asks (docs/06).
+            .padding(.trailing, Layout.settingsLogoGap)
+            SpotifyLogoLink(url: SpotifyLink.home, variant: .full)
         }
         .frame(height: Layout.rowHeight)
     }
@@ -248,6 +304,8 @@ struct LibraryNoticeView: View {
         case .forbidden: return "Spotify no dejó reproducirlo. Revisá que tu cuenta tenga Premium."
         case .rateLimited: return "Spotify pidió esperar un momento. Probá de nuevo en un rato."
         case .playbackFailed: return "No pudimos reproducirlo. Probá de nuevo."
+        case .foldersUnavailable:
+            return "Spotify no dejó leer tus carpetas. Se muestran tus playlists sin agrupar."
         }
     }
 }

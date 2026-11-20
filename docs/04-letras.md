@@ -80,7 +80,7 @@ desde LRCLIB como "Lyricsfile format").
 
 | Respuesta | Modo |
 |---|---|
-| `hasWordSync == true` | **Por palabra**: leer `lyricsfile` (YAML) → `lines[].words` con tiempos |
+| `hasWordSync == true` | **Por palabra**: leer `lyricsfile` (YAML) → `lines[].words` con tiempos. Con "Estilo de las letras" en Estrofa, se muestra la estrofa completa |
 | `syncedLyrics` no nulo | **Estrofa completa**, usando los tiempos por línea del LRC para saber en qué estrofa vamos |
 | Solo `plainLyrics`, `instrumental == true` o 404 | **Sin letra**: aviso "No encontramos la letra de este tema" durante 3 s y vuelta a la vista normal |
 
@@ -109,14 +109,29 @@ desde LRCLIB como "Lyricsfile format").
 - Posición = `progress_ms` del último polling + el tiempo transcurrido, mientras `is_playing`
   sea verdadero. Actualizar la vista a ~10 fps en modo palabra y ~2 fps en modo estrofa.
 - Si el polling detecta un salto de más de 1,5 s frente a lo interpolado (alguien adelantó el
-  tema), resincronizar.
+  tema), resincronizar. En pausa no hay interpolación ni, por lo tanto, ruido: cualquier
+  posición distinta se toma en el acto (un adelanto chico, o uno fallido que vuelve atrás).
+- **Tocar una estrofa** (2026-11-18) manda `PUT /me/player/seek` al comienzo de la estrofa
+  menos el desfase de "Sincronía de las letras" (nunca antes de 0), así esa estrofa queda en
+  pantalla apenas llega. Las letras toman esa posición en el acto, sin esperar el polling.
+  Recorrer las estrofas arrastrando no manda nada. Ver `docs/02`, "Modo letras".
+- **Sincronía de las letras** (Ajustes → Reproductor, 2026-11-17): un desfase de −3 a +3 s en
+  pasos de 0,1 s que se suma a la posición interpolada antes de elegir la estrofa. Positivo
+  las muestra antes (para cuando la posición de Spotify llega tarde o el audio va por
+  Bluetooth). Se guarda en `UserDefaults`, no en el tema: depende del equipo y de la red.
+- **Estilo de las letras** (Ajustes → Reproductor, 2026-11-18): **Por palabra** (por defecto)
+  resalta las palabras cuando la letra tiene sincronía por palabra; **Estrofa** muestra siempre
+  la estrofa completa, con las mismas estrofas y tiempos, y se refresca a ~2 fps. Con sincronía
+  por línea las dos opciones se ven igual. También va en `UserDefaults`: es una preferencia de
+  lectura, no parte del aspecto que se comparte con un tema.
 
 ## Avisos para el usuario y el README
 
 - La nota de Ajustes ya dice que las letras vienen de una base comunitaria, no de Spotify, y que
   pueden faltar o tener errores.
 - **Derechos**: las letras de LRCLIB las cargan usuarios; los derechos son de las editoriales.
-  Por eso la función está apagada por defecto y aclarada en el README.
+  Por eso la función está aclarada en el README y se puede apagar en Ajustes. Arranca
+  **prendida**: el dueño lo decidió el 2026-11-18 (ver `docs/06-cumplimiento.md`).
 - La política de Spotify prohíbe productos "integrados con contenido de otro servicio". Mostrar
   letras de un tercero junto a la reproducción es una zona gris sin un precedente claro. Está
   anotado en `docs/06-cumplimiento.md`.

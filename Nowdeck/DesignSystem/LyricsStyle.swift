@@ -8,7 +8,7 @@ import SwiftUI
 // `Typography.swift`.
 
 extension TextStyle {
-    /// "Desde la playlist" above the source name: 12/16, weight 500.
+    /// "Reproduciendo desde" above the source name: 12/16, weight 500.
     static let lyricsSourceLabel = TextStyle(size: 12, weight: .medium, lineHeight: 16,
                                              scalesWithDynamicType: false)
     /// Name of the playlist or album: 15/20 bold.
@@ -23,6 +23,10 @@ extension TextStyle {
     /// Device name in the bottom row: 14 semibold.
     static let lyricsDevice = TextStyle(size: 14, weight: .semibold,
                                         scalesWithDynamicType: false)
+    /// While browsing the lyrics, when the stanza on screen starts: 13 semibold monospaced,
+    /// like the playback times.
+    static let lyricsBrowseTime = TextStyle(size: 13, weight: .semibold, design: .monospaced,
+                                            scalesWithDynamicType: false)
     /// Text of the notice pill: 15/20 semibold.
     static let notice = TextStyle(size: 15, weight: .semibold, lineHeight: 20,
                                   scalesWithDynamicType: false)
@@ -37,14 +41,8 @@ extension Palette {
 
 extension Metrics {
     enum Lyrics {
-        /// Top row: source on the left, Spotify logo on the right.
+        /// Top row: Spotify icon and the source on the left (like the normal view).
         static let headerHeight: CGFloat = 44
-        static let headerSpacing: CGFloat = 16
-        /// Gap between the source icon and its two lines.
-        static let headerIconSpacing: CGFloat = 8
-        static let headerIconSize: CGFloat = 18
-        /// Spotify logo box (same as in the player's normal view).
-        static let logoSize = CGSize(width: 108, height: 30)
 
         /// Gap between the current and the next stanza.
         static let stanzaSpacing: CGFloat = 12

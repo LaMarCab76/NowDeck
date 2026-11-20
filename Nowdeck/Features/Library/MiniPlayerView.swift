@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// The mini player at the bottom of the library (`Biblioteca.dc.html`): artwork, title and
-/// artist (back to the player), "Suena en **Dispositivo**" (devices) and play/pause.
+/// The mini player at the bottom of the library (`Biblioteca.dc.html`): Agregar a una
+/// playlist at the left end (owner's request, 2026-11-18), artwork, title and artist (back to
+/// the player), "Suena en **Dispositivo**" (devices) and play/pause.
 ///
 /// Its background is the artwork color, softened like the player's
 /// (`ArtworkColor.playerBackground`). The design asks for it unconditionally, so it does
@@ -16,12 +17,17 @@ struct MiniPlayerView: View {
     var onOpenPlayer: () -> Void
     var onShowDevices: () -> Void
     var onPlayPause: () -> Void
+    var onAddToPlaylist: () -> Void = {}
 
     @EnvironmentObject private var theme: ThemeStore
     private typealias Layout = Metrics.Library
 
     var body: some View {
         HStack(spacing: Layout.miniGap) {
+            if let item {
+                addToPlaylistButton(isEnabled: item.playlistURI != nil)
+            }
+
             Button(action: onOpenPlayer) {
                 HStack(spacing: Layout.miniArtworkGap) {
                     artworkView
@@ -140,6 +146,22 @@ struct MiniPlayerView: View {
         return Text("Suena en").font(TextStyle.miniDevicePrefix.fixedFont)
             + Text(verbatim: " ")
             + Text(verbatim: name).font(TextStyle.miniDeviceName.fixedFont)
+    }
+
+    /// Same icon as the player's button. Disabled for ads and local files.
+    private func addToPlaylistButton(isEnabled: Bool) -> some View {
+        Button(action: onAddToPlaylist) {
+            Image(systemName: "plus.circle")
+                .font(.system(size: Layout.miniAddIconSize, weight: .semibold))
+                .foregroundStyle(theme.palette.text.color)
+                .frame(width: Metrics.minTouchTarget, height: Metrics.minTouchTarget)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : Palette.disabledControlOpacity)
+        .accessibilityLabel(Text("Agregar a una playlist"))
+        .accessibilityHint(Text("Elegí una de tus playlists"))
     }
 
     private var playPauseButton: some View {

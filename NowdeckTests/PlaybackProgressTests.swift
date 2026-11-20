@@ -50,6 +50,15 @@ final class PlaybackProgressTests: XCTestCase {
         XCTAssertEqual(PlaybackProgress.formatted(ms: 227_000), "3:47")
         XCTAssertEqual(PlaybackProgress.formatted(ms: 3_723_000), "1:02:03")
     }
+
+    func testRemainingFormatting() {
+        XCTAssertEqual(PlaybackProgress.remainingFormatted(positionMs: 84_000, durationMs: 227_000),
+                       "\u{2212}2:23")
+        XCTAssertEqual(PlaybackProgress.remainingFormatted(positionMs: 0, durationMs: 3_723_000),
+                       "\u{2212}1:02:03")
+        XCTAssertEqual(PlaybackProgress.remainingFormatted(positionMs: 300_000, durationMs: 227_000),
+                       "\u{2212}0:00", "Never a negative time left")
+    }
 }
 
 final class PollingPolicyTests: XCTestCase {
@@ -73,5 +82,23 @@ final class PollingPolicyTests: XCTestCase {
     func testRetryAfterIsRespectedWithJitter() {
         XCTAssertEqual(policy.delay(after: .rateLimited(retryAfter: 7), jitter: 0.4), 7.4)
         XCTAssertEqual(policy.delay(after: .rateLimited(retryAfter: 86_400)), policy.maxRetryAfter)
+    }
+
+    // MARK: Dragging the bar
+
+    func testPositionUnderTheFinger() {
+        XCTAssertEqual(PlaybackProgress.positionMs(atX: 0, width: 400, durationMs: 200_000), 0)
+        XCTAssertEqual(PlaybackProgress.positionMs(atX: 100, width: 400, durationMs: 200_000), 50_000)
+        XCTAssertEqual(PlaybackProgress.positionMs(atX: 400, width: 400, durationMs: 200_000), 200_000)
+    }
+
+    func testFingerOutsideTheBarStopsAtTheEdges() {
+        XCTAssertEqual(PlaybackProgress.positionMs(atX: -30, width: 400, durationMs: 200_000), 0)
+        XCTAssertEqual(PlaybackProgress.positionMs(atX: 450, width: 400, durationMs: 200_000), 200_000)
+    }
+
+    func testNoBarOrNoDurationGivesTheStart() {
+        XCTAssertEqual(PlaybackProgress.positionMs(atX: 100, width: 0, durationMs: 200_000), 0)
+        XCTAssertEqual(PlaybackProgress.positionMs(atX: 100, width: 400, durationMs: 0), 0)
     }
 }

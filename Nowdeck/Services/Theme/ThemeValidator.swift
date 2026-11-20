@@ -102,7 +102,7 @@ struct ValidatedTheme: Equatable, Sendable {
 
 /// Validates untrusted theme data (a file, AirDrop, the clipboard).
 ///
-/// Security (CLAUDE.md, docs/05 "Seguridad"): a theme is **data only**. This code reads a
+/// Security (AGENTS.md, docs/05 "Seguridad"): a theme is **data only**. This code reads a
 /// bounded amount of JSON, picks the known fields one by one with strict types, and builds a
 /// `Theme` from them. Nothing in the file is executed, loaded or used as a URL, path or
 /// format string; unknown fields are dropped (only their names are shown, shortened).
@@ -116,7 +116,8 @@ enum ThemeValidator {
     private static let supportedVersion = 1
 
     private static let topLevelFields: Set<String> = [
-        "formato", "nombre", "colores", "fondoReproductor", "reproductor", "letras",
+        "formato", "nombre", "colores", "fondoReproductor", "desenfoqueFondo", "oscurecerFondo",
+        "reproductor", "letras",
     ]
     private static let colorFields = ["fondo", "superficie", "texto", "textoSecundario",
                                       "acento", "textoSobreAcento"]
@@ -172,6 +173,20 @@ enum ThemeValidator {
             theme.playerBackground = background
         }
 
+        if let value = root["desenfoqueFondo"] {
+            guard let blur = validPercent(value, in: Theme.backgroundBlurRange) else {
+                return .failure(.invalidValue(field: "desenfoqueFondo"))
+            }
+            theme.backgroundBlur = blur
+        }
+
+        if let value = root["oscurecerFondo"] {
+            guard let dim = validPercent(value, in: Theme.backgroundDimRange) else {
+                return .failure(.invalidValue(field: "oscurecerFondo"))
+            }
+            theme.backgroundDim = dim
+        }
+
         if let value = root["reproductor"] {
             guard let player = value as? [String: Any] else {
                 return .failure(.invalidValue(field: "reproductor"))
@@ -224,11 +239,33 @@ enum ThemeValidator {
         return .success(ValidatedTheme(theme: theme, warnings: warnings, themeToApply: toApply))
     }
 
+    /// A whole number inside `range` (`desenfoqueFondo`, `oscurecerFondo`). JSON booleans
+    /// also arrive as `NSNumber`, so they are rejected explicitly; so are fractions.
+    private static func validPercent(_ value: Any, in range: ClosedRange<Int>) -> Int? {
+        guard let number = value as? NSNumber,
+              CFGetTypeID(number) != CFBooleanGetTypeID()
+        else { return nil }
+        let double = number.doubleValue
+        guard double.rounded() == double,
+              range.contains(Int(exactly: double) ?? -1)
+        else { return nil }
+        return Int(double)
+    }
+
     /// Merges with the default theme, drops what has no design yet (artwork on the right) and
     /// corrects contrast. Also used by `ThemeStore` for its own edits.
     static func prepareForApplying(_ theme: Theme) -> (theme: Theme, issues: [ContrastIssue]) {
         var merged = theme.mergedWithDefault()
         merged.player?.artworkPosition = .left
+        // Themes built in code or decoded from storage skip `validBlur`: keep them in range.
+        if let blur = merged.backgroundBlur {
+            merged.backgroundBlur = min(max(blur, Theme.backgroundBlurRange.lowerBound),
+                                        Theme.backgroundBlurRange.upperBound)
+        }
+        if let dim = merged.backgroundDim {
+            merged.backgroundDim = min(max(dim, Theme.backgroundDimRange.lowerBound),
+                                       Theme.backgroundDimRange.upperBound)
+        }
         // After the merge every color is present; validated colors are well formed. A theme
         // built in code with a malformed color falls back to the default colors.
         let colors = ThemeColorSet(merged.colors) ?? ThemeColorSet(Theme.default.colors)!

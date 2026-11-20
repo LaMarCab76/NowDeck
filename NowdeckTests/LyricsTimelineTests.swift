@@ -110,4 +110,41 @@ final class LyricsTimelineTests: XCTestCase {
         let paused = LyricsPlayback(progressMs: 10_900, isPlaying: false, timestamp: start.addingTimeInterval(1))
         XCTAssertEqual(anchor.reconciled(with: paused), paused)
     }
+
+    func testWhilePausedAnyOtherPositionIsTakenAtOnce() {
+        let start = Date(timeIntervalSince1970: 1_000)
+        // Paused at 20 s after a seek that Spotify then rejected: the position goes back to
+        // 19 s. Nothing is interpolated while paused, so the 1 s is not jitter.
+        let anchor = LyricsPlayback(progressMs: 20_000, isPlaying: false, timestamp: start)
+        let rolledBack = LyricsPlayback(progressMs: 19_000, isPlaying: false,
+                                        timestamp: start.addingTimeInterval(0.5))
+        XCTAssertEqual(anchor.reconciled(with: rolledBack), rolledBack)
+
+        let same = LyricsPlayback(progressMs: 20_000, isPlaying: false,
+                                  timestamp: start.addingTimeInterval(3))
+        XCTAssertEqual(anchor.reconciled(with: same), anchor)
+    }
+
+    // MARK: Lyrics style (Ajustes → Reproductor)
+
+    func testByWordStyleKeepsTheWordHighlight() {
+        let shown = wordLyrics.displayed(as: .byWord)
+        XCTAssertEqual(shown, wordLyrics)
+        XCTAssertEqual(LyricsTimeline.frame(for: shown, atMs: 1_200)?.sungWordCount, 1)
+    }
+
+    func testStanzaStyleShowsWordSyncedLyricsAsWholeStanzas() {
+        let shown = wordLyrics.displayed(as: .stanza)
+        XCTAssertEqual(shown.sync, .line)
+        XCTAssertEqual(shown.stanzas, wordLyrics.stanzas, "Same stanzas and times")
+        let frame = LyricsTimeline.frame(for: shown, atMs: 1_200)
+        XCTAssertEqual(frame?.isPrimaryActive, true)
+        XCTAssertEqual(frame?.sungWordCount, wordLyrics.stanzas[0].words.count,
+                       "The whole stanza at once, not just the first word")
+    }
+
+    func testLineSyncedLyricsAreTheSameInEitherStyle() {
+        XCTAssertEqual(lineLyrics.displayed(as: .byWord), lineLyrics)
+        XCTAssertEqual(lineLyrics.displayed(as: .stanza), lineLyrics)
+    }
 }

@@ -23,6 +23,11 @@ extension Metrics {
         static let searchTabLeadingPadding: CGFloat = 14
         static let tabIconSize: CGFloat = 18
         static let tabIconGap: CGFloat = 8
+        /// Ajustes, at the left of the logo (moved from the player on 2026-11-17).
+        static let settingsIconSize: CGFloat = 19
+        /// Ajustes → logo. With `rowGap` (16) it leaves 20 pt, more than the 15 pt of clear
+        /// space the 30 pt logo needs.
+        static let settingsLogoGap: CGFloat = 4
 
         // Row 2: filters and "ABRIR SPOTIFY".
         static let filterHeight: CGFloat = 36
@@ -66,6 +71,43 @@ extension Metrics {
         static let miniDeviceIconGap: CGFloat = 8
         static let miniPlayButtonSize: CGFloat = 44
         static let miniPlayIconSize: CGFloat = 17
+        /// Agregar a una playlist, at the left end (2026-11-18): the player's 20 pt icon,
+        /// in a 44 pt tap zone.
+        static let miniAddIconSize: CGFloat = 20
+
+        // Detail of a playlist or an album (`Detalle.dc.html`).
+        /// "‹ Biblioteca": a 36 pt pill like an inactive tab, moved 4 pt left like the tabs.
+        static let backHeight: CGFloat = 36
+        static let backLeadingPadding: CGFloat = 10
+        static let backTrailingPadding: CGFloat = 16
+        static let backIconSize: CGFloat = 18
+        static let backIconGap: CGFloat = 6
+        /// Between "ABRIR EN SPOTIFY" and the logo.
+        static let detailHeaderGap: CGFloat = 20
+        static let detailHeight: CGFloat = 252
+        static let detailColumnGap: CGFloat = 32
+        static let detailInfoWidth: CGFloat = 170
+        static let detailNameTopGap: CGFloat = 10
+        static let detailPlayWidth: CGFloat = 150
+        static let detailPlayHeight: CGFloat = 44
+        static let detailPlayIconSize: CGFloat = 16
+        static let detailPlayIconGap: CGFloat = 8
+        static let trackListLabelHeight: CGFloat = 22
+        static let trackRowHeight: CGFloat = 50
+        static let trackNumberWidth: CGFloat = 22
+        static let trackRowGap: CGFloat = 14
+        static let trackTitleGap: CGFloat = 6
+        static let trackExplicitSize: CGFloat = 15
+        static let trackSeparatorWidth: CGFloat = 1
+        static let trackUnavailableOpacity: Double = 0.4
+        static let trackListFadeHeight: CGFloat = 36
+        static let trackPlaceholderCount = 4
+        /// Playlists of other people: icon, title, text and "Ver en Spotify".
+        static let restrictedMaxWidth: CGFloat = 440
+        static let restrictedIconSize: CGFloat = 28
+        static let restrictedGap: CGFloat = 10
+        static let outlineButtonHeight: CGFloat = 44
+        static let outlineButtonPadding: CGFloat = 18
     }
 }
 
@@ -76,6 +118,8 @@ extension Palette {
     static let searchField = Color.white.opacity(0.1)
     /// Mini player background when the artwork gives no color.
     static let miniPlayerFallback = Color.white.opacity(0.09)
+    /// Lines between the tracks of the detail screen (white at 10 %, like Dispositivos).
+    static let trackSeparator = Color.white.opacity(0.1)
 }
 
 extension TextStyle {
@@ -102,4 +146,23 @@ extension TextStyle {
     /// "Suena en" (14 medium) and the device (14 bold).
     static let miniDevicePrefix = TextStyle(size: 14, weight: .medium, scalesWithDynamicType: false)
     static let miniDeviceName = TextStyle(size: 14, weight: .bold, scalesWithDynamicType: false)
+
+    // Detail of a playlist or an album.
+    /// Name under the artwork: 18 pt bold, line height 22.
+    static let detailName = TextStyle(size: 18, weight: .bold, lineHeight: 22,
+                                      scalesWithDynamicType: false)
+    /// "Reproducir": 16 pt bold.
+    static let detailPlay = TextStyle(size: 16, weight: .bold, scalesWithDynamicType: false)
+    /// "48 TEMAS · 2 H 51 MIN": 12 pt monospaced, tracking +0.08em.
+    static let trackListLabel = TextStyle(size: 12, weight: .regular, design: .monospaced,
+                                          trackingEm: 0.08, scalesWithDynamicType: false)
+    /// Track title in the list: 16 pt semibold, line height 21.
+    static let trackRowTitle = TextStyle(size: 16, weight: .semibold, lineHeight: 21,
+                                         scalesWithDynamicType: false)
+    /// Number and duration of a track: 12 pt monospaced.
+    static let trackRowNumber = TextStyle(size: 12, weight: .regular, design: .monospaced,
+                                          scalesWithDynamicType: false)
+    /// "Spotify no muestra los temas…": 20 pt bold, line height 26.
+    static let restrictedTitle = TextStyle(size: 20, weight: .bold, lineHeight: 26,
+                                           scalesWithDynamicType: false)
 }

@@ -1,36 +1,32 @@
 import SwiftUI
 
-/// The floating volume pill (`Main.dc.html`, shown in `Volumen.dc.html`):
-/// [−] · speaker · bar · value · [+].
+/// The volume bar: bar · value, or why the volume can't change.
 ///
-/// It is always in the hierarchy and slides between `y = −112` (hidden, above the screen) and
-/// its place 16 pt from the top, so the entry and exit animate like the mockup's
-/// `translateY`. While hidden it takes no touches and VoiceOver skips it.
+/// Since 2026-11-18 (owner's request, mockup `VolumenLateral.html`) it opens sideways inside
+/// the controls row, out of the speaker button (`PlayerControls`), with no panel behind it
+/// and without − and +: the bar takes a tap or a drag anywhere, and VoiceOver still moves it
+/// 5 % per swipe. `PlayerControls` places it, sizes it and animates it; this view only draws
+/// the content. While hidden it takes no touches and VoiceOver skips it.
 struct VolumePanelView: View {
     @ObservedObject var volume: VolumeController
 
     @EnvironmentObject private var theme: ThemeStore
-    /// Waits before announcing, so a burst of taps on − or + is read once, with the final
-    /// level.
+    /// Waits before announcing, so a burst of changes is read once, with the final level.
     @State private var announcementTask: Task<Void, Never>?
     /// Last time VoiceOver changed the level by swiping on the bar. VoiceOver reads the new
     /// value itself in that case, so no announcement follows.
     @State private var lastAdjustment = Date.distantPast
+    /// While the finger moves on the bar, the fill follows it without animation. A gesture
+    /// state goes back to `false` by itself also when the system cancels the gesture (an
+    /// alert, a call), when `onEnded` is not called.
+    @GestureState private var isDragging = false
     private typealias Layout = Metrics.VolumePanel
 
-    /// How long the announcement waits for the taps to settle.
+    /// How long the announcement waits for the changes to settle.
     static let announcementDelay: TimeInterval = 0.5
 
     var body: some View {
         HStack(spacing: Layout.gap) {
-            stepButton(systemName: "minus", label: "Bajar volumen", action: volume.decrease)
-
-            Image(systemName: "speaker.wave.2")
-                .font(.system(size: Layout.speakerIconSize - 3, weight: .medium))
-                .foregroundStyle(theme.palette.tertiaryText.color)
-                .frame(width: Layout.speakerIconSize, height: Layout.speakerIconSize)
-                .accessibilityHidden(true)
-
             if volume.isAdjustable, let level = volume.level {
                 levelBar(level)
                 Text(verbatim: String(level))
@@ -39,24 +35,16 @@ struct VolumePanelView: View {
                     .frame(width: Layout.valueWidth, alignment: .trailing)
                     .accessibilityHidden(true)
             } else {
+                // Two lines if needed: on the iPhone 8 Plus the room is about 270 pt.
                 Text(unavailableMessage)
                     .textStyle(.volumeUnavailable)
                     .foregroundStyle(theme.palette.tertiaryText.color)
-                    .lineLimit(1)
+                    .lineLimit(2)
                     .minimumScaleFactor(0.8)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-
-            stepButton(systemName: "plus", label: "Subir volumen", action: volume.increase)
         }
-        .padding(Layout.padding)
-        .frame(width: Layout.width, height: Layout.height)
-        .background(Capsule().fill(Palette.volumePanelBackground))
-        .shadow(color: Palette.volumePanelShadow, radius: Layout.shadowRadius, y: Layout.shadowY)
-        .padding(.top, Layout.top)
-        .offset(y: volume.isPanelVisible ? 0 : Layout.hiddenOffset)
-        .animation(volume.isPanelVisible ? VolumePanelMotion.entry : VolumePanelMotion.exit,
-                   value: volume.isPanelVisible)
+        .padding(.leading, Layout.leadingGap)
         .allowsHitTesting(volume.isPanelVisible)
         .accessibilityHidden(!volume.isPanelVisible)
         .onChange(of: volume.announcement) { announce($0) }
@@ -79,6 +67,8 @@ struct VolumePanelView: View {
                          : "No hay un dispositivo activo"
     }
 
+    /// The bar is 6 pt high but the whole 44 pt row around it takes the finger: tap or drag
+    /// anywhere on it to set the level.
     private func levelBar(_ level: Int) -> some View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
@@ -86,10 +76,29 @@ struct VolumePanelView: View {
                 Capsule()
                     .fill(theme.palette.accent.color)
                     .frame(width: proxy.size.width * CGFloat(level) / 100)
-                    .animation(VolumePanelMotion.level, value: level)
+                    .animation(isDragging ? nil : VolumePanelMotion.level, value: level)
+            }
+            .frame(height: Layout.barHeight)
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .updating($isDragging) { _, isDragging, _ in isDragging = true }
+                    .onChanged { drag in
+                        volume.drag(to: Self.level(atX: drag.location.x, width: proxy.size.width))
+                    }
+                    .onEnded { drag in
+                        volume.drag(to: Self.level(atX: drag.location.x, width: proxy.size.width))
+                        volume.endDrag()
+                    }
+            )
+            // Covers a cancelled gesture, so the panel can hide again. After a normal lift
+            // `endDrag()` already ran and this second call does nothing.
+            .onChange(of: isDragging) { dragging in
+                if !dragging { volume.endDrag() }
             }
         }
-        .frame(height: Layout.barHeight)
+        .frame(height: Metrics.minTouchTarget)
         .accessibilityElement()
         .accessibilityLabel(Text("Volumen"))
         .accessibilityValue(Text("\(level) de 100"))
@@ -103,19 +112,9 @@ struct VolumePanelView: View {
         }
     }
 
-    private func stepButton(systemName: String, label: LocalizedStringKey,
-                            action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: Layout.buttonIconSize, weight: .semibold))
-                .foregroundStyle(theme.palette.text.color)
-                .frame(width: Layout.buttonSize, height: Layout.buttonSize)
-                .background(Circle().fill(Palette.volumeButtonBackground))
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .disabled(!volume.isAdjustable)
-        .opacity(volume.isAdjustable ? 1 : Palette.disabledControlOpacity)
-        .accessibilityLabel(Text(label))
+    /// The level under a finger at `x` on a bar `width` wide, rounded to whole percents.
+    static func level(atX x: CGFloat, width: CGFloat) -> Int {
+        guard width > 0 else { return 0 }
+        return Int((min(max(x / width, 0), 1) * 100).rounded())
     }
 }

@@ -18,27 +18,12 @@ extension PlaybackState {
     }
 }
 
-extension PlaybackOrigin {
-    /// "Desde la playlist", already localized, as lyrics mode shows it above the name.
-    var lyricsSourceLabel: String {
-        let named = !(name ?? "").isEmpty
-        switch kind {
-        case .playlist: return named ? String(localized: "Desde la playlist") : String(localized: "Desde una playlist")
-        case .album: return named ? String(localized: "Desde el álbum") : String(localized: "Desde un álbum")
-        case .artist: return named ? String(localized: "Desde el artista") : String(localized: "Desde un artista")
-        case .show: return named ? String(localized: "Desde el podcast") : String(localized: "Desde un podcast")
-        case .likedSongs: return String(localized: "Desde Tus me gusta")
-        }
-    }
-}
-
 extension LyricsModeContent {
     init(item: NowPlaying, origin: PlaybackOrigin?, deviceName: String?,
          deviceType: String? = nil) {
-        // Lyrics mode shows the name line only when there is a name; otherwise the label
-        // ("Desde una playlist") is the line.
-        let name = origin.flatMap { ($0.name ?? "").isEmpty ? $0.lyricsSourceLabel : $0.name }
-        let label = origin.flatMap { ($0.name ?? "").isEmpty ? nil : $0.lyricsSourceLabel }
+        // The same two lines as the player: "Reproduciendo desde" over the name or the type.
+        let name = origin?.displayName
+        let label = origin == nil ? nil : PlaybackOrigin.heading
         self.init(title: item.title, artist: item.subtitle, isExplicit: item.isExplicit,
                   sourceLabel: label, sourceName: name, deviceName: deviceName,
                   deviceType: deviceType)
