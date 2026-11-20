@@ -231,9 +231,10 @@ The Web API has no push notifications for the state, so it has to be polled.
 - **After a `403`**: every 30 s, so the app recovers on its own if the owner fixes the user
   list.
 - **App in the background**: stop polling.
-- **Another screen covers the player**: with the Library (mini player; Settings opens from
-  there) or the Queue (header) open, polling continues; with Devices, it stops until the user
-  comes back.
+- **Another screen covers the player**: polling continues while Library is open so the mini
+  player stays current. With Devices, it stops until the user comes back.
+- **Queue**: opens inside the player and follows playback polling. The app reads the list
+  on opening, on refresh, and when a song starts.
 - **After a command**: update the UI **optimistically** and poll again after ~600 ms to
   confirm. While the command is in flight, polling is paused (a response read before the
   command would overwrite the optimistic change). If it fails, the change is reverted and the

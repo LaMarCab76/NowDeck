@@ -18,6 +18,7 @@ struct PlaybackJSON {
     var isRestricted = false
     /// Replace the track with the reference podcast episode.
     var episode = false
+    var replacementTrack: (id: String, durationMs: Int)?
 
     func data() throws -> Data {
         var object = try XCTUnwrap(
@@ -37,6 +38,13 @@ struct PlaybackJSON {
         if episode {
             object["item"] = try JSONSerialization.jsonObject(with: Fixture.data("episode-reference"))
             object["currently_playing_type"] = "episode"
+        } else if let replacementTrack {
+            var track = try XCTUnwrap(object["item"] as? [String: Any])
+            track["id"] = replacementTrack.id
+            track["uri"] = "spotify:track:\(replacementTrack.id)"
+            track["external_urls"] = ["spotify": "https://open.spotify.com/track/\(replacementTrack.id)"]
+            track["duration_ms"] = replacementTrack.durationMs
+            object["item"] = track
         }
         return try JSONSerialization.data(withJSONObject: object)
     }

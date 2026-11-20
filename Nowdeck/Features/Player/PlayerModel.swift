@@ -77,6 +77,18 @@ final class PlayerModel: ObservableObject {
     /// playlists and what was added are kept between openings of the sheet.
     private(set) lazy var playlists = AddToPlaylistModel(api: api)
 
+    /// Keep in-flight playback and its result when the queue view is closed and reopened.
+    private(set) lazy var queue = QueueModel(api: api)
+
+    private struct QueuedSeekConfirmation {
+        let previousItemKey: String?
+        let requestedURI: String
+        var wasSuperseded = false
+    }
+
+    @Published private var queuedSeekConfirmation: QueuedSeekConfirmation?
+    var isWaitingForQueuedSeekConfirmation: Bool { queuedSeekConfirmation != nil }
+
     /// Shared with `controls` (playback commands) and the sheets that call the API on their
     /// own (Dispositivos, Biblioteca).
     let api: SpotifyAPI
@@ -285,6 +297,7 @@ final class PlayerModel: ObservableObject {
     }
 
     private func showOnly(_ newStatus: Status) {
+        if nowPlaying != nil { queue.invalidateForPlaybackChange() }
         status = newStatus
         playback = nil
         nowPlaying = nil
@@ -325,6 +338,19 @@ final class PlayerModel: ObservableObject {
                                                fetchedAt: fetchedAt, now: now())
     }
 
+    /// A successful start can precede the new track's metadata. Keep seek locked while
+    /// polls still show the previous track, unless that track was itself the selection.
+    func waitForQueuedSeekConfirmation(requestedURI: String) {
+        queuedSeekConfirmation = QueuedSeekConfirmation(previousItemKey: nowPlaying?.transitionKey,
+                                                        requestedURI: requestedURI)
+    }
+
+    /// An accepted skip or library selection replaces the queued start. Keep seek locked
+    /// until the next valid playback read, which can now legitimately show the old item.
+    func queuedStartWasSuperseded() {
+        queuedSeekConfirmation?.wasSuperseded = true
+    }
+
     // MARK: Applying an answer
 
     private func apply(_ state: PlaybackState?, at date: Date) {
@@ -334,7 +360,11 @@ final class PlayerModel: ObservableObject {
             fetchedAt = date
             return
         }
-        if isNewStart(of: item, state: state, at: date) { itemStarts += 1 }
+        let playbackWasEmpty = nowPlaying == nil
+        if isNewStart(of: item, state: state, at: date) {
+            queue.invalidateForPlaybackChange()
+            itemStarts += 1
+        }
         playback = state
         fetchedAt = date
         if nowPlaying != item {
@@ -344,6 +374,12 @@ final class PlayerModel: ObservableObject {
                 refreshUpNext()
             }
             nowPlaying = item
+        }
+        if let confirmation = queuedSeekConfirmation,
+           confirmation.wasSuperseded || playbackWasEmpty
+               || item.transitionKey != confirmation.previousItemKey
+               || item.playlistURI == confirmation.requestedURI {
+            queuedSeekConfirmation = nil
         }
         // Only while it plays: a track picked while paused was not heard.
         if state.isPlaying, let artistID = item.artistID { lastHeardArtistID = artistID }

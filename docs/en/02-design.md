@@ -355,10 +355,10 @@ player; the filter row and the cards are replaced by the detail.
 ## Add to a playlist (2026-11-18, no mockup)
 
 At the owner's request. It opens from the player's button and from the mini player's, and
-follows the Queue design:
+uses the historical Queue sheet layout (`Cola.html`):
 
 - The same 640×398 sheet (grabber, surface, radius 20 at the top, 40 gradient at the end).
-- **Header**: Queue's, with "ADD TO A PLAYLIST" (*AGREGAR A UNA PLAYLIST*) in accent instead
+- **Header**: the historical sheet's header, with "ADD TO A PLAYLIST" (*AGREGAR A UNA PLAYLIST*) in accent instead
   of "PLAYING" (*SONANDO*). The song is **fixed** on opening: if the music moves on while the
   user chooses, the one that was playing when the button was tapped is added.
 - "YOUR PLAYLISTS" (*TUS PLAYLISTS*) and rows of 56: 40 artwork (uncropped, radius 4), name
@@ -405,52 +405,31 @@ follows the Queue design:
   When signing back in with "Allow", only the **same Spotify account** is accepted, and only
   if Spotify grants both permissions.
 
-## Queue (`Cola.html`)
+## Queue (`cola-integrada.html`)
 
-- The same sheet as Devices: 640×398 over a black background, surface `#161616`, radius 20
-  at the top, 40×5 grabber (dragging it down closes it).
-- **Header** (height 56): 56 artwork, "PLAYING" (*SONANDO*) in accent (12 mono, +0.08em), the
-  title in 20 bold and the artists in 14 `textoCuerpo` (with the explicit mark in front, as
-  in the player); on the right, the Spotify logo (link to the song)
-  and Close (44). Long titles and artists scroll (marquee).
-- "UP NEXT" (*A CONTINUACIÓN*) (12 mono, `etiqueta`) and rows of 56 with separators of white
-  at 10%: number (12 mono), 40 artwork (uncropped, radius 4), title 16 semibold with the
-  explicit mark, artists 13 `textoCuerpo` and duration (12 mono). Up to **20** songs.
-- **Tapping a song** (since 2026-11-18, owner's request; not in the mockup) opens the system
-  alert "Play this song?" (*¿Reproducir este tema?*), with "“Title” by Artists starts
-  playing now." (*«Título» de Artistas empieza a sonar ahora.*) and the buttons "Play"
-  (*Reproducir*) and "Cancel" (*Cancelar*). While pressed, the row dims to 70%. While it
-  starts, a spinner replaces the duration and the other rows don't respond; if it fails,
-  the notice line shows above the list ("No active device. Choose one to listen on."
-  (*No hay un dispositivo activo. Elegí uno para escuchar.*), "Couldn't play it. Try
-  again." (*No pudimos reproducirlo. Probá de nuevo.*), etc.). The sheet stays open and
-  updates on its own when the song starts. Episodes and local files are not buttons.
-- Long-pressing a song shows the full name and "Open in Spotify" (*Abrir en Spotify*), as in
-  the detail. At the bottom, a 40 gradient toward the surface.
-- At the end of the list: "To remove or reorder songs, use Spotify." (*Para quitar o
-  reordenar temas, usá Spotify.*) (14, `textoCuerpo`) and "OPEN SPOTIFY ↗" (*ABRIR SPOTIFY
-  ↗*).
-- **Empty queue**: list icon, "The queue is empty" (*No hay nada en la cola*) (20 bold) and
-  "When this song ends, Spotify decides what's next. You can pick something from the
-  Library." (*Cuando termine este tema, Spotify decide qué sigue. Podés elegir algo desde la
-  Biblioteca.*) (15, maximum width 440).
-- **Error**: the Devices notice line and "Retry" (*Reintentar*) (48 accent capsule).
-- It's read on opening, when another song starts with the sheet open (also if the same song
-  starts again, for example because it was in the queue twice in a row) and when pulling the
-  list down (also with an empty queue). It has no polling of its own: it uses the player's,
-  which keeps running while the sheet is open.
-- **Button**: "Queue" (*Cola*) in the top row, to the left of Library and with the same style
-  (44 tall, icon and text 15 semibold; no pill since 2026-11-18). It's always there, except
-  in lyrics mode: its top row keeps the Spotify icon and the source, but doesn't have Queue
-  or Library.
-- Differences from the mockup (owner's decision, 2026-11-17):
-  - The mockup puts the button in the right group of controls. Since the redesign, the
-    controls go in a single centered row with 36 between buttons, and one more doesn't fit on
-    the iPhone 8 Plus (that side would need 216 and has 160), so it moved to the top row.
-  - It is not a theme control (`reproductor.controles`): themes saved before it existed list
-    their controls and would never show it.
-  - The icon is the SF Symbols `list.bullet` symbol (three bulleted lines); the mockup draws
-    lines with a play triangle.
+- **Queue button** in the top row (44), to the left of Library. It uses the accent color while
+  open. Tap it again to return to the large cover. The Lyrics button replaces Queue with
+  lyrics mode when lyrics are available. Library remains accessible from Queue.
+- **Upper block** (268): a 44 pt top row with the full Spotify logo linking to the song and
+  the source beside it. In the center, "UP NEXT" (*A CONTINUACIÓN*) (12 mono, 24 pt band)
+  and a 144 pt scrolling list. Below it, the same compact row as Lyrics (56), with 56 pt
+  artwork, title, artist and device. Swiping horizontally on that row changes tracks.
+- **List**: up to 20 songs. Rows of 48 with a 10% separator, number (12 mono), 40 pt artwork
+  (radius 4), 16 semibold title with the explicit mark, 13 pt artist and 12 mono duration.
+  Scrolling stays in the list. The progress bar and controls keep their position when
+  opening or closing Queue.
+- **Tapping a song** opens "Play this song?" (*¿Reproducir este tema?*) with Play and Cancel.
+  On confirmation, a spinner replaces the duration and the rows and transport controls
+  wait for the response. Queue stays open. A failure shows a notice above the list.
+  Episodes and local files are informational rows.
+- Long-pressing shows the full name and "Open in Spotify" (*Abrir en Spotify*) where
+  applicable. The list ends with "To remove or reorder songs, use Spotify." (*Para quitar o
+  reordenar temas, usá Spotify.*) and "OPEN SPOTIFY ↗" (*ABRIR SPOTIFY ↗*).
+- **Loading, empty queue, and errors** appear in the center, with "Retry" (*Reintentar*) if
+  the first read fails. The list is read on opening, on pull to refresh and whenever a song
+  starts, even if it's the same one twice in a row. It follows the player's polling.
+
+`Cola.html` preserves the historical sheet design. Add to a Playlist still uses that format.
 
 ## Settings (`Ajustes.dc.html`)
 

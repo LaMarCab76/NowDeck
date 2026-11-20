@@ -5,8 +5,10 @@ import SwiftUI
 struct PlayerView: View {
     @ObservedObject var model: PlayerModel
     @ObservedObject var lyrics: LyricsModeController
+    @ObservedObject var controls: PlayerControlsModel
     var actions: PlayerActions
     var showsLyricsButton: Bool
+    var showsQueue: Bool
     /// Full screen width, to adapt to the iPhone 8 Plus (736 pt).
     var screenWidth: CGFloat
     /// The track swipe (`PlayerContent`, `TrackSwipe`): moves the cover and title, and shows the next or
@@ -36,13 +38,14 @@ struct PlayerView: View {
     @EnvironmentObject private var preferences: AppPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// The normal top block, or lyrics mode in its place (docs/02, "Modo letras"). They
-    /// cross-fade.
+    /// All three layouts share this height, so the bottom block keeps its position.
     private var topBlock: some View {
         ZStack {
             topBlockContent
         }
+        .frame(height: Layout.upperAreaHeight)
         .animation(Motion.modeChange, value: lyrics.showsLyricsMode)
+        .animation(Motion.modeChange, value: showsQueue)
     }
 
     @ViewBuilder
@@ -73,11 +76,38 @@ struct PlayerView: View {
                 upNext: model.upNext,
                 previousTrack: model.previousTrack
             )
-            .frame(height: Layout.upperAreaHeight)
             .transition(.opacity)
         } else {
-            normalTopBlock
-                .transition(.opacity)
+            VStack(spacing: 0) {
+                PlayerTopRow(origin: model.origin, logoURL: model.nowPlaying?.itemURL,
+                             actions: actions, queueActive: showsQueue)
+                    .animation(nil, value: showsQueue)
+                if showsQueue, let item = model.nowPlaying {
+                    QueueView(player: model, controls: controls, model: model.queue)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    CompactPlaybackRow(title: item.title, artist: item.subtitle,
+                                       isExplicit: item.isExplicit,
+                                       artwork: model.artwork.map(Image.init(uiImage:)),
+                                       deviceName: model.playback?.device?.name,
+                                       deviceType: model.playback?.device?.type,
+                                       onShowDevices: actions.devices, swipe: swipe,
+                                       pageWidth: screenWidth, upNext: model.upNext,
+                                       previousTrack: model.previousTrack)
+                        .overlay(alignment: .top) {
+                            Rectangle()
+                                .fill(Palette.trackSeparator)
+                                .frame(height: Metrics.Queue.separatorWidth)
+                                .offset(y: -Metrics.Queue.separatorWidth)
+                                .allowsHitTesting(false)
+                                .accessibilityHidden(true)
+                        }
+                } else {
+                    normalTrackBlock
+                        .padding(.top, Layout.topRowBottomGap)
+                        .transition(.opacity)
+                }
+            }
+            .transition(.opacity)
         }
     }
 
@@ -89,22 +119,17 @@ struct PlayerView: View {
     /// to. The device row moves with its page: if it stayed still, the moving cover
     /// would pass under it (docs/06: nothing on top of the cover). The origin and everything
     /// below stay still.
-    private var normalTopBlock: some View {
-        VStack(spacing: Layout.topRowBottomGap) {
-            PlayerTopRow(origin: model.origin, logoURL: model.nowPlaying?.itemURL,
-                         actions: actions)
-            ZStack(alignment: .topLeading) {
-                currentPage
-                    .offset(x: swipe.offset(pageWidth: screenWidth))
-                if let edge = swipe.edge {
-                    previewPage(edge: edge)
-                        .offset(x: swipe.previewOffset(pageWidth: screenWidth))
-                }
+    private var normalTrackBlock: some View {
+        ZStack(alignment: .topLeading) {
+            currentPage
+                .offset(x: swipe.offset(pageWidth: screenWidth))
+            if let edge = swipe.edge {
+                previewPage(edge: edge)
+                    .offset(x: swipe.previewOffset(pageWidth: screenWidth))
             }
-            .frame(height: Layout.topBlockHeight, alignment: .top)
-            .trackSwipeBand()
         }
-        .frame(height: Layout.upperAreaHeight, alignment: .top)
+        .frame(height: Layout.topBlockHeight, alignment: .top)
+        .trackSwipeBand()
     }
 
     /// While a swiped-in item settles in the middle, the current page swaps to it without
@@ -166,7 +191,7 @@ struct PlayerView: View {
     /// Spotify allows moving the playback here (`actions.disallows.seeking`, restricted
     /// device): the progress bar and the stanzas of lyrics mode take the finger.
     private var canSeek: Bool {
-        ControlAvailability(playback: model.playback).seek
+        controls.availability.seek
     }
 
     private var bottomBlock: some View {
@@ -179,7 +204,8 @@ struct PlayerView: View {
                             onToggleTime: { preferences.showsRemainingTime.toggle() },
                             onSeek: canSeek ? actions.seek : nil)
             }
-            PlayerControls(playback: model.playback, actions: actions,
+            PlayerControls(playback: model.playback, availability: controls.availability,
+                           actions: actions,
                            controls: optionalControls,
                            lyricsActive: lyrics.isButtonActive,
                            canAddToPlaylist: model.nowPlaying?.playlistURI != nil,
@@ -272,15 +298,17 @@ struct PlayerTopRow: View {
     var logoURL: URL?
     var actions: PlayerActions
     var showsLibrary = true
+    var queueActive = false
 
     @EnvironmentObject private var theme: ThemeStore
     private typealias Layout = Metrics.Player
 
     var body: some View {
         HStack(spacing: Layout.topRowGap) {
-            HStack(spacing: Layout.iconClearSpace) {
-                // The logo stays outside the origin button, with its clear space (docs/06).
-                SpotifyLogoLink(url: origin?.url ?? logoURL, variant: .icon)
+            HStack(spacing: queueActive ? Metrics.Queue.logoClearSpace : Layout.iconClearSpace) {
+                // Queue links to the track; the separate origin button links to its context.
+                SpotifyLogoLink(url: queueActive ? logoURL : origin?.url ?? logoURL,
+                                variant: queueActive ? .compactFull : .icon)
                 if let origin {
                     Button {
                         SpotifyLink.open(origin.url)
@@ -299,8 +327,9 @@ struct PlayerTopRow: View {
             // is centered with 36 between buttons, and one more button no longer fits the
             // iPhone 8 Plus (owner's choice). It is not a theme control either: themes saved
             // before it existed list their controls explicitly and would never show it.
-            TopRowButton(systemName: "list.bullet", label: "Cola", action: actions.queue)
-                .accessibilityHint(Text("Muestra lo que sigue"))
+            TopRowButton(systemName: "list.bullet", label: "Cola", isSelected: queueActive,
+                         action: actions.queue)
+                .accessibilityHint(queueActive ? Text("Vuelve al reproductor") : Text("Muestra lo que sigue"))
 
             if showsLibrary {
                 TopRowButton(systemName: "books.vertical", label: "Biblioteca",
@@ -316,6 +345,7 @@ struct PlayerTopRow: View {
 private struct TopRowButton: View {
     var systemName: String
     var label: LocalizedStringKey
+    var isSelected = false
     var action: () -> Void
 
     @EnvironmentObject private var theme: ThemeStore
@@ -331,11 +361,12 @@ private struct TopRowButton: View {
                 Text(label)
                     .textStyle(.libraryPill)
             }
-            .foregroundStyle(theme.palette.text.color)
+            .foregroundStyle(isSelected ? theme.palette.accent.color : theme.palette.text.color)
             .frame(height: Metrics.minTouchTarget)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -350,6 +381,7 @@ private struct TopRowButton: View {
 struct SpotifyLogoLink: View {
     enum Variant {
         case full
+        case compactFull
         case icon
     }
 
@@ -375,12 +407,12 @@ struct SpotifyLogoImage: View {
 
     var body: some View {
         switch variant {
-        case .full:
+        case .full, .compactFull:
+            let size = variant == .full ? Metrics.Player.logoSize : Metrics.Queue.logoSize
             Image("SpotifyLogo")
                 .resizable()
                 .scaledToFit()
-                .frame(width: Metrics.Player.logoSize.width, height: Metrics.Player.logoSize.height,
-                       alignment: .leading)
+                .frame(width: size.width, height: size.height, alignment: .leading)
                 .accessibilityHidden(true)
         case .icon:
             Image("SpotifyIcon")
@@ -743,6 +775,7 @@ private struct VerticalOutsetRectangle: Shape {
 ///   (`PlayerControlLayout.volumeExpansion`).
 struct PlayerControls: View {
     var playback: PlaybackState?
+    var availability: ControlAvailability
     var actions: PlayerActions
     /// Optional controls in the theme's order (`reproductor.controles`).
     var controls: [Theme.PlayerControl]
@@ -806,8 +839,7 @@ struct PlayerControls: View {
 
     private func row(layout: PlayerControlLayout, gap: CGFloat,
                      expansion: VolumeExpansion) -> some View {
-        let availability = ControlAvailability(playback: playback)
-        return HStack(spacing: gap) {
+        HStack(spacing: gap) {
             HStack(spacing: 0) {
                 ToggleIconButton(systemName: "plus.circle", isOn: false,
                                  label: "Agregar a una playlist", isEnabled: canAddToPlaylist,

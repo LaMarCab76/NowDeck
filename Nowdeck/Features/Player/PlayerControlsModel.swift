@@ -46,6 +46,7 @@ final class PlayerControlsModel: ObservableObject {
     /// The last queued command; the next one waits for it.
     private var lastCommand: Task<Void, Never>?
     @Published private var pendingCommands = 0
+    @Published private(set) var isStartingQueuedTrack = false
     private var batchFailed = false
     private var noticeTask: Task<Void, Never>?
     private var playbackSubscription: AnyCancellable?
@@ -76,13 +77,28 @@ final class PlayerControlsModel: ObservableObject {
 
     /// What can be tapped right now.
     var availability: ControlAvailability {
-        ControlAvailability(playback: player?.playback)
+        guard !isStartingQueuedTrack else { return .none }
+        var availability = ControlAvailability(playback: player?.playback)
+        if player?.isWaitingForQueuedSeekConfirmation == true { availability.seek = false }
+        return availability
     }
 
-    /// The library waits for player commands before starting another context.
-    var isSendingCommand: Bool { pendingCommands > 0 }
+    /// The library and queue wait for player commands before starting another context.
+    var isSendingCommand: Bool { pendingCommands > 0 || isStartingQueuedTrack }
 
     // MARK: Commands
+
+    /// Starting a queue item replaces the current playback. Keep commands targeting the
+    /// old item out of that request, even if the user closes the queue while it is in flight.
+    func playQueuedTrack(_ entry: QueueEntry, in queue: QueueModel) async {
+        guard let player, !isSendingCommand, let uri = entry.playURI else { return }
+        isStartingQueuedTrack = true
+        player.holdPolling()
+        let started = await queue.play(entry, context: player.playback?.context)
+        if started { player.waitForQueuedSeekConfirmation(requestedURI: uri) }
+        player.resumePolling(after: started ? confirmDelay : 0)
+        isStartingQueuedTrack = false
+    }
 
     func playPause() {
         guard let playback = player?.playback, availability.playPause else { return }
@@ -118,7 +134,7 @@ final class PlayerControlsModel: ObservableObject {
     /// off → context → track → off, skipping the modes `actions` forbids.
     func cycleRepeat() {
         guard let playback = player?.playback,
-              playback.device?.isRestricted != true,
+              availability.repeatMode,
               let target = ControlAvailability.nextRepeatMode(after: playback.repeatState,
                                                               actions: playback.actions)
         else { return }
@@ -176,9 +192,10 @@ final class PlayerControlsModel: ObservableObject {
                                            isPlaying: isPlaying, date: date)
     }
 
-    /// Next or previous accepted: another item, whose position only a poll can tell.
+    /// Next or previous accepted: only a poll can tell where playback landed.
     private func itemChanged() {
         confirmed = nil
+        player?.queuedStartWasSuperseded()
     }
 
     /// A failed seek is undone only once no seek is left on its way, and then back to the

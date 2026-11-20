@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// One row of the Cola sheet: the same track data as the playlist detail, plus a small cover.
+/// One row of the queue: the same track data as the playlist detail, plus a small cover.
 struct QueueEntry: Identifiable, Equatable, Sendable {
     var track: CollectionTrack
     var artworkURL: URL?
@@ -148,18 +148,20 @@ enum QueueProblem: Equatable {
     }
 }
 
-/// State of the Cola sheet.
+/// State of the player's queue.
 ///
-/// The queue is read when the sheet opens, when the player shows another track while the
-/// sheet is open (`trackDidChange()`) and on pull to refresh. It is **not** polled: the
+/// The queue is read when Queue opens, when the player shows another track while
+/// Queue is open and on pull to refresh. It is **not** polled: the
 /// player's polling already spends the request quota (docs/03, "Polling y estado local").
 @MainActor
 final class QueueModel: ObservableObject {
     /// `nil` until the first answer arrives.
     @Published private(set) var entries: [QueueEntry]?
-    /// The last problem, shown until the next successful read. A list already on screen
-    /// stays below it.
-    @Published private(set) var problem: QueueProblem?
+    @Published private var readProblem: QueueProblem?
+    @Published private var playbackProblem: QueueProblem?
+    /// An automatic read can fix a loading error while a playback failure still needs to
+    /// be shown when the user returns to Queue.
+    var problem: QueueProblem? { playbackProblem ?? readProblem }
     @Published private(set) var isLoading = false
     /// The row whose track is starting, while its request runs. Other taps wait for it.
     @Published private(set) var startingID: QueueEntry.ID?
@@ -168,45 +170,40 @@ final class QueueModel: ObservableObject {
     /// The only worker that reads the queue. Reads never overlap, so an older answer can
     /// never land after a newer one.
     private var loadTask: Task<Void, Never>?
-    /// Set when the track changed while the worker was reading: that read may carry the old
-    /// queue, so the worker reads once more before finishing.
-    private var needsAnotherRead = false
-    /// `reload()` and `trackDidChange()` calls waiting for the worker right now. Only read
-    /// by tests, to know that an overlapping call has really joined a running read.
+    private var playbackGeneration = 0
+    /// The newest playback generation a caller requested. An invalidation alone does not
+    /// request a read while Queue is closed.
+    private var requestedGeneration = 0
+    /// Reload calls waiting for the worker. Only read by tests.
     private(set) var waitingCalls = 0
 
     init(api: SpotifyAPI) {
         self.api = api
     }
 
-    /// Reads the queue. A reload while a read is running waits for it instead of sending a
-    /// second request.
-    func reload() async {
+    /// Discard later answers for the old playback, even when the queue view is absent.
+    func invalidateForPlaybackChange() {
+        playbackGeneration += 1
+    }
+
+    /// Reloads for the current playback. Readers share a request unless playback changed
+    /// after it started, in which case the worker reads again before returning.
+    func reload(clearingPlaybackProblem: Bool = false) async {
+        if clearingPlaybackProblem { playbackProblem = nil }
+        requestedGeneration = playbackGeneration
         waitingCalls += 1
         defer { waitingCalls -= 1 }
         await worker().value
     }
 
-    /// The player moved to another track: the queue moved with it. A read already running
-    /// may carry the old queue, so the worker reads again after it. Several changes during
-    /// one read ask for a single extra read.
-    func trackDidChange() async {
-        waitingCalls += 1
-        defer { waitingCalls -= 1 }
-        if loadTask != nil { needsAnotherRead = true }
-        await worker().value
-    }
-
-    /// The running worker, or a new one. Everything here runs on the main actor, and there
-    /// is no suspension between the last check of `needsAnotherRead` and clearing
-    /// `loadTask`, so a request for another read is never lost.
     private func worker() -> Task<Void, Never> {
         if let loadTask { return loadTask }
         let task = Task {
+            var generation: Int
             repeat {
-                needsAnotherRead = false
-                await fetch()
-            } while needsAnotherRead
+                generation = playbackGeneration
+                await fetch(generation: generation)
+            } while generation < requestedGeneration
             loadTask = nil
         }
         loadTask = task
@@ -215,34 +212,36 @@ final class QueueModel: ObservableObject {
 
     /// Plays a tapped row (after the confirmation) and returns whether Spotify accepted it.
     /// The queue is not read here: the new track changes the player's `itemStarts`, and
-    /// the sheet reads the queue then. A failure is shown above the list.
+    /// the view reads the queue then. A failure is shown above the list.
     func play(_ entry: QueueEntry, context: PlaybackContext?) async -> Bool {
         guard let uri = entry.playURI, startingID == nil else { return false }
         startingID = entry.id
+        playbackProblem = nil
         defer { startingID = nil }
         do {
             try await api.playFromQueue(trackURI: uri, context: context)
-            problem = nil
             return true
         } catch is CancellationError {
             return false
         } catch {
-            problem = QueueProblem(playing: error)
+            playbackProblem = QueueProblem(playing: error)
             return false
         }
     }
 
-    private func fetch() async {
+    private func fetch(generation: Int) async {
         isLoading = true
         defer { isLoading = false }
         do {
             let queue = try await api.playbackQueue()
+            guard generation == playbackGeneration else { return }
             entries = QueueEntry.entries(from: queue)
-            problem = nil
+            readProblem = nil
         } catch is CancellationError {
             return
         } catch {
-            problem = QueueProblem(error)
+            guard generation == playbackGeneration else { return }
+            readProblem = QueueProblem(error)
         }
     }
 }

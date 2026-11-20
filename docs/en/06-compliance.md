@@ -156,7 +156,7 @@ Point-by-point review on the `hito/08-terminaciones` branch (milestones 1 to 7 i
 - ✅ Visible text "OPEN SPOTIFY ↗" (*ABRIR SPOTIFY ↗*) in Library and in Nothing playing
   (*Nada sonando*), plus the "See more in Spotify" (*Ver más en Spotify*) card at the end of
   each row.
-- ✅ Queue (2026-11-17): full logo in the header (link to the playing song), up to 20 songs,
+- ✅ Queue: full logo in the top row (link to the playing song), up to 20 songs,
   explicit mark, full names on long press and "OPEN SPOTIFY ↗" at the end of the list.
 - ✅ Add to a playlist (2026-11-18): full logo in the header (link to the song), explicit
   mark, title and artists with marquee, and "OPEN SPOTIFY ↗" at the end.

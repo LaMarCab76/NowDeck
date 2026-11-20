@@ -76,8 +76,10 @@ While the app is in the foreground, **the screen does not turn off**
    - "Don't see your device?" (*¿No ves tu dispositivo?*) button, which opens a 3-step help
      and "Refresh list" (*Actualizar lista*).
 9. **Queue** (added on 2026-11-17, at the owner's request)
-   - Queue pill in the player's top row, to the left of Library.
-   - Bottom sheet with what's playing now and up to 20 songs under "UP NEXT" (*A CONTINUACIÓN*).
+   - Queue button in the player's top row, to the left of Library.
+   - Opens "UP NEXT" (*A CONTINUACIÓN*) in the center of the player, with up to 20 songs.
+     What's playing moves into a compact row above the progress bar and controls. Tap Queue
+     again to return to the large cover, or tap Lyrics to show the lyrics.
    - The Web API doesn't allow removing, reordering, or skipping to a song in the queue.
      Since 2026-11-18 (owner's request), **tapping a song** asks "Play this song?"
      (*¿Reproducir este tema?*) with "Play" (*Reproducir*) and "Cancel" (*Cancelar*); on
