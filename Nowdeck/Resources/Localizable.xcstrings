@@ -890,6 +890,22 @@
         }
       }
     },
+    "Buscando carpetas…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looking for folders…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscando carpetas…"
+          }
+        }
+      }
+    },
     "Buscando dispositivos" : {
       "localizations" : {
         "en" : {

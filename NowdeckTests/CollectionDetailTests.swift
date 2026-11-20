@@ -74,7 +74,7 @@ final class CollectionDetailTests: XCTestCase {
                                from: JSONSerialization.data(withJSONObject: object))
         }
 
-        let rows = CollectionDetailModel.rows([
+        let items: [(CollectionItem, Bool)] = [
             (try item(LibraryJSON.track("Loop", id: "t1", artists: ["Los Tilos", "Marea Baja"],
                                         explicit: true)), false),
             (try item(LibraryJSON.episode("Capítulo 4", id: "e1", show: "Charlas")), false),
@@ -82,7 +82,11 @@ final class CollectionDetailTests: XCTestCase {
             (try item(LibraryJSON.track("Galpón", id: "t3", isPlayable: false)), false),
             (try item(LibraryJSON.track("Afuera", id: "t4", restriction: "market")), false),
             (try item(LibraryJSON.track("Demo", id: "t5")), true),
-        ], from: 10)
+        ]
+        let indexedItems = items.enumerated().map { index, item in
+            (index, Optional(item.0), item.1)
+        }
+        let rows = CollectionDetailModel.rows(indexedItems, from: 10, pageOffset: 50)
 
         XCTAssertEqual(rows.map(\.title), ["Loop", "Capítulo 4", "Galpón", "Afuera", "Demo"],
                        "Items without a name are dropped")
@@ -91,8 +95,69 @@ final class CollectionDetailTests: XCTestCase {
                        ["Los Tilos, Marea Baja", "Charlas", "Artista", "Artista", "Artista"])
         XCTAssertEqual(rows.map(\.isExplicit), [true, false, false, false, false])
         XCTAssertEqual(rows.map(\.isAvailable), [true, true, false, false, false])
+        XCTAssertEqual(rows.map(\.playbackPosition), [50, nil, nil, nil, nil])
         XCTAssertEqual(rows.first?.pageURL?.absoluteString, "https://open.spotify.com/track/t1")
         XCTAssertNil(rows.last?.pageURL, "Local files have no Spotify page")
+    }
+
+    // MARK: Playback
+
+    func testSelectingAnAlbumTrackPlaysAtItsPosition() async throws {
+        let albumPage = LibraryJSON.page([
+            LibraryJSON.track("Uno", id: "t1"), NSNull(),
+            LibraryJSON.track("Tres", id: "t3"),
+        ])
+        let (api, recorder) = makeLibraryTestAPI { request in
+            request.httpMethod == "PUT" ? (.stub(204), Data()) : (.stub(200), albumPage)
+        }
+        let library = LibraryModel(api: api)
+        library.showDetail(of: album)
+        let detail = try XCTUnwrap(library.detail)
+        await detail.load()
+
+        let song = try XCTUnwrap(detail.tracks.last)
+        let outcome = await library.play(album, startingAt: song)
+
+        XCTAssertEqual(outcome, .started)
+        XCTAssertEqual(song.number, 2)
+        let request = try XCTUnwrap(recorder.requests.last)
+        XCTAssertEqual(request.httpMethod, "PUT")
+        XCTAssertEqual(request.url?.path, "/v1/me/player/play")
+        let body = try XCTUnwrap(request.httpBody)
+        XCTAssertEqual(String(decoding: body, as: UTF8.self),
+                       #"{"context_uri":"spotify:album:a1","offset":{"position":2}}"#)
+    }
+
+    func testSelectingADuplicateOnALaterPlaylistPageUsesItsOriginalPosition() async throws {
+        let duplicate = LibraryJSON.playlistItem(LibraryJSON.track("Repetido", id: "t1"))
+        let firstPage = LibraryJSON.page([duplicate] + Array(repeating: NSNull(), count: 49),
+                                         limit: 50, total: 55, hasNext: true)
+        let secondPage = LibraryJSON.page([
+            NSNull(), "malformed wrapper", LibraryJSON.playlistItem(nil),
+            LibraryJSON.playlistItem(LibraryJSON.track("", id: "t2")), duplicate,
+        ], offset: 50, limit: 50, total: 55)
+        let (api, recorder) = makeLibraryTestAPI { request in
+            if request.httpMethod == "PUT" { return (.stub(204), Data()) }
+            return (.stub(200), request.queryValues["offset"] == "0" ? firstPage : secondPage)
+        }
+        let library = LibraryModel(api: api)
+        library.showDetail(of: playlist)
+        let detail = try XCTUnwrap(library.detail)
+        await detail.load()
+        await detail.loadMore()
+
+        XCTAssertEqual(detail.tracks.map(\.number), [1, 2])
+        XCTAssertEqual(detail.tracks.map(\.playbackPosition), [0, 54])
+        let song = try XCTUnwrap(detail.tracks.last)
+        let outcome = await library.play(playlist, startingAt: song)
+
+        XCTAssertEqual(outcome, .started)
+        let request = try XCTUnwrap(recorder.requests.last)
+        XCTAssertEqual(request.httpMethod, "PUT")
+        XCTAssertEqual(request.url?.path, "/v1/me/player/play")
+        let body = try XCTUnwrap(request.httpBody)
+        XCTAssertEqual(String(decoding: body, as: UTF8.self),
+                       #"{"context_uri":"spotify:playlist:p1","offset":{"position":54}}"#)
     }
 
     // MARK: Model

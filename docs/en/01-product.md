@@ -63,10 +63,10 @@ While the app is in the foreground, **the screen does not turn off**
    - Playlists, Albums (*Álbumes*), Podcasts, and Audiobooks (*Audiolibros*) filters.
    - Horizontal row of cards. Tapping a playlist or an album opens its **detail**; podcasts
      and audiobooks open in Spotify.
-   - **Playlist or album detail**: artwork, name, owner or artists, the **Play** (*Reproducir*)
-     button (starts from the beginning), and the list of songs. Songs can't be tapped to
-     play. For other people's playlists Spotify doesn't return the songs: the user is told,
-     and can still play it or view it in Spotify.
+   - **Playlist or album detail**. See the artwork, name, owner or artists, **Play**
+     (*Reproducir*), **Shuffle** (*Aleatorio*), and the song list. Tap an available song to
+     start playback from that point in the playlist or album. Spotify may restrict the song
+     list for other people's playlists. You can play the whole playlist or view it in Spotify.
    - Mini player at the bottom, with a background in the artwork's color and "Playing on
      <device>" (*Suena en*).
 7. **Search**: search field; tapping a result plays it on the active device. The
@@ -126,10 +126,10 @@ While the app is in the foreground, **the screen does not turn off**
   - If there's line sync, the whole verse is shown.
   - If there are no lyrics or only plain text, the notice appears and the player goes back to the
     normal view.
-- **Play from the Library**: tap a playlist or an album → detail with its songs →
-  Play → it plays on the active device and you go back to the Player. If there's no
-  active device, Devices opens. Long-pressing a card still offers
-  "Play" without going through the detail.
+- **Play from the Library**. Open a playlist or album and tap a song to play it on the
+  active device and stay in the detail. Tap **Play** to start the collection and return to
+  the Player. Devices opens when an active device is needed. The card's menu also offers
+  **Play**.
 - **Theme**: in Settings → Export, the share sheet opens with a `.nowdeck.json`.
   Importing can be done from Files, AirDrop, or by pasting the text → import sheet →
   Apply.

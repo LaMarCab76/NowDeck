@@ -92,23 +92,25 @@ extension SpotifyAPI {
         return try Self.decode(SearchResults.self, from: data)
     }
 
-    /// `PUT /me/player/play` with `{"context_uri": …}` on the active device.
+    /// `PUT /me/player/play` on the active device. An optional zero-based position
+    /// starts the chosen occurrence within an album or playlist.
     ///
     /// No `device_id` is sent: "If not supplied, the user's currently active device is the
     /// target." Without an active device Spotify answers `404` (`SpotifyAPIError.notFound`;
     /// the reference does not list it, but it is how the player commands fail today), and a
     /// `403` covers the cases of `SpotifyAPIError.forbidden` (no Premium, among others).
-    func playContext(uri: String) async throws {
+    func playContext(uri: String, position: Int? = nil) async throws {
         var request = Request(method: "PUT", path: "/me/player/play")
-        request.body = try Self.playContextBody(uri: uri)
+        request.body = try Self.playContextBody(uri: uri, position: position)
         _ = try await send(request)
     }
 
-    /// The JSON body of `playContext(uri:)`. Separate so tests can check it.
-    static func playContextBody(uri: String) throws -> Data {
+    /// The JSON body of `playContext`. Whole collections omit the offset.
+    static func playContextBody(uri: String, position: Int? = nil) throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
-        return try encoder.encode(PlayContextBody(contextUri: uri))
+        return try encoder.encode(PlayContextBody(contextUri: uri,
+                                                  offset: position.map(PlayContextBody.Offset.init)))
     }
 
     // MARK: Helpers
@@ -125,9 +127,15 @@ extension SpotifyAPI {
 }
 
 private struct PlayContextBody: Encodable {
+    struct Offset: Encodable {
+        let position: Int
+    }
+
     let contextUri: String
+    let offset: Offset?
 
     private enum CodingKeys: String, CodingKey {
         case contextUri = "context_uri"
+        case offset
     }
 }

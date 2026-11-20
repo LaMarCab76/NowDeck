@@ -45,6 +45,8 @@ final class AppPreferences: ObservableObject {
     static let lyricsOffsetStep = 100
 
     private let defaults: UserDefaults
+    /// Kept in memory so reopening Biblioteca does not reset the notices.
+    private var hasStartedPlaylistFolderSearch = false
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -59,6 +61,13 @@ final class AppPreferences: ObservableObject {
     func answerPlaylistFolders(enabled: Bool) {
         usesPlaylistFolders = enabled
         hasAnsweredPlaylistFolders = true
+    }
+
+    /// The search and its possible failure are announced only on the first attempt.
+    func beginPlaylistFolderSearch() -> Bool {
+        guard !hasStartedPlaylistFolderSearch else { return false }
+        hasStartedPlaylistFolderSearch = true
+        return true
     }
 
     /// Rounds to the step and keeps the value inside `lyricsOffsetRange`.

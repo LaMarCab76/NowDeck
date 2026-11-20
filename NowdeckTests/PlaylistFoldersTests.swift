@@ -1,3 +1,4 @@
+import Combine
 import XCTest
 @testable import Nowdeck
 
@@ -97,6 +98,7 @@ final class PlaylistFoldersTests: XCTestCase {
     // MARK: Library
 
     private func makeModel(rootlistStatus: StubBox<Int> = StubBox(200),
+                           preferences: AppPreferences? = nil,
                            playlistPage: (@Sendable (Int) throws -> Data)? = nil)
         -> (LibraryModel, StubRecorder) {
         let playlists = LibraryJSON.page([LibraryJSON.playlist("Asado", id: "a"),
@@ -123,7 +125,13 @@ final class PlaylistFoldersTests: XCTestCase {
                 return (.stub(204), Data())
             }
         }
-        return (LibraryModel(api: api, folders: PlaylistFolderClient(api: api)), recorder)
+        let settings = preferences ?? AppPreferences(defaults: freshDefaults())
+        settings.usesPlaylistFolders = true
+        return (LibraryModel(api: api, preferences: settings), recorder)
+    }
+
+    private func freshDefaults() -> UserDefaults {
+        UserDefaults(suiteName: "PlaylistFoldersTests.\(UUID().uuidString)")!
     }
 
     func testPlaylistsRowShowsFoldersAndOpensThem() async throws {
@@ -229,6 +237,47 @@ final class PlaylistFoldersTests: XCTestCase {
         XCTAssertEqual(items.map(\.name), ["Asado", "Suelta"])
     }
 
+    func testFolderSearchAndFailureAreAnnouncedOncePerAppLaunch() async {
+        let defaults = freshDefaults()
+        let preferences = AppPreferences(defaults: defaults)
+        let failure = StubBox(401)
+        let (first, _) = makeModel(rootlistStatus: failure, preferences: preferences)
+        var firstSearches = 0
+        let firstSubscription = first.$isSearchingPlaylistFolders.filter { $0 }.sink { _ in
+            firstSearches += 1
+        }
+        await first.load(.playlists)
+        XCTAssertEqual(firstSearches, 1)
+        XCTAssertFalse(first.isSearchingPlaylistFolders)
+        XCTAssertEqual(first.notice, .foldersUnavailable)
+
+        let (reopened, recorder) = makeModel(rootlistStatus: failure, preferences: preferences)
+        var reopenedSearches = 0
+        let reopenedSubscription = reopened.$isSearchingPlaylistFolders.filter { $0 }.sink { _ in
+            reopenedSearches += 1
+        }
+        await reopened.load(.playlists)
+        XCTAssertEqual(reopenedSearches, 0)
+        XCTAssertNil(reopened.notice)
+        XCTAssertTrue(recorder.requests.contains { $0.url?.host == "spclient.wg.spotify.com" },
+                      "The experimental search still runs")
+        guard case .loaded(let items) = reopened.state(of: .playlists) else {
+            return XCTFail("Expected the flat list")
+        }
+        XCTAssertEqual(items.map(\.name), ["Asado", "Suelta"])
+
+        let (relaunched, _) = makeModel(rootlistStatus: failure,
+                                        preferences: AppPreferences(defaults: defaults))
+        var relaunchedSearches = 0
+        let relaunchedSubscription = relaunched.$isSearchingPlaylistFolders.filter { $0 }.sink { _ in
+            relaunchedSearches += 1
+        }
+        await relaunched.load(.playlists)
+        XCTAssertEqual(relaunchedSearches, 1)
+        XCTAssertEqual(relaunched.notice, .foldersUnavailable)
+        withExtendedLifetime([firstSubscription, reopenedSubscription, relaunchedSubscription]) {}
+    }
+
     func testFailedReloadClosesTheOpenFolder() async {
         let status = StubBox(200)
         let (model, _) = makeModel(rootlistStatus: status)
@@ -240,6 +289,7 @@ final class PlaylistFoldersTests: XCTestCase {
         await model.load(.playlists)
 
         XCTAssertFalse(model.showsFolders)
+        XCTAssertNil(model.notice, "A successful first attempt also consumes the notices")
         XCTAssertTrue(model.folderPath.isEmpty, "The flat list shows no folder back bar")
         guard case .loaded(let items) = model.state(of: .playlists) else {
             return XCTFail("Expected the flat list")

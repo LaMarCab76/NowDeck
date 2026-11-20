@@ -284,7 +284,9 @@ Reemplaza a la píldora flotante de `Volumen.dc.html`, que se queda como referen
   ofrece "Reproducir" directamente. Los podcasts y audiolibros se abren en Spotify.
 - **Carpetas de playlists** (opción experimental): al abrir una carpeta, la fila muestra
   su contenido y "‹ Volver" reemplaza los filtros. Al cerrar el detalle de una playlist
-  se vuelve a la carpeta desde la que se abrió.
+  se vuelve a la carpeta desde la que se abrió. La primera búsqueda de carpetas por
+  arranque muestra "Buscando carpetas…". Si falla, avisa una vez y carga las playlists
+  sin agrupar. Las cargas posteriores del mismo arranque omiten ambos avisos.
 - **Buscar**: campo de 56 (radio 28, blanco al 10 %) con el placeholder "Temas, artistas,
   álbumes, podcasts o audiolibros" y una línea de ayuda.
 - **Mini reproductor** (56, radio 14, fondo según la carátula): Agregar a una playlist
@@ -298,7 +300,8 @@ Se abre al tocar una tarjeta de playlist o álbum. Mantiene los márgenes de la 
 mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle.
 
 - **Fila 1** (44): "‹ Biblioteca" a la izquierda (píldora de 36, radio 18, blanco al 8 %,
-  17 bold, relleno 10/16, corrida −4 como las pestañas). A la derecha, "ABRIR EN SPOTIFY ↗"
+  17 bold, relleno 10/16, corrida −4 como las pestañas). A su lado, **Aleatorio** (44,
+  con el estilo y estado del control de Reproducción). A la derecha, "ABRIR EN SPOTIFY ↗"
   en monoespaciada (abre la playlist o el álbum) y el logo, con 20 entre los dos.
 - **Bloque central** (252), en dos columnas con 32 entre ellas:
   - **Izquierda** (170): carátula de 150×150 (radio 4), nombre en 18 bold (interlineado 22,
@@ -316,7 +319,9 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
     muestra los temas de esta playlist" (20 bold, interlineado 26), una línea de ayuda (15/22)
     y "Ver en Spotify ↗" (botón contorneado de 44, borde blanco al 35 %), todo en un ancho
     máximo de 440 y centrado en vertical.
-- Mantener apretado un tema muestra el nombre completo y "Abrir en Spotify".
+- Tocar un tema disponible inicia la reproducción desde su posición en la colección y
+  mantiene abierto el detalle. Mantenerlo apretado muestra el nombre completo y
+  "Abrir en Spotify" cuando hay un enlace.
 
 ## Dispositivos (`Dispositivos.dc.html`)
 

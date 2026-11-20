@@ -97,11 +97,7 @@ struct PlayerScreen: View {
                 // While the library covers the player, the devices sheet ("Suena en …" in the
                 // mini player, a card or a command that finds no active device) is presented
                 // from inside the library.
-                LibraryScreen(model: LibraryModel(
-                                  api: model.api,
-                                  // Experimental, only if the user turned it on.
-                                  folders: preferences.usesPlaylistFolders
-                                      ? PlaylistFolderClient(api: model.api) : nil),
+                LibraryScreen(model: LibraryModel(api: model.api, preferences: preferences),
                               player: model,
                               onPlayPause: wiredActions.playPause,
                               onShowDevices: { [presentation] in presentation.showDevices() },

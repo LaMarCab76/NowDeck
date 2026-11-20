@@ -292,7 +292,9 @@ replaces the floating pill of `Volumen.dc.html`, which stays as a historical ref
   (*Reproducir*) directly. Podcasts and audiobooks open in Spotify.
 - **Playlist folders** (experimental option): when a folder is opened, the row shows its
   contents and "‹ Back" (*‹ Volver*) replaces the filters. Closing a playlist's detail goes
-  back to the folder it was opened from.
+  back to the folder it was opened from. The first folder search after launch shows
+  "Looking for folders…". If it fails, a notice appears once and the ungrouped playlists
+  load. Later loads during the same launch skip both notices.
 - **Search**: 56 field (radius 28, white at 10%) with the placeholder "Songs, artists, albums,
   podcasts or audiobooks" (*Temas, artistas, álbumes, podcasts o audiolibros*) and a help
   line.
@@ -307,7 +309,8 @@ Opens when tapping a playlist or album card. It keeps the Library margins and th
 player; the filter row and the cards are replaced by the detail.
 
 - **Row 1** (44): "‹ Library" (*‹ Biblioteca*) on the left (36 pill, radius 18, white at 8%,
-  17 bold, padding 10/16, shifted −4 like the tabs). On the right, "OPEN IN SPOTIFY ↗"
+  17 bold, padding 10/16, shifted −4 like the tabs). Next to it, **Shuffle** (44, with
+  the same style and state as the player's control). On the right, "OPEN IN SPOTIFY ↗"
   (*ABRIR EN SPOTIFY ↗*) in monospaced (opens the playlist or the album) and the logo, with 20
   between them.
 - **Central block** (252), in two columns with 32 between them:
@@ -328,7 +331,9 @@ player; the filter row and the cards are replaced by the detail.
     (20 bold, line height 26), a help line (15/22) and "View in Spotify ↗" (*Ver en Spotify
     ↗*) (44 outlined button, border white at 35%), all within a maximum width of 440 and
     vertically centered.
-- Long-pressing a song shows the full name and "Open in Spotify" (*Abrir en Spotify*).
+- Tapping an available song starts playback at its position in the collection and keeps
+  the detail open. Long-pressing a song shows the full name and "Open in Spotify"
+  (*Abrir en Spotify*) when a link is available.
 
 ## Devices (`Dispositivos.dc.html`)
 

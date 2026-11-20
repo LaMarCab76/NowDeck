@@ -61,9 +61,10 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
    - Fila horizontal de tarjetas. Tocar una playlist o un álbum abre su **detalle**; los
      podcasts y audiolibros se abren en Spotify.
    - **Detalle de playlist o álbum**: carátula, nombre, dueño o artistas, el botón
-     **Reproducir** (arranca desde el principio) y la lista de temas. Los temas no se tocan
-     para reproducir. En las playlists de otras personas Spotify no devuelve los temas: se
-     avisa y se puede reproducir igual o verla en Spotify.
+     **Reproducir**, el control de **Aleatorio** y la lista de temas. Tocar un tema disponible
+     inicia la reproducción desde ese punto de la playlist o el álbum. En las playlists de
+     otras personas Spotify puede restringir la lista de temas. Se puede reproducir la
+     playlist completa o verla en Spotify.
    - Mini reproductor abajo, con fondo del color de la carátula y "Suena en <dispositivo>".
 7. **Buscar**: campo de búsqueda; al tocar un resultado, suena en el dispositivo activo. La
    pantalla de resultados todavía no está diseñada (ver pendientes).
@@ -117,10 +118,10 @@ Mientras la app está en primer plano, **la pantalla no se apaga**
   - Si hay sincronía por línea, se muestra la estrofa completa.
   - Si no hay letra o es solo texto plano, aparece el aviso y el reproductor vuelve a la vista
     normal.
-- **Reproducir desde la Biblioteca**: tocar una playlist o un álbum → detalle con sus temas →
-  Reproducir → suena en el dispositivo activo y se vuelve a Reproducción. Si no hay
-  dispositivo activo, se abre Dispositivos. Mantener apretada una tarjeta sigue ofreciendo
-  "Reproducir" sin pasar por el detalle.
+- **Reproducir desde la Biblioteca**. Abrí una playlist o un álbum y tocá un tema para
+  escucharlo en el dispositivo activo y seguir en el detalle. Tocá **Reproducir** para
+  iniciar la colección y volver a Reproducción. Si falta un dispositivo activo, se abre
+  Dispositivos. El menú de la tarjeta también ofrece **Reproducir**.
 - **Tema**: en Ajustes → Exportar, se abre la hoja de compartir con un `.nowdeck.json`.
   Importar se puede hacer desde Archivos, AirDrop o pegando el texto → hoja de importación →
   Aplicar.
