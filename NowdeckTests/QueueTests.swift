@@ -230,28 +230,71 @@ final class QueueTests: XCTestCase {
         XCTAssertEqual(recorder.requests.count, 1)
     }
 
-    func testTrackChangeAlwaysReadsAgain() async throws {
-        let gate = FirstRequestGate(started: expectation(description: "first read started"))
+    func testReopeningAfterAHiddenTrackChangeReadsTheNewQueue() async throws {
+        let retryStarted = expectation(description: "old queue read waiting to retry")
+        let (retryWait, releaseRetry) = AsyncStream<Void>.makeStream()
+        defer { releaseRetry.finish() }
+
+        let playback = StubBox(PlaybackJSON())
         let answers = AnswerQueue([
+            .success((.stub(200), Self.json(["queue": [Self.track("Vista anterior")]]))),
+            .success((.stub(500), Data())),
+            .success((.stub(200), Self.json(["queue": [Self.track("Vista nueva")]]))),
             .success((.stub(200), Self.json(["queue": [Self.track("Viejo")]]))),
             .success((.stub(200), Self.json(["queue": [Self.track("Nuevo")]]))),
         ])
+        let (session, recorder) = StubURLProtocol.session { request in
+            switch request.url?.path {
+            case "/v1/me/player": return (.stub(200), try playback.value.data())
+            case "/v1/me/player/queue": return try answers.next()
+            default: return (.stub(404), Data())
+            }
+        }
+        let api = SpotifyAPI(tokens: FakeTokenProvider(), session: session, sleep: { _ in
+            retryStarted.fulfill()
+            for await _ in retryWait {}
+        }, jitter: { 0 })
+        let player = PlayerModel(api: api, artworkLoader: ArtworkLoader(session: session))
+        player.loadsArtistImages = false
+        await player.poll()
+        try await waitUntil { player.upNext?.item.title == "Vista anterior" }
+
+        let queue = player.queue
+        let first = Task { await queue.reload() }
+        await fulfillment(of: [retryStarted], timeout: 2)
+
+        // Queue is closed while its read waits. Only the player observes the new item.
+        playback.value.replacementTrack = (id: "newTrack", durationMs: 300_000)
+        await player.poll()
+        XCTAssertEqual(player.nowPlaying?.playlistURI, "spotify:track:newTrack")
+        try await waitUntil { player.upNext?.item.title == "Vista nueva" }
+
+        let reopened = Task { await queue.reload() }
+        try await waitUntil { queue.waitingCalls == 2 }
+        releaseRetry.finish()
+        _ = await (first.value, reopened.value)
+
+        XCTAssertEqual(queue.entries?.map(\.track.title), ["Nuevo"])
+        XCTAssertEqual(recorder.requests.filter { $0.url?.path == "/v1/me/player/queue" }.count, 5)
+    }
+
+    func testInvalidatingAClosedQueuesReadDiscardsItsAnswerWithoutFetchingAgain() async {
+        let gate = FirstRequestGate(started: expectation(description: "read started"))
+        addTeardownBlock { gate.open() }
+        let body = Self.json(["queue": [Self.track("Viejo")]])
         let (api, recorder) = makeAPI { _ in
             gate.pass()
-            return try answers.next()
+            return (.stub(200), body)
         }
         let model = QueueModel(api: api)
-
         let first = Task { await model.reload() }
         await fulfillment(of: [gate.started], timeout: 2)
-        // The track changes while the first read is still waiting: its answer may be old.
-        let change = Task { await model.trackDidChange() }
-        try await waitUntil { model.waitingCalls == 2 }
-        gate.open()
-        _ = await (first.value, change.value)
 
-        XCTAssertEqual(recorder.requests.count, 2)
-        XCTAssertEqual(model.entries?.map(\.track.title), ["Nuevo"])
+        model.invalidateForPlaybackChange()
+        gate.open()
+        await first.value
+        XCTAssertNil(model.entries)
+        XCTAssertEqual(recorder.requests.count, 1)
     }
 
     func testSeveralTrackChangesDuringOneReadAskForOneMoreRead() async throws {
@@ -270,8 +313,11 @@ final class QueueTests: XCTestCase {
         await fulfillment(of: [gate.started], timeout: 2)
         // Two changes wait for the same read. They must not start two overlapping reads,
         // where the older answer could land last.
-        let change1 = Task { await model.trackDidChange() }
-        let change2 = Task { await model.trackDidChange() }
+        model.invalidateForPlaybackChange()
+        let change1 = Task { await model.reload() }
+        try await waitUntil { model.waitingCalls == 2 }
+        model.invalidateForPlaybackChange()
+        let change2 = Task { await model.reload() }
         try await waitUntil { model.waitingCalls == 3 }
         gate.open()
         _ = await (first.value, change1.value, change2.value)

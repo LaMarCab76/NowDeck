@@ -151,7 +151,7 @@ enum QueueProblem: Equatable {
 /// State of the player's queue.
 ///
 /// The queue is read when Queue opens, when the player shows another track while
-/// Queue is open (`trackDidChange()`) and on pull to refresh. It is **not** polled: the
+/// Queue is open and on pull to refresh. It is **not** polled: the
 /// player's polling already spends the request quota (docs/03, "Polling y estado local").
 @MainActor
 final class QueueModel: ObservableObject {
@@ -170,46 +170,40 @@ final class QueueModel: ObservableObject {
     /// The only worker that reads the queue. Reads never overlap, so an older answer can
     /// never land after a newer one.
     private var loadTask: Task<Void, Never>?
-    /// Set when the track changed while the worker was reading: that read may carry the old
-    /// queue, so the worker reads once more before finishing.
-    private var needsAnotherRead = false
-    /// `reload()` and `trackDidChange()` calls waiting for the worker right now. Only read
-    /// by tests, to know that an overlapping call has really joined a running read.
+    private var playbackGeneration = 0
+    /// The newest playback generation a caller requested. An invalidation alone does not
+    /// request a read while Queue is closed.
+    private var requestedGeneration = 0
+    /// Reload calls waiting for the worker. Only read by tests.
     private(set) var waitingCalls = 0
 
     init(api: SpotifyAPI) {
         self.api = api
     }
 
-    /// Reads the queue. A reload while a read is running waits for it instead of sending a
-    /// second request.
+    /// Discard later answers for the old playback, even when the queue view is absent.
+    func invalidateForPlaybackChange() {
+        playbackGeneration += 1
+    }
+
+    /// Reloads for the current playback. Readers share a request unless playback changed
+    /// after it started, in which case the worker reads again before returning.
     func reload(clearingPlaybackProblem: Bool = false) async {
         if clearingPlaybackProblem { playbackProblem = nil }
+        requestedGeneration = playbackGeneration
         waitingCalls += 1
         defer { waitingCalls -= 1 }
         await worker().value
     }
 
-    /// The player moved to another track: the queue moved with it. A read already running
-    /// may carry the old queue, so the worker reads again after it. Several changes during
-    /// one read ask for a single extra read.
-    func trackDidChange() async {
-        waitingCalls += 1
-        defer { waitingCalls -= 1 }
-        if loadTask != nil { needsAnotherRead = true }
-        await worker().value
-    }
-
-    /// The running worker, or a new one. Everything here runs on the main actor, and there
-    /// is no suspension between the last check of `needsAnotherRead` and clearing
-    /// `loadTask`, so a request for another read is never lost.
     private func worker() -> Task<Void, Never> {
         if let loadTask { return loadTask }
         let task = Task {
+            var generation: Int
             repeat {
-                needsAnotherRead = false
-                await fetch()
-            } while needsAnotherRead
+                generation = playbackGeneration
+                await fetch(generation: generation)
+            } while generation < requestedGeneration
             loadTask = nil
         }
         loadTask = task
@@ -235,16 +229,18 @@ final class QueueModel: ObservableObject {
         }
     }
 
-    private func fetch() async {
+    private func fetch(generation: Int) async {
         isLoading = true
         defer { isLoading = false }
         do {
             let queue = try await api.playbackQueue()
+            guard generation == playbackGeneration else { return }
             entries = QueueEntry.entries(from: queue)
             readProblem = nil
         } catch is CancellationError {
             return
         } catch {
+            guard generation == playbackGeneration else { return }
             readProblem = QueueProblem(error)
         }
     }

@@ -34,11 +34,8 @@ struct QueueView: View {
         } message: { entry in
             Text(confirmationMessage(for: entry.track))
         }
-        .task { await model.reload() }
-        .onChange(of: player.itemStarts) { _ in
-            // Consecutive plays of the same track consume an entry too.
-            Task { await model.trackDidChange() }
-        }
+        // Consecutive plays of the same track consume an entry too.
+        .task(id: player.itemStarts) { await model.reload() }
     }
 
     private var isConfirming: Binding<Bool> {

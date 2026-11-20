@@ -10,6 +10,7 @@ final class PlayerControlsModelTests: XCTestCase {
         let recorder: StubRecorder
         /// What `GET /me/player` answers.
         let playback: StubBox<PlaybackJSON>
+        let hasPlayback: StubBox<Bool>
         /// Status of every command.
         let commandStatus: StubBox<Int>
         let clock: TestClock
@@ -34,13 +35,16 @@ final class PlayerControlsModelTests: XCTestCase {
                       commandDelay: TimeInterval = 0,
                       commandGate: DispatchSemaphore? = nil) async throws -> Harness {
         let playback = StubBox(initial)
+        let hasPlayback = StubBox(true)
         let commandStatus = StubBox(204)
         let clock = TestClock()
         let (session, recorder) = StubURLProtocol.session { request in
             guard request.url?.host == "api.spotify.com" else { return (.stub(404), Data()) }
             let path = request.url?.path ?? ""
             if path.hasPrefix("/v1/playlists") { return (.stub(404), Data()) }
-            if request.httpMethod == "GET" { return (.stub(200), try playback.value.data()) }
+            if request.httpMethod == "GET" {
+                return hasPlayback.value ? (.stub(200), try playback.value.data()) : (.stub(204), Data())
+            }
             if commandDelay > 0 { Thread.sleep(forTimeInterval: commandDelay) }
             // Commands wait here until the test signals the gate.
             commandGate?.wait()
@@ -57,7 +61,8 @@ final class PlayerControlsModelTests: XCTestCase {
         await model.poll()
         XCTAssertEqual(model.status, .active)
         return Harness(model: model, controls: controls, recorder: recorder,
-                       playback: playback, commandStatus: commandStatus, clock: clock)
+                       playback: playback, hasPlayback: hasPlayback,
+                       commandStatus: commandStatus, clock: clock)
     }
 
     /// Lets queued commands run when the test expects nothing to happen.
@@ -174,6 +179,23 @@ final class PlayerControlsModelTests: XCTestCase {
         await h.controls.playQueuedTrack(queuedEntry(uri: uri), in: h.model.queue)
         XCTAssertFalse(h.controls.availability.seek)
         await h.model.poll()
+        XCTAssertTrue(h.controls.availability.seek)
+    }
+
+    func testSeekingReturnsWhenThePreviousTrackResumesAfterNothingPlaying() async throws {
+        let h = try await make()
+        let previousItem = try XCTUnwrap(h.model.nowPlaying)
+        await h.controls.playQueuedTrack(queuedEntry(), in: h.model.queue)
+        XCTAssertFalse(h.controls.availability.seek)
+
+        h.hasPlayback.value = false
+        await h.model.poll()
+        XCTAssertEqual(h.model.status, .nothingPlaying)
+        XCTAssertFalse(h.controls.availability.seek)
+
+        h.hasPlayback.value = true
+        await h.model.poll()
+        XCTAssertEqual(h.model.nowPlaying, previousItem)
         XCTAssertTrue(h.controls.availability.seek)
     }
 

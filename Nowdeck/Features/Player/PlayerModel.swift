@@ -296,6 +296,7 @@ final class PlayerModel: ObservableObject {
     }
 
     private func showOnly(_ newStatus: Status) {
+        if nowPlaying != nil { queue.invalidateForPlaybackChange() }
         status = newStatus
         playback = nil
         nowPlaying = nil
@@ -352,7 +353,11 @@ final class PlayerModel: ObservableObject {
             fetchedAt = date
             return
         }
-        if isNewStart(of: item, state: state, at: date) { itemStarts += 1 }
+        let playbackWasEmpty = nowPlaying == nil
+        if isNewStart(of: item, state: state, at: date) {
+            queue.invalidateForPlaybackChange()
+            itemStarts += 1
+        }
         playback = state
         fetchedAt = date
         if nowPlaying != item {
@@ -364,7 +369,8 @@ final class PlayerModel: ObservableObject {
             nowPlaying = item
         }
         if let confirmation = queuedSeekConfirmation,
-           item.transitionKey != confirmation.previousItemKey || item.playlistURI == confirmation.requestedURI {
+           playbackWasEmpty || item.transitionKey != confirmation.previousItemKey
+               || item.playlistURI == confirmation.requestedURI {
             queuedSeekConfirmation = nil
         }
         // Only while it plays: a track picked while paused was not heard.
