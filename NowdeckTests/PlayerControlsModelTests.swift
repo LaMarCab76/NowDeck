@@ -141,6 +141,20 @@ final class PlayerControlsModelTests: XCTestCase {
         XCTAssertEqual(h.controls.notice, .failed)
     }
 
+    func testShuffleToggleUsesTheSharedPlaybackStateInBothDirections() async throws {
+        let h = try await make(PlaybackJSON(shuffle: false))
+        h.controls.toggleShuffle()
+        XCTAssertEqual(h.model.playback?.shuffleState, true)
+        XCTAssertTrue(h.controls.isSendingCommand)
+
+        h.controls.toggleShuffle()
+        XCTAssertEqual(h.model.playback?.shuffleState, false)
+
+        try await eventually { !h.controls.isSendingCommand }
+        XCTAssertEqual(h.commands, ["PUT /me/player/shuffle", "PUT /me/player/shuffle"])
+        XCTAssertEqual(h.commandRequests.map { $0.queryValue("state") }, ["true", "false"])
+    }
+
     func testShuffleAndRepeatRollBack() async throws {
         let h = try await make(PlaybackJSON(shuffle: false, repeatState: "off"))
         h.commandStatus.value = 429

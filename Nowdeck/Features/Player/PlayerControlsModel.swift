@@ -45,7 +45,7 @@ final class PlayerControlsModel: ObservableObject {
 
     /// The last queued command; the next one waits for it.
     private var lastCommand: Task<Void, Never>?
-    private var pendingCommands = 0
+    @Published private var pendingCommands = 0
     private var batchFailed = false
     private var noticeTask: Task<Void, Never>?
     private var playbackSubscription: AnyCancellable?
@@ -78,6 +78,9 @@ final class PlayerControlsModel: ObservableObject {
     var availability: ControlAvailability {
         ControlAvailability(playback: player?.playback)
     }
+
+    /// The library waits for player commands before starting another context.
+    var isSendingCommand: Bool { pendingCommands > 0 }
 
     // MARK: Commands
 

@@ -900,12 +900,13 @@ private extension View {
     }
 }
 
-/// 48 pt round icon button. Active: accent on accent at 16 % (like Letras in the mockup).
+/// Round icon button. Active: accent on accent at 16 % (like Letras in the mockup).
 struct ToggleIconButton: View {
     var systemName: String
     var isOn: Bool
     var label: LocalizedStringKey
     var isEnabled = true
+    var size: CGFloat = Metrics.Player.sideButtonSize
     var action: () -> Void
 
     @EnvironmentObject private var theme: ThemeStore
@@ -915,7 +916,7 @@ struct ToggleIconButton: View {
             Image(systemName: systemName)
                 .font(.system(size: Metrics.Player.sideIconSize - 2, weight: .semibold))
                 .foregroundStyle(isOn ? theme.palette.accent.color : theme.palette.tertiaryText.color)
-                .frame(width: Metrics.Player.sideButtonSize, height: Metrics.Player.sideButtonSize)
+                .frame(width: size, height: size)
                 .background(Circle().fill(isOn
                     ? theme.palette.accent.color.opacity(Palette.activeToggleOpacity)
                     : Color.clear))

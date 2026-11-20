@@ -4,9 +4,8 @@ import SwiftUI
 /// the mini player.
 ///
 /// The player presents it full screen. Tapping a playlist or an album opens its detail
-/// (`CollectionDetailView`), whose "Reproducir" plays it on the active device and goes back
-/// to the player; podcasts and audiobooks open in Spotify. Tapping the mini player goes
-/// back too.
+/// (`CollectionDetailView`). The collection's "Reproducir" button goes back to the player,
+/// while playing a song keeps the detail open. Podcasts and audiobooks open in Spotify.
 ///
 /// Two actions belong to other milestones and come in as closures:
 /// - `onShowDevices`: the devices sheet (milestone 4). Called by "Suena en …" and when
@@ -40,7 +39,9 @@ struct LibraryScreen: View {
 
     var body: some View {
         LibraryContent(model: model, player: player, controls: player.controls, tab: $tab,
-                       onPlay: play, onOpenPlayer: { dismiss() },
+                       onPlay: { play($0) },
+                       onPlayTrack: { play($0, startingAt: $1) },
+                       onOpenPlayer: { dismiss() },
                        onPlayPause: onPlayPause, onShowDevices: onShowDevices,
                        onOpenSettings: { showsSettings = true },
                        onAddToPlaylist: onAddToPlaylist)
@@ -61,14 +62,14 @@ struct LibraryScreen: View {
             }
     }
 
-    private func play(_ item: LibraryEntry) {
+    private func play(_ item: LibraryEntry, startingAt track: CollectionTrack? = nil) {
         Task {
-            switch await model.play(item) {
+            if item.playsInPlace && player.controls.isSendingCommand { return }
+            switch await model.play(item, startingAt: track) {
             case .started:
-                // Confirm the new state soon (docs/03, "Después de un comando") and go back
-                // to the player, as the design asks.
+                // Confirm the new state soon so the mini player reflects the selected song.
                 player.refresh(after: 0.6)
-                dismiss()
+                if track == nil { dismiss() }
             case .openInSpotify(let url):
                 SpotifyLink.open(url)
             case .noActiveDevice:
@@ -95,6 +96,7 @@ struct LibraryContent: View {
     @ObservedObject var controls: PlayerControlsModel
     @Binding var tab: Tab
     var onPlay: (LibraryEntry) -> Void
+    var onPlayTrack: (LibraryEntry, CollectionTrack) -> Void
     var onOpenPlayer: () -> Void
     var onPlayPause: () -> Void
     var onShowDevices: () -> Void
@@ -117,12 +119,20 @@ struct LibraryContent: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 if let detail = model.detail {
-                    CollectionDetailHeader(pageURL: detail.entry.pageURL,
-                                           onBack: { model.closeDetail() })
+                    CollectionDetailHeader(
+                        pageURL: detail.entry.pageURL,
+                        shuffleIsOn: player.playback?.shuffleState == true,
+                        canToggleShuffle: controls.availability.shuffle && model.startingURI == nil,
+                        onToggleShuffle: {
+                            guard model.startingURI == nil else { return }
+                            controls.toggleShuffle()
+                        },
+                        onBack: { model.closeDetail() })
                     Spacer(minLength: 0)
                     CollectionDetailView(model: detail,
-                                         isStarting: model.startingURI == detail.entry.uri,
-                                         onPlay: { onPlay(detail.entry) })
+                                         canStartPlayback: canStartPlayback,
+                                         onPlay: { onPlay(detail.entry) },
+                                         onPlayTrack: { onPlayTrack(detail.entry, $0) })
                 } else {
                     header
                     Spacer(minLength: 0)
@@ -172,7 +182,7 @@ struct LibraryContent: View {
         .foregroundStyle(theme.palette.text.color)
         .background(theme.palette.background.color.ignoresSafeArea())
         .overlay(alignment: .top) {
-            if let notice = model.notice {
+            if let notice = libraryNotice {
                 LibraryNoticeView(notice: notice)
                     .padding(.top, Metrics.Notice.top)
                     .transition(.opacity)
@@ -182,8 +192,20 @@ struct LibraryContent: View {
                     .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: model.notice)
+        .animation(.easeInOut(duration: 0.2), value: libraryNotice)
         .animation(.easeInOut(duration: 0.2), value: controls.notice)
+    }
+
+    private var libraryNotice: LibraryModel.Notice? {
+        if let notice = model.notice { return notice }
+        guard model.isSearchingPlaylistFolders, controls.notice == nil, model.detail == nil,
+              tab == .library, model.filter == .playlists else { return nil }
+        return .searchingFolders
+    }
+
+    private var canStartPlayback: Bool {
+        model.startingURI == nil && !controls.isSendingCommand
+            && player.playback?.device?.isRestricted != true
     }
 
     /// Playlists and albums open their detail. The model handles folders, podcasts and
@@ -276,7 +298,7 @@ struct LibraryNoticeView: View {
 
     var body: some View {
         HStack(spacing: Metrics.Notice.iconSpacing) {
-            Image(systemName: notice == .noActiveDevice ? "hifispeaker" : "exclamationmark.circle")
+            Image(systemName: icon)
                 .font(.system(size: Metrics.Notice.iconSize - 3, weight: .semibold))
                 .frame(width: Metrics.Notice.iconSize, height: Metrics.Notice.iconSize)
                 .accessibilityHidden(true)
@@ -298,12 +320,21 @@ struct LibraryNoticeView: View {
         .onChange(of: notice) { _ in AccessibilityAnnouncement.post(message) }
     }
 
+    private var icon: String {
+        switch notice {
+        case .noActiveDevice: return "hifispeaker"
+        case .searchingFolders: return "magnifyingglass"
+        default: return "exclamationmark.circle"
+        }
+    }
+
     private var message: LocalizedStringResource {
         switch notice {
         case .noActiveDevice: return "No hay un dispositivo activo. Elegí uno para escuchar."
         case .forbidden: return "Spotify no dejó reproducirlo. Revisá que tu cuenta tenga Premium."
         case .rateLimited: return "Spotify pidió esperar un momento. Probá de nuevo en un rato."
         case .playbackFailed: return "No pudimos reproducirlo. Probá de nuevo."
+        case .searchingFolders: return "Buscando carpetas…"
         case .foldersUnavailable:
             return "Spotify no dejó leer tus carpetas. Se muestran tus playlists sin agrupar."
         }

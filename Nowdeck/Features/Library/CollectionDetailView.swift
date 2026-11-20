@@ -2,11 +2,10 @@ import SwiftUI
 
 // Detail of a playlist or an album (`Detalle.dc.html`), shown inside the library in place of
 // the filters and the row of cards. The library keeps its margins and its mini player; the
-// first row changes to "‹ Biblioteca", "ABRIR EN SPOTIFY ↗" and the logo.
+// first row changes to "‹ Biblioteca", shuffle, "ABRIR EN SPOTIFY ↗" and the logo.
 //
-// Tapping a track does nothing: "Reproducir" plays the whole playlist or album from the
-// start, as the owner asked. A long press on a track shows its full name and "Abrir en
-// Spotify".
+// Tapping a playable song starts it within the collection. A long press shows its full
+// name and "Abrir en Spotify".
 
 // MARK: - Header
 
@@ -14,6 +13,9 @@ import SwiftUI
 struct CollectionDetailHeader: View {
     /// The playlist's or album's page: both the link and the logo open it in Spotify.
     var pageURL: URL?
+    var shuffleIsOn: Bool
+    var canToggleShuffle: Bool
+    var onToggleShuffle: () -> Void
     var onBack: () -> Void
 
     @EnvironmentObject private var theme: ThemeStore
@@ -44,6 +46,10 @@ struct CollectionDetailHeader: View {
             .padding(.leading, Layout.tabTrackOffset)
             .accessibilityLabel(Text("Volver a la biblioteca"))
 
+            ToggleIconButton(systemName: "shuffle", isOn: shuffleIsOn, label: "Aleatorio",
+                             isEnabled: canToggleShuffle, size: Metrics.minTouchTarget,
+                             action: onToggleShuffle)
+
             Spacer(minLength: 0)
 
             HStack(spacing: Layout.detailHeaderGap) {
@@ -60,9 +66,9 @@ struct CollectionDetailHeader: View {
 /// Artwork, name and "Reproducir" on the left; the track list on the right.
 struct CollectionDetailView: View {
     @ObservedObject var model: CollectionDetailModel
-    /// "Reproducir" was tapped and playback is starting.
-    var isStarting: Bool
+    var canStartPlayback: Bool
     var onPlay: () -> Void
+    var onPlayTrack: (CollectionTrack) -> Void
 
     @EnvironmentObject private var theme: ThemeStore
     private typealias Layout = Metrics.Library
@@ -116,8 +122,8 @@ struct CollectionDetailView: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .disabled(isStarting)
-        .opacity(isStarting ? 0.6 : 1)
+        .disabled(!canStartPlayback)
+        .opacity(canStartPlayback ? 1 : 0.6)
         .accessibilityHint(Text("Reproduce en el dispositivo activo"))
     }
 
@@ -148,7 +154,9 @@ struct CollectionDetailView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(spacing: 0) {
                     ForEach(model.tracks) { track in
-                        TrackRow(track: track)
+                        TrackRow(track: track, canStartPlayback: canStartPlayback) {
+                            onPlayTrack(track)
+                        }
                             .onAppear {
                                 if track.id == model.tracks.last?.id {
                                     Task { await model.loadMore() }
@@ -239,11 +247,30 @@ struct CollectionDetailView: View {
 /// A 50 pt row: number, title (with the explicit mark), artists and duration.
 struct TrackRow: View {
     var track: CollectionTrack
+    var canStartPlayback: Bool
+    var onPlay: () -> Void
 
     @EnvironmentObject private var theme: ThemeStore
     private typealias Layout = Metrics.Library
 
     var body: some View {
+        Group {
+            if track.playbackPosition != nil {
+                Button(action: onPlay) { row }
+                    .buttonStyle(.plain)
+                    .disabled(!canStartPlayback)
+                    .accessibilityLabel(accessibilityLabel)
+                    .accessibilityHint(Text("Reproduce en el dispositivo activo"))
+            } else {
+                row
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(accessibilityLabel)
+            }
+        }
+        .modifier(TrackMenu(track: track))
+    }
+
+    private var row: some View {
         HStack(spacing: Layout.trackRowGap) {
             Text(verbatim: "\(track.number)")
                 .textStyle(.trackRowNumber)
@@ -284,9 +311,6 @@ struct TrackRow: View {
         .overlay(alignment: .top) { TrackSeparator() }
         .opacity(track.isAvailable ? 1 : Layout.trackUnavailableOpacity)
         .contentShape(Rectangle())
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabel)
-        .modifier(TrackMenu(track: track))
     }
 
     private var accessibilityLabel: Text {

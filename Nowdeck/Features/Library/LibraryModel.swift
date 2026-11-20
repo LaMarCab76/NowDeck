@@ -10,9 +10,9 @@ import Foundation
 ///   one audiobook. Audiobooks exist only in a few markets and `GET /me` no longer says the
 ///   user's country (removed in February 2026), so "has saved audiobooks" is the only
 ///   honest signal. A failed or empty answer keeps the filter hidden.
-/// - With the experimental playlist folders on (`folders` is set), the Playlists row shows
-///   the account's tree level by level: folders open in place and "‹ Volver" goes back. If
-///   the folder service fails, the row falls back to the flat list and a notice says so.
+/// - With experimental playlist folders on, the Playlists row shows the account's tree
+///   level by level: folders open in place and "‹ Volver" goes back. The row falls back to
+///   the flat list if the folder service fails. Only the first attempt has notices.
 @MainActor
 final class LibraryModel: ObservableObject {
     enum RowState: Equatable {
@@ -53,6 +53,7 @@ final class LibraryModel: ObservableObject {
         case forbidden
         case rateLimited
         case playbackFailed
+        case searchingFolders
         /// The experimental folders could not be read; the flat list is shown instead.
         case foldersUnavailable
     }
@@ -66,22 +67,22 @@ final class LibraryModel: ObservableObject {
     /// URI of the card whose playback is starting.
     @Published private(set) var startingURI: String?
     @Published private(set) var notice: Notice?
+    @Published private(set) var isSearchingPlaylistFolders = false
     /// The open folders, from the outermost. Empty at the top of the tree.
     @Published private(set) var folderPath: [PlaylistFolder] = []
     /// The playlist or album whose detail screen is open, if any.
     @Published private(set) var detail: CollectionDetailModel?
 
     private let api: SpotifyAPI
-    private let folders: PlaylistFolderClient?
+    private let preferences: AppPreferences?
     private var noticeTask: Task<Void, Never>?
     /// Loaded folder tree and the cards of its playlists, by URI.
     private var tree: [PlaylistTreeNode]?
     private var playlistsByURI: [String: LibraryEntry] = [:]
 
-    /// `folders` turns on the experimental playlist folders (Ajustes → Reproductor).
-    init(api: SpotifyAPI, folders: PlaylistFolderClient? = nil) {
+    init(api: SpotifyAPI, preferences: AppPreferences? = nil) {
         self.api = api
-        self.folders = folders
+        self.preferences = preferences
     }
 
     /// Whether the Playlists row shows the folder tree.
@@ -121,7 +122,8 @@ final class LibraryModel: ObservableObject {
     func load(_ filter: LibraryFilter) async {
         if case .loading = state(of: filter) { return }
         rows[filter] = .loading
-        if filter == .playlists, folders != nil, await loadFolderTree() {
+        if filter == .playlists, let preferences, preferences.usesPlaylistFolders,
+           await loadFolderTree(showNotices: preferences.beginPlaylistFolderSearch()) {
             return
         }
         do {
@@ -166,10 +168,12 @@ final class LibraryModel: ObservableObject {
     /// Allow extra pages for null, invalid or duplicate entries while bounding requests.
     static let maxFolderPlaylistPages = 2 * maxFolderPlaylists / folderPlaylistPageSize
 
-    /// Reads the tree and the playlists' cards. Returns `false` (after showing a notice) when
-    /// the folder service fails, so the caller loads the flat list instead.
-    private func loadFolderTree() async -> Bool {
-        guard let folders else { return false }
+    /// Reads the tree and the playlists' cards. Returns `false` when the folder service
+    /// fails, so the caller loads the flat list instead.
+    private func loadFolderTree(showNotices: Bool) async -> Bool {
+        let folders = PlaylistFolderClient(api: api)
+        isSearchingPlaylistFolders = showNotices
+        defer { isSearchingPlaylistFolders = false }
         do {
             async let rootlist = folders.rootlist()
             async let cards = allPlaylistCards()
@@ -197,7 +201,7 @@ final class LibraryModel: ObservableObject {
             tree = nil
             // The flat list has no folders: a path left open would keep the back bar.
             folderPath = []
-            show(.foldersUnavailable)
+            if showNotices { show(.foldersUnavailable) }
             return false
         }
     }
@@ -302,9 +306,11 @@ final class LibraryModel: ObservableObject {
 
     // MARK: Playing a card
 
-    /// Starts the card on the active device (albums and playlists), or says to open it in
-    /// Spotify (podcasts and audiobooks, see `LibraryEntry.playsInPlace`).
-    func play(_ item: LibraryEntry) async -> PlayOutcome {
+    /// Starts a collection or a selected song in it on the active device.
+    /// Podcasts and audiobooks open in Spotify (see `LibraryEntry.playsInPlace`).
+    func play(_ item: LibraryEntry, startingAt track: CollectionTrack? = nil) async -> PlayOutcome {
+        if let track, track.playbackPosition == nil || !item.playsInPlace { return .ignored }
+
         if case .folder(let id) = item.kind {
             openFolder(id: id)
             return .openedFolder
@@ -315,7 +321,7 @@ final class LibraryModel: ObservableObject {
         startingURI = item.uri
         defer { startingURI = nil }
         do {
-            try await api.playContext(uri: item.uri)
+            try await api.playContext(uri: item.uri, position: track?.playbackPosition)
             return .started
         } catch SpotifyAPIError.notFound {
             show(.noActiveDevice)

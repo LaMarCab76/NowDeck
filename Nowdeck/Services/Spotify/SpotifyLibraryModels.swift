@@ -18,7 +18,9 @@ import Foundation
 /// instead of failing the whole page. Spotify documents `null` entries in playlist
 /// contents, and an unreadable item should cost one card, not the row.
 struct Paging<Item: Decodable & Sendable>: Decodable, Sendable {
-    var items: [Item]
+    let items: [Item]
+    /// Zero-based positions within the raw page, before unreadable entries were removed.
+    let itemIndices: [Int]
     var limit: Int?
     var offset: Int?
     var total: Int?
@@ -28,6 +30,7 @@ struct Paging<Item: Decodable & Sendable>: Decodable, Sendable {
     init(items: [Item], limit: Int? = nil, offset: Int? = nil, total: Int? = nil,
          next: String? = nil) {
         self.items = items
+        itemIndices = Array(items.indices)
         self.limit = limit
         self.offset = offset
         self.total = total
@@ -42,6 +45,7 @@ struct Paging<Item: Decodable & Sendable>: Decodable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let lenient = try container.decodeIfPresent([Lenient<Item>].self, forKey: .items) ?? []
         items = lenient.compactMap(\.value)
+        itemIndices = lenient.indices.filter { lenient[$0].value != nil }
         limit = try container.decodeIfPresent(Int.self, forKey: .limit)
         offset = try container.decodeIfPresent(Int.self, forKey: .offset)
         total = try container.decodeIfPresent(Int.self, forKey: .total)

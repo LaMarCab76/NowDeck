@@ -16,11 +16,14 @@ struct CollectionTrack: Identifiable, Equatable, Sendable {
     var isAvailable: Bool
     /// The track's page on `open.spotify.com`; `nil` for local files.
     var pageURL: URL?
+    /// Position in Spotify's collection, before missing items were excluded from the UI.
+    /// Only available on playable songs in the collection detail.
+    var playbackPosition: Int? = nil
 }
 
 extension CollectionTrack {
     /// `nil` when the item has no name: there would be nothing to show.
-    init?(item: CollectionItem, isLocal: Bool = false, position: Int) {
+    init?(item: CollectionItem, isLocal: Bool, position: Int, playbackPosition: Int?) {
         guard let name = item.name, !name.isEmpty else { return nil }
         let names: [String]
         if item.type == "episode" {
@@ -29,6 +32,8 @@ extension CollectionTrack {
             names = (item.artists ?? []).compactMap(\.name)
         }
         let local = isLocal || item.isLocal == true
+        let available = !local && item.isPlayable != false && item.restrictions == nil
+        let isSong = item.uri.flatMap(SpotifyURI.init)?.kind == "track"
         self.init(
             id: position,
             number: position + 1,
@@ -36,9 +41,10 @@ extension CollectionTrack {
             subtitle: names.filter { !$0.isEmpty }.joined(separator: ", "),
             durationMs: item.durationMs,
             isExplicit: item.explicit == true,
-            isAvailable: !local && item.isPlayable != false && item.restrictions == nil,
+            isAvailable: available,
             pageURL: local ? nil : NowPlaying.pageURL(externalURL: item.externalUrls?.spotify,
-                                                      uri: item.uri)
+                                                      uri: item.uri),
+            playbackPosition: available && isSong ? playbackPosition : nil
         )
     }
 }
@@ -46,9 +52,7 @@ extension CollectionTrack {
 /// State of the detail screen of a playlist or an album: its track list, loaded in pages of
 /// 50 as the list scrolls.
 ///
-/// Playback is not here: the "Reproducir" button plays the whole playlist or album through
-/// `LibraryModel.play(_:)`, like a card did before, so the notices and the "starting" state
-/// stay in one place.
+/// `LibraryModel` handles playback for both the collection and its individual songs.
 @MainActor
 final class CollectionDetailModel: ObservableObject {
     enum State: Equatable {
@@ -206,16 +210,18 @@ final class CollectionDetailModel: ObservableObject {
         case .album:
             return { offset, firstPosition in
                 let page = try await api.albumTracks(albumID: id, offset: offset)
-                return (Self.rows(page.items.map { ($0, false) }, from: firstPosition),
+                let items = zip(page.itemIndices, page.items).map { ($0, Optional($1), false) }
+                return (Self.rows(items, from: firstPosition, pageOffset: page.offset ?? offset),
                         page.total, page.nextOffset)
             }
         case .playlist:
             return { offset, firstPosition in
                 let page = try await api.playlistItems(playlistID: id, offset: offset)
-                let items = page.items.compactMap { playlistItem in
-                    playlistItem.content.map { ($0, playlistItem.isLocal == true) }
+                let items = zip(page.itemIndices, page.items).map { index, playlistItem in
+                    (index, playlistItem.content, playlistItem.isLocal == true)
                 }
-                return (Self.rows(items, from: firstPosition), page.total, page.nextOffset)
+                return (Self.rows(items, from: firstPosition, pageOffset: page.offset ?? offset),
+                        page.total, page.nextOffset)
             }
         case .show, .audiobook, .folder:
             // Only playlists and albums have a track list in the library.
@@ -223,14 +229,17 @@ final class CollectionDetailModel: ObservableObject {
         }
     }
 
-    /// Numbers the rows of a page after the ones already shown, dropping items without a
-    /// name.
-    nonisolated static func rows(_ items: [(CollectionItem, Bool)],
-                                 from firstPosition: Int) -> [CollectionTrack] {
+    /// Keeps the row numbering compact while retaining the original playback offset.
+    nonisolated static func rows(_ items: [(index: Int, content: CollectionItem?, isLocal: Bool)],
+                                 from firstPosition: Int, pageOffset: Int) -> [CollectionTrack] {
         var rows: [CollectionTrack] = []
-        for (item, isLocal) in items {
-            if let row = CollectionTrack(item: item, isLocal: isLocal,
-                                         position: firstPosition + rows.count) {
+        for (index, content, isLocal) in items {
+            guard let content else { continue }
+            let (position, overflow) = pageOffset.addingReportingOverflow(index)
+            let playbackPosition = pageOffset >= 0 && !overflow ? position : nil
+            if let row = CollectionTrack(item: content, isLocal: isLocal,
+                                         position: firstPosition + rows.count,
+                                         playbackPosition: playbackPosition) {
                 rows.append(row)
             }
         }
