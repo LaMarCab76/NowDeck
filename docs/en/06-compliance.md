@@ -267,8 +267,8 @@ Point-by-point review on the `hito/08-terminaciones` branch (milestones 1 to 7 i
 ### Nowdeck name and logo
 
 - ✅ Visible name "Nowdeck" (`CFBundleDisplayName`), with no "Spotify" or anything similar.
-- ⚠️ **App icon**: `AppIcon` doesn't have an image yet. When it's made: no green circle and
-  no waves.
+- ✅ **App icon**: `AppIcon` shows a landscape phone on its stand, with a green bar on a dark
+  background. The silhouette and bar distinguish the icon from Spotify's branding.
 
 ### Policy
 
