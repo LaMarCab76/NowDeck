@@ -77,6 +77,17 @@ final class PlayerModel: ObservableObject {
     /// playlists and what was added are kept between openings of the sheet.
     private(set) lazy var playlists = AddToPlaylistModel(api: api)
 
+    /// Keep in-flight playback and its result when the queue view is closed and reopened.
+    private(set) lazy var queue = QueueModel(api: api)
+
+    private struct QueuedSeekConfirmation {
+        let previousItemKey: String?
+        let requestedURI: String
+    }
+
+    @Published private var queuedSeekConfirmation: QueuedSeekConfirmation?
+    var isWaitingForQueuedSeekConfirmation: Bool { queuedSeekConfirmation != nil }
+
     /// Shared with `controls` (playback commands) and the sheets that call the API on their
     /// own (Dispositivos, Biblioteca).
     let api: SpotifyAPI
@@ -325,6 +336,13 @@ final class PlayerModel: ObservableObject {
                                                fetchedAt: fetchedAt, now: now())
     }
 
+    /// A successful start can precede the new track's metadata. Keep seek locked while
+    /// polls still show the previous track, unless that track was itself the selection.
+    func waitForQueuedSeekConfirmation(requestedURI: String) {
+        queuedSeekConfirmation = QueuedSeekConfirmation(previousItemKey: nowPlaying?.transitionKey,
+                                                        requestedURI: requestedURI)
+    }
+
     // MARK: Applying an answer
 
     private func apply(_ state: PlaybackState?, at date: Date) {
@@ -344,6 +362,10 @@ final class PlayerModel: ObservableObject {
                 refreshUpNext()
             }
             nowPlaying = item
+        }
+        if let confirmation = queuedSeekConfirmation,
+           item.transitionKey != confirmation.previousItemKey || item.playlistURI == confirmation.requestedURI {
+            queuedSeekConfirmation = nil
         }
         // Only while it plays: a track picked while paused was not heard.
         if state.isPlaying, let artistID = item.artistID { lastHeardArtistID = artistID }

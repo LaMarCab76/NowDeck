@@ -388,6 +388,33 @@ final class QueueTests: XCTestCase {
         XCTAssertNil(model.startingID)
     }
 
+    func testPlaybackFailureSurvivesReopeningTheQueueAndItsAutomaticRead() async {
+        let gate = FirstRequestGate(started: expectation(description: "play request started"))
+        addTeardownBlock { gate.open() }
+        let body = Self.json(["queue": [Self.track("Uno")]])
+        let (api, _) = makeAPI { request in
+            if request.httpMethod == "GET" { return (.stub(200), body) }
+            gate.pass()
+            return (.stub(403), spotifyErrorJSON(status: 403, message: "Premium required"))
+        }
+        let player = PlayerModel(api: api)
+        let queue = player.queue
+        let play = Task { await queue.play(Self.entry(), context: nil) }
+        await fulfillment(of: [gate.started], timeout: 2)
+
+        let reopened = player.queue
+        XCTAssertTrue(reopened === queue)
+        gate.open()
+        let played = await play.value
+        XCTAssertFalse(played)
+
+        await reopened.reload()
+        XCTAssertEqual(reopened.entries?.map(\.track.title), ["Uno"])
+        XCTAssertEqual(reopened.problem, .forbidden)
+        await reopened.reload(clearingPlaybackProblem: true)
+        XCTAssertNil(reopened.problem)
+    }
+
     func testForbiddenIsNotRetriedAsATrackAlone() async {
         let (api, recorder) = makeAPI { _ in
             (.stub(403), spotifyErrorJSON(status: 403, message: "Premium required"))

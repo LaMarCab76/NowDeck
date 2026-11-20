@@ -77,7 +77,10 @@ final class PlayerControlsModel: ObservableObject {
 
     /// What can be tapped right now.
     var availability: ControlAvailability {
-        isStartingQueuedTrack ? .none : ControlAvailability(playback: player?.playback)
+        guard !isStartingQueuedTrack else { return .none }
+        var availability = ControlAvailability(playback: player?.playback)
+        if player?.isWaitingForQueuedSeekConfirmation == true { availability.seek = false }
+        return availability
     }
 
     /// The library and queue wait for player commands before starting another context.
@@ -88,10 +91,11 @@ final class PlayerControlsModel: ObservableObject {
     /// Starting a queue item replaces the current playback. Keep commands targeting the
     /// old item out of that request, even if the user closes the queue while it is in flight.
     func playQueuedTrack(_ entry: QueueEntry, in queue: QueueModel) async {
-        guard let player, !isSendingCommand, entry.playURI != nil else { return }
+        guard let player, !isSendingCommand, let uri = entry.playURI else { return }
         isStartingQueuedTrack = true
         player.holdPolling()
         let started = await queue.play(entry, context: player.playback?.context)
+        if started { player.waitForQueuedSeekConfirmation(requestedURI: uri) }
         player.resumePolling(after: started ? confirmDelay : 0)
         isStartingQueuedTrack = false
     }

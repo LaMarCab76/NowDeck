@@ -157,9 +157,11 @@ enum QueueProblem: Equatable {
 final class QueueModel: ObservableObject {
     /// `nil` until the first answer arrives.
     @Published private(set) var entries: [QueueEntry]?
-    /// The last problem, shown until the next successful read. A list already on screen
-    /// stays below it.
-    @Published private(set) var problem: QueueProblem?
+    @Published private var readProblem: QueueProblem?
+    @Published private var playbackProblem: QueueProblem?
+    /// An automatic read can fix a loading error while a playback failure still needs to
+    /// be shown when the user returns to Queue.
+    var problem: QueueProblem? { playbackProblem ?? readProblem }
     @Published private(set) var isLoading = false
     /// The row whose track is starting, while its request runs. Other taps wait for it.
     @Published private(set) var startingID: QueueEntry.ID?
@@ -181,7 +183,8 @@ final class QueueModel: ObservableObject {
 
     /// Reads the queue. A reload while a read is running waits for it instead of sending a
     /// second request.
-    func reload() async {
+    func reload(clearingPlaybackProblem: Bool = false) async {
+        if clearingPlaybackProblem { playbackProblem = nil }
         waitingCalls += 1
         defer { waitingCalls -= 1 }
         await worker().value
@@ -219,15 +222,15 @@ final class QueueModel: ObservableObject {
     func play(_ entry: QueueEntry, context: PlaybackContext?) async -> Bool {
         guard let uri = entry.playURI, startingID == nil else { return false }
         startingID = entry.id
+        playbackProblem = nil
         defer { startingID = nil }
         do {
             try await api.playFromQueue(trackURI: uri, context: context)
-            problem = nil
             return true
         } catch is CancellationError {
             return false
         } catch {
-            problem = QueueProblem(playing: error)
+            playbackProblem = QueueProblem(playing: error)
             return false
         }
     }
@@ -238,11 +241,11 @@ final class QueueModel: ObservableObject {
         do {
             let queue = try await api.playbackQueue()
             entries = QueueEntry.entries(from: queue)
-            problem = nil
+            readProblem = nil
         } catch is CancellationError {
             return
         } catch {
-            problem = QueueProblem(error)
+            readProblem = QueueProblem(error)
         }
     }
 }

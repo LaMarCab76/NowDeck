@@ -111,11 +111,8 @@ final class PlayerControlsModelTests: XCTestCase {
         let gate = DispatchSemaphore(value: 0)
         addTeardownBlock { gate.signal() }
         let h = try await make(PlaybackJSON(isPlaying: true), commandGate: gate)
-        let queue = QueueModel(api: h.model.api)
-        let entry = QueueEntry(track: CollectionTrack(
-            id: 0, number: 1, title: "Siguiente", subtitle: "Artista", durationMs: 180_000,
-            isExplicit: false, isAvailable: true, pageURL: nil),
-            artworkURL: nil, playURI: "spotify:track:next")
+        let queue = h.model.queue
+        let entry = queuedEntry()
         h.model.start()
         try await eventually { h.playbackReads >= 2 }
         let readsBefore = h.playbackReads
@@ -142,6 +139,49 @@ final class PlayerControlsModelTests: XCTestCase {
         XCTAssertNil(queue.startingID)
         XCTAssertTrue(h.controls.availability.playPause)
         try await eventually { h.playbackReads > readsBefore }
+    }
+
+    func testSeekingStaysDisabledUntilAReadReplacesThePreviousTrack() async throws {
+        let h = try await make()
+        let previousDuration = try XCTUnwrap(h.model.nowPlaying?.durationMs)
+        let queue = h.model.queue
+        await h.controls.playQueuedTrack(queuedEntry(), in: queue)
+
+        XCTAssertTrue(h.controls.availability.playPause)
+        XCTAssertFalse(h.controls.availability.seek)
+        h.controls.seek(toMs: 120_000)
+
+        // The first read after a successful play can still report the old item.
+        await h.model.poll()
+        XCTAssertEqual(h.model.nowPlaying?.durationMs, previousDuration)
+        XCTAssertFalse(h.controls.availability.seek)
+        h.controls.seek(toMs: 120_000)
+        XCTAssertEqual(h.commands, ["PUT /me/player/play"])
+
+        h.playback.value.replacementTrack = (id: "next", durationMs: 300_000)
+        await h.model.poll()
+        XCTAssertEqual(h.model.nowPlaying?.durationMs, 300_000)
+        XCTAssertTrue(h.controls.availability.seek)
+        h.controls.seek(toMs: 240_000)
+        try await eventually { h.commands == ["PUT /me/player/play", "PUT /me/player/seek"] }
+        XCTAssertEqual(h.commandRequests.last?.queryValue("position_ms"), "240000")
+    }
+
+    func testSeekingWaitsForAReadWhenTheQueuedTrackIsAlreadyPlaying() async throws {
+        let h = try await make()
+        let uri = try XCTUnwrap(h.model.nowPlaying?.playlistURI)
+
+        await h.controls.playQueuedTrack(queuedEntry(uri: uri), in: h.model.queue)
+        XCTAssertFalse(h.controls.availability.seek)
+        await h.model.poll()
+        XCTAssertTrue(h.controls.availability.seek)
+    }
+
+    private func queuedEntry(uri: String = "spotify:track:next") -> QueueEntry {
+        QueueEntry(track: CollectionTrack(
+            id: 0, number: 1, title: "Siguiente", subtitle: "Artista", durationMs: 180_000,
+            isExplicit: false, isAvailable: true, pageURL: nil),
+            artworkURL: nil, playURI: uri)
     }
 
     func testACommandAfterARefreshStillResumesThePolling() async throws {

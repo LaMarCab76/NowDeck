@@ -83,7 +83,7 @@ struct PlayerView: View {
                              actions: actions, queueActive: showsQueue)
                     .animation(nil, value: showsQueue)
                 if showsQueue, let item = model.nowPlaying {
-                    QueueView(player: model, controls: controls)
+                    QueueView(player: model, controls: controls, model: model.queue)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     CompactPlaybackRow(title: item.title, artist: item.subtitle,
                                        isExplicit: item.isExplicit,

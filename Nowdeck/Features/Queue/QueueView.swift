@@ -10,17 +10,11 @@ import SwiftUI
 struct QueueView: View {
     @ObservedObject var player: PlayerModel
     @ObservedObject var controls: PlayerControlsModel
-    @StateObject private var model: QueueModel
+    @ObservedObject var model: QueueModel
     @EnvironmentObject private var theme: ThemeStore
     @State private var pendingEntry: QueueEntry?
 
     private typealias Layout = Metrics.Queue
-
-    init(player: PlayerModel, controls: PlayerControlsModel) {
-        self.player = player
-        self.controls = controls
-        _model = StateObject(wrappedValue: QueueModel(api: player.api))
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -84,7 +78,7 @@ struct QueueView: View {
             VStack(alignment: .leading, spacing: Layout.emptyGap) {
                 QueueProblemLine(problem: problem)
                 Button("Reintentar") {
-                    Task { await model.reload() }
+                    Task { await model.reload(clearingPlaybackProblem: true) }
                 }
                 .buttonStyle(DevicesRefreshButtonStyle())
             }
@@ -109,7 +103,7 @@ struct QueueView: View {
                 QueueFooter()
             }
         }
-        .refreshable { await model.reload() }
+        .refreshable { await model.reload(clearingPlaybackProblem: true) }
     }
 
     /// "No hay nada en la cola", inside a scroll view so that pull to refresh still works:
@@ -123,7 +117,7 @@ struct QueueView: View {
                     .frame(width: proxy.size.width, alignment: .leading)
                     .frame(minHeight: proxy.size.height)
             }
-            .refreshable { await model.reload() }
+            .refreshable { await model.reload(clearingPlaybackProblem: true) }
         }
     }
 }
