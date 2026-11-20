@@ -30,6 +30,7 @@ struct PlayerActions {
 struct PlayerScreen: View {
     @StateObject private var model: PlayerModel
     @StateObject private var lyrics = LyricsModeController()
+    @State private var showsQueue = false
     @EnvironmentObject private var theme: ThemeStore
     @EnvironmentObject private var preferences: AppPreferences
     @Environment(\.scenePhase) private var scenePhase
@@ -51,7 +52,10 @@ struct PlayerScreen: View {
     /// playback controls.
     private var wiredActions: PlayerActions {
         var wired = actions
-        wired.lyrics = { [lyrics, model] in lyrics.toggle(for: model.playback?.lyricsTrack) }
+        wired.lyrics = { [lyrics, model] in
+            showsQueue = false
+            lyrics.toggle(for: model.playback?.lyricsTrack)
+        }
         // Milestone 3: playback controls and volume.
         let controls = model.controls
         wired.playPause = { controls.playPause() }
@@ -67,8 +71,10 @@ struct PlayerScreen: View {
         wired.devices = { [presentation] in presentation.showDevices() }
         // Milestone 5: library.
         wired.library = { [presentation] in presentation.showsLibrary = true }
-        // Playback queue: tapping a track asks to play it.
-        wired.queue = { [presentation] in presentation.showsQueue = true }
+        wired.queue = { [lyrics] in
+            showsQueue.toggle()
+            if showsQueue { lyrics.turnOff() }
+        }
         // Agregar a una playlist (2026-11-18).
         wired.addToPlaylist = { [presentation] in presentation.showAddToPlaylist() }
         return wired
@@ -77,6 +83,7 @@ struct PlayerScreen: View {
     var body: some View {
         PlayerContent(model: model, lyrics: lyrics, controls: model.controls,
                       actions: wiredActions, showsLyricsButton: theme.showsLyricsButton,
+                      showsQueue: showsQueue,
                       // With the library open, it shows the control notices itself.
                       showsNotices: presentation.visibleSurface == .player)
             // A command answered "no active device": offer the device list (milestone 4) on
@@ -90,7 +97,9 @@ struct PlayerScreen: View {
                 if !isOn { lyrics.turnOff() }
             }
             .devicesSheet(isPresented: $presentation.showsDevices, player: model)
-            .queueSheet(isPresented: $presentation.showsQueue, player: model)
+            .onChange(of: model.status) { status in
+                if status != .active { showsQueue = false }
+            }
             .addToPlaylistSheet(isPresented: $presentation.showsAddToPlaylist, player: model,
                                 access: playlistAccess)
             .fullScreenCover(isPresented: $presentation.showsLibrary) {
@@ -117,7 +126,7 @@ struct PlayerScreen: View {
             .onChange(of: theme.playerBackground) {
                 model.loadsArtistImages = $0 == .artistPhoto
             }
-            // Covered by the library or Cola, the player is "gone" but its data is still
+            // Covered by the library, the player is "gone" but its data is still
             // on screen (`keepsPlayerPolling`).
             .onDisappear { if !presentation.keepsPlayerPolling { model.stop() } }
             // iOS 16 API (the two-value variant is iOS 17+).
@@ -136,6 +145,7 @@ struct PlayerContent: View {
     @EnvironmentObject private var theme: ThemeStore
     var actions: PlayerActions
     var showsLyricsButton: Bool
+    var showsQueue = false
     /// `false` while another screen (the library) covers the player and shows the notices.
     var showsNotices = true
 
@@ -156,8 +166,9 @@ struct PlayerContent: View {
                 Color.clear
             case .active:
                 ScreenMargins(top: Spacing.Player.top, bottom: Spacing.Player.bottom) { width in
-                    PlayerView(model: model, lyrics: lyrics, actions: actions,
-                               showsLyricsButton: showsLyricsButton, screenWidth: width,
+                    PlayerView(model: model, lyrics: lyrics, controls: controls, actions: actions,
+                               showsLyricsButton: showsLyricsButton, showsQueue: showsQueue,
+                               screenWidth: width,
                                swipe: swipe)
                 }
                 .overlay(alignment: .top) {
@@ -168,7 +179,7 @@ struct PlayerContent: View {
                         ControlNoticeView(notice: notice)
                             .padding(.top, Metrics.Notice.top)
                             .transition(.opacity)
-                    } else if let notice = lyrics.notice {
+                    } else if !showsQueue, let notice = lyrics.notice {
                         LyricsNoticeView(notice: notice)
                             .padding(.top, Metrics.Notice.top)
                             .transition(.opacity)
@@ -183,10 +194,9 @@ struct PlayerContent: View {
                 emptyState(.unavailable)
             }
         }
-        // Next / previous by dragging left or right across the cover and title (in lyrics
-        // mode, its bottom row): they follow the finger and the other item comes in from the
-        // side.
-        .trackSwipe(isActive: model.status == .active,
+        // Next / previous by dragging across the cover and title. Queue and lyrics use
+        // only the compact playback row as the swipe band.
+        .trackSwipe(isActive: model.status == .active && !controls.isStartingQueuedTrack,
                     band: swipeBand, onChange: swipeChanged, onEnd: swipeEnded,
                     onCancel: settleDraggingSwipe)
         .onPreferenceChange(TrackSwipeBandKey.self) { swipeBand = $0 }

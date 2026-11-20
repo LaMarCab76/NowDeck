@@ -1,30 +1,31 @@
 import SwiftUI
 
-// Tokens of the Cola sheet (Cola.html). The sheet itself (640×398, handle, close button,
-// margins) has the same values as Dispositivos and reuses `Metrics.Devices`; rows reuse the
-// track styles of the playlist detail (`trackRowTitle`, `cardSubtitle`, `trackRowNumber`).
+// Tokens for the inline queue (cola-integrada.html) and the Add to a Playlist sheet.
 
 extension Metrics {
     enum Queue {
         /// Spotify's guidelines: at most 20 items per content row (docs/06).
         static let maxItems = 20
 
-        // Header
+        static let logoSize = CGSize(width: 77, height: 26)
+        static let logoClearSpace = logoSize.height / 2
+
+        // Add to a Playlist header
         static let headerArtworkSize: CGFloat = 56
         static let headerGap: CGFloat = 14
 
         // Rows
-        static let rowHeight: CGFloat = 56
+        static let rowHeight: CGFloat = 56  // Add to a Playlist
+        static let queueRowHeight: CGFloat = 48
         static let rowGap: CGFloat = 14
         static let rowArtworkSize: CGFloat = 40
         static let numberWidth: CGFloat = 20
         static let titleGap: CGFloat = 6
         static let explicitSize: CGFloat = 15
         static let separatorWidth: CGFloat = 1
-        /// "A CONTINUACIÓN" sits in a 22 pt band, like the detail's list label.
-        static let labelHeight: CGFloat = 22
-        /// The bottom fade over the list.
-        static let fadeHeight: CGFloat = 40
+        static let labelHeight: CGFloat = 22  // Add to a Playlist
+        static let queueLabelHeight: CGFloat = 24
+        static let fadeHeight: CGFloat = 40  // Add to a Playlist
 
         // Footer: "Para quitar o reordenar temas, usá Spotify." and "ABRIR SPOTIFY ↗"
         static let footerTopPadding: CGFloat = 6
@@ -35,7 +36,7 @@ extension Metrics {
         static let emptyMaxWidth: CGFloat = 440
         static let emptyGap: CGFloat = 10
         static let emptyIconSize: CGFloat = 30
-        static let emptyBottomPadding: CGFloat = 24
+        static let emptyBottomPadding: CGFloat = 24  // Add to a Playlist
     }
 }
 

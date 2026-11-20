@@ -17,7 +17,8 @@ values: colors, sizes, margins, radii, text and states.
 | `Biblioteca.dc.html` | Library and Search, with filters and mini player |
 | `Detalle.dc.html` | Detail of a playlist or an album: your own, an album, and someone else's playlist |
 | `Dispositivos.dc.html` | Devices sheet and help |
-| `Cola.html` | Queue sheet: with songs, end of the list and empty queue. Made by hand (not on the canvas) on 2026-11-17 and approved by the owner; it can be viewed in a browser without `support.js` |
+| `cola-integrada.html` | Queue inside the player, with a toggle back to the large cover. Interactive in a browser |
+| `Cola.html` | Historical reference for the queue sheet |
 | `Ajustes.dc.html` / `AjustesReproductor.dc.html` | Settings: Appearance and Player |
 | `TemaImportar.dc.html` | Import theme |
 | `SinReproduccion.dc.html` | Nothing playing (*Nada sonando*) |

@@ -20,7 +20,7 @@ extension Metrics {
         /// everything still fits in 414 pt.
         static let topBlockHeight: CGFloat = 210
         static let artworkSize: CGFloat = 210
-        /// The whole upper area (top row and artwork row). Lyrics mode replaces all of it.
+        /// The whole upper area, shared by the player, lyrics and queue layouts.
         static let upperAreaHeight: CGFloat = topRowHeight + topRowBottomGap + topBlockHeight
         /// Between the artwork and the text column.
         static let artworkGap: CGFloat = 32

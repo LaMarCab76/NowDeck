@@ -46,6 +46,7 @@ final class PlayerControlsModel: ObservableObject {
     /// The last queued command; the next one waits for it.
     private var lastCommand: Task<Void, Never>?
     @Published private var pendingCommands = 0
+    @Published private(set) var isStartingQueuedTrack = false
     private var batchFailed = false
     private var noticeTask: Task<Void, Never>?
     private var playbackSubscription: AnyCancellable?
@@ -76,13 +77,24 @@ final class PlayerControlsModel: ObservableObject {
 
     /// What can be tapped right now.
     var availability: ControlAvailability {
-        ControlAvailability(playback: player?.playback)
+        isStartingQueuedTrack ? .none : ControlAvailability(playback: player?.playback)
     }
 
-    /// The library waits for player commands before starting another context.
-    var isSendingCommand: Bool { pendingCommands > 0 }
+    /// The library and queue wait for player commands before starting another context.
+    var isSendingCommand: Bool { pendingCommands > 0 || isStartingQueuedTrack }
 
     // MARK: Commands
+
+    /// Starting a queue item replaces the current playback. Keep commands targeting the
+    /// old item out of that request, even if the user closes the queue while it is in flight.
+    func playQueuedTrack(_ entry: QueueEntry, in queue: QueueModel) async {
+        guard let player, !isSendingCommand, entry.playURI != nil else { return }
+        isStartingQueuedTrack = true
+        player.holdPolling()
+        let started = await queue.play(entry, context: player.playback?.context)
+        player.resumePolling(after: started ? confirmDelay : 0)
+        isStartingQueuedTrack = false
+    }
 
     func playPause() {
         guard let playback = player?.playback, availability.playPause else { return }
@@ -118,7 +130,7 @@ final class PlayerControlsModel: ObservableObject {
     /// off → context → track → off, skipping the modes `actions` forbids.
     func cycleRepeat() {
         guard let playback = player?.playback,
-              playback.device?.isRestricted != true,
+              availability.repeatMode,
               let target = ControlAvailability.nextRepeatMode(after: playback.repeatState,
                                                               actions: playback.actions)
         else { return }

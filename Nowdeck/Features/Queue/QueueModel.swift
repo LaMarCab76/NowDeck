@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// One row of the Cola sheet: the same track data as the playlist detail, plus a small cover.
+/// One row of the queue: the same track data as the playlist detail, plus a small cover.
 struct QueueEntry: Identifiable, Equatable, Sendable {
     var track: CollectionTrack
     var artworkURL: URL?
@@ -148,10 +148,10 @@ enum QueueProblem: Equatable {
     }
 }
 
-/// State of the Cola sheet.
+/// State of the player's queue.
 ///
-/// The queue is read when the sheet opens, when the player shows another track while the
-/// sheet is open (`trackDidChange()`) and on pull to refresh. It is **not** polled: the
+/// The queue is read when Queue opens, when the player shows another track while
+/// Queue is open (`trackDidChange()`) and on pull to refresh. It is **not** polled: the
 /// player's polling already spends the request quota (docs/03, "Polling y estado local").
 @MainActor
 final class QueueModel: ObservableObject {
@@ -215,7 +215,7 @@ final class QueueModel: ObservableObject {
 
     /// Plays a tapped row (after the confirmation) and returns whether Spotify accepted it.
     /// The queue is not read here: the new track changes the player's `itemStarts`, and
-    /// the sheet reads the queue then. A failure is shown above the list.
+    /// the view reads the queue then. A failure is shown above the list.
     func play(_ entry: QueueEntry, context: PlaybackContext?) async -> Bool {
         guard let uri = entry.playURI, startingID == nil else { return false }
         startingID = entry.id

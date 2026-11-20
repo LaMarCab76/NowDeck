@@ -92,7 +92,7 @@ final class PlayerControlsModelTests: XCTestCase {
         let readsBefore = h.playbackReads
 
         h.controls.playPause()
-        // Cola opening, or the app coming back, while the pause is on its way.
+        // The app comes back while the pause is on its way.
         h.model.start()
         h.model.refresh()
         try await settle()
@@ -105,6 +105,43 @@ final class PlayerControlsModelTests: XCTestCase {
         gate.signal()
         try await eventually { h.playbackReads > readsBefore }
         XCTAssertEqual(h.model.playback?.isPlaying, false)
+    }
+
+    func testStartingAQueuedTrackHoldsPollingAndBlocksCommandsForTheOldTrack() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        addTeardownBlock { gate.signal() }
+        let h = try await make(PlaybackJSON(isPlaying: true), commandGate: gate)
+        let queue = QueueModel(api: h.model.api)
+        let entry = QueueEntry(track: CollectionTrack(
+            id: 0, number: 1, title: "Siguiente", subtitle: "Artista", durationMs: 180_000,
+            isExplicit: false, isAvailable: true, pageURL: nil),
+            artworkURL: nil, playURI: "spotify:track:next")
+        h.model.start()
+        try await eventually { h.playbackReads >= 2 }
+        let readsBefore = h.playbackReads
+
+        let play = Task { await h.controls.playQueuedTrack(entry, in: queue) }
+        try await eventually { h.commands == ["PUT /me/player/play"] }
+        XCTAssertTrue(h.controls.isSendingCommand)
+        XCTAssertEqual(queue.startingID, entry.id)
+        XCTAssertEqual(h.controls.availability, .none)
+
+        h.controls.playPause()
+        h.controls.next()
+        h.controls.seek(toMs: 120_000)
+        h.controls.cycleRepeat()
+        await h.controls.playQueuedTrack(entry, in: queue)
+        h.model.start()
+        try await settle()
+        XCTAssertEqual(h.commands, ["PUT /me/player/play"])
+        XCTAssertEqual(h.playbackReads, readsBefore)
+
+        gate.signal()
+        await play.value
+        XCTAssertFalse(h.controls.isSendingCommand)
+        XCTAssertNil(queue.startingID)
+        XCTAssertTrue(h.controls.availability.playPause)
+        try await eventually { h.playbackReads > readsBefore }
     }
 
     func testACommandAfterARefreshStillResumesThePolling() async throws {

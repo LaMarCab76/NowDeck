@@ -1,0 +1,517 @@
+<div id="nowdeck-queue-mock" class="viz-dotted-background" lang="es-AR">
+  <section class="nd-screen" aria-label="Reproductor de Nowdeck" data-mode="queue">
+    <div class="nd-upper">
+      <header class="nd-top">
+        <div class="nd-origin">
+          <img class="nd-brand nd-brand-icon" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMzYuMDUgMjI1LjI1Ij48cGF0aCBmaWxsPSIjZmZmZmZmIiBkPSJtMTIyLjM3LDMuMzFDNjEuOTkuOTEsMTEuMSw0Ny45MSw4LjcxLDEwOC4yOWMtMi40LDYwLjM4LDQ0LjYxLDExMS4yNiwxMDQuOTgsMTEzLjY2LDYwLjM4LDIuNCwxMTEuMjYtNDQuNiwxMTMuNjYtMTA0Ljk4QzIyOS43NCw1Ni41OSwxODIuNzQsNS43LDEyMi4zNywzLjMxWm00Ni4xOCwxNjAuMjhjLTEuMzYsMi40LTQuMDEsMy42LTYuNTksMy4yNC0uNzktLjExLTEuNTgtLjM3LTIuMzItLjc5LTE0LjQ2LTguMjMtMzAuMjItMTMuNTktNDYuODQtMTUuOTMtMTYuNjItMi4zNC0zMy4yNS0xLjUzLTQ5LjQyLDIuNC0zLjUxLjg1LTcuMDQtMS4zLTcuODktNC44MS0uODUtMy41MSwxLjMtNy4wNCw0LjgxLTcuODksMTcuNzgtNC4zMiwzNi4wNi01LjIxLDU0LjMyLTIuNjQsMTguMjYsMi41NywzNS41OCw4LjQ2LDUxLjQ5LDE3LjUxLDMuMTMsMS43OSw0LjIzLDUuNzcsMi40NSw4LjkxWm0xNC4zOC0yOC43MmMtMi4yMyw0LjEyLTcuMzksNS42Ni0xMS41MSwzLjQzLTE2LjkyLTkuMTUtMzUuMjQtMTUuMTYtNTQuNDUtMTcuODYtMTkuMjEtMi43LTM4LjQ3LTEuOTctNTcuMjYsMi4xNi0xLjAyLjIyLTIuMDMuMjYtMy4wMS4xMi0zLjQxLS40OC02LjMzLTMuMDItNy4xMS02LjU5LTEuMDEtNC41OCwxLjg5LTkuMTEsNi40Ny0xMC4xMiwyMC43Ny00LjU3LDQyLjA2LTUuMzgsNjMuMjgtMi40LDIxLjIxLDIuOTgsNDEuNDYsOS42Miw2MC4xNiwxOS43NCw0LjEzLDIuMjMsNS42Niw3LjM4LDMuNDMsMTEuNTFabTE1Ljk0LTMyLjM4Yy0yLjEsNC4wNC02LjQ3LDYuMTMtMTAuNzMsNS41My0xLjE1LS4xNi0yLjI4LS41Mi0zLjM3LTEuMDgtMTkuNy0xMC4yNS00MC45Mi0xNy4wMi02My4wNy0yMC4xMy0yMi4xNS0zLjExLTQ0LjQyLTIuNDUtNjYuMTgsMS45Ny01LjY2LDEuMTUtMTEuMTctMi41MS0xMi4zMi04LjE2LTEuMTUtNS42NiwyLjUxLTExLjE3LDguMTYtMTIuMzIsMjQuMS00Ljg5LDQ4Ljc0LTUuNjIsNzMuMjUtMi4xOCwyNC41MSwzLjQ0LDQ3Ljk5LDEwLjk0LDY5LjgxLDIyLjI5LDUuMTIsMi42Niw3LjExLDguOTcsNC40NSwxNC4wOVoiLz48L3N2Zz4=" alt="Spotify">
+          <img class="nd-brand nd-brand-full" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MjMuNDYgMjI1LjI1Ij48cGF0aCBmaWxsPSIjZmZmZmZmIiBkPSJtMTI1LjUyLDMuMzFDNjUuMTQuOTEsMTQuMjYsNDcuOTEsMTEuODYsMTA4LjI5Yy0yLjQsNjAuMzgsNDQuNjEsMTExLjI2LDEwNC45OCwxMTMuNjYsNjAuMzgsMi40LDExMS4yNi00NC42LDExMy42Ni0xMDQuOThDMjMyLjg5LDU2LjU5LDE4NS44OSw1LjcsMTI1LjUyLDMuMzFabTQ2LjE4LDE2MC4yOGMtMS4zNiwyLjQtNC4wMSwzLjYtNi41OSwzLjI0LS43OS0uMTEtMS41OC0uMzctMi4zMi0uNzktMTQuNDYtOC4yMy0zMC4yMi0xMy41OS00Ni44NC0xNS45My0xNi42Mi0yLjM0LTMzLjI1LTEuNTMtNDkuNDIsMi40LTMuNTEuODUtNy4wNC0xLjMtNy44OS00LjgxLS44NS0zLjUxLDEuMy03LjA0LDQuODEtNy44OSwxNy43OC00LjMyLDM2LjA2LTUuMjEsNTQuMzItMi42NCwxOC4yNiwyLjU3LDM1LjU4LDguNDYsNTEuNDksMTcuNTEsMy4xMywxLjc5LDQuMjMsNS43NywyLjQ1LDguOTFabTE0LjM4LTI4LjcyYy0yLjIzLDQuMTItNy4zOSw1LjY2LTExLjUxLDMuNDMtMTYuOTItOS4xNS0zNS4yNC0xNS4xNi01NC40NS0xNy44Ni0xOS4yMS0yLjctMzguNDctMS45Ny01Ny4yNiwyLjE2LTEuMDIuMjItMi4wMy4yNi0zLjAxLjEyLTMuNDEtLjQ4LTYuMzMtMy4wMi03LjExLTYuNTktMS4wMS00LjU4LDEuODktOS4xMSw2LjQ3LTEwLjEyLDIwLjc3LTQuNTcsNDIuMDYtNS4zOCw2My4yOC0yLjQsMjEuMjEsMi45OCw0MS40Niw5LjYyLDYwLjE2LDE5Ljc0LDQuMTMsMi4yMyw1LjY2LDcuMzgsMy40MywxMS41MVptMTUuOTQtMzIuMzhjLTIuMSw0LjA0LTYuNDcsNi4xMy0xMC43Myw1LjUzLTEuMTUtLjE2LTIuMjgtLjUyLTMuMzctMS4wOC0xOS43LTEwLjI1LTQwLjkyLTE3LjAyLTYzLjA3LTIwLjEzLTIyLjE1LTMuMTEtNDQuNDItMi40NS02Ni4xOCwxLjk3LTUuNjYsMS4xNS0xMS4xNy0yLjUxLTEyLjMyLTguMTYtMS4xNS01LjY2LDIuNTEtMTEuMTcsOC4xNi0xMi4zMiwyNC4xLTQuODksNDguNzQtNS42Miw3My4yNS0yLjE4LDI0LjUxLDMuNDQsNDcuOTksMTAuOTQsNjkuODEsMjIuMjksNS4xMiwyLjY2LDcuMTEsOC45Nyw0LjQ1LDE0LjA5WiIvPjxwYXRoIGZpbGw9IiNmZmZmZmYiIGQ9Im0zMTguNTQsMTY5LjgxYy0xOC44NywwLTM1LjA3LTYuNTMtNDEuODQtMTMuOTUtLjY0LS43My0uNzMtMS4xMy0uNzMtMi4wMnYtMjIuMDljMC0xLjA1Ljg5LTEuNDUsMS42MS0uNTYsOC4xNCwxMC4xNiwyNS40OCwxOC40NiwzOS42NywxOC40NiwxMS4yOSwwLDE4Ljg3LTMuMDYsMTguODctMTMuMDYsMC01Ljk3LTIuODItOS44NC0xOC4yMi0xNC4xOWwtOC44Ny0yLjVjLTIwLjU2LTUuOC0zMy4wNi0xMi42Ni0zMy4wNi0zMi4zMywwLTE3LjQxLDE2LjEyLTMyLjczLDQzLjA1LTMyLjczLDEzLjIyLDAsMjYuMzYsNC4xMSwzMy45NCw5Ljc2LjY0LjQ4Ljg5Ljk3Ljg5LDEuODV2MjAuMDhjMCwxLjM3LTEuMTMsMS43Ny0yLjE4Ljg5LTYuMTMtNS4wOC0xNy45OC0xMS45My0zMi4wMS0xMS45M3MtMjAuNjQsNi4yOS0yMC42NCwxMi4wOWMwLDYuMTMsNC4yNyw3LjgyLDE5LjUxLDEyLjM0bDcuNTgsMi4yNmMyMy40Niw3LjAxLDMzLjA2LDE2Ljg1LDMzLjA2LDMzLjE0LDAsMjAuOTYtMTcuNDEsMzQuNTEtNDAuNjMsMzQuNTFabTE2NC4zOS00Mi4wOWMwLTEyLjgyLDguODctMjIuMzMsMjEuMzctMjIuMzNzMjEuMjgsOS41MSwyMS4yOCwyMi4zMy04Ljg3LDIyLjMzLTIxLjI4LDIyLjMzLTIxLjM3LTkuNTEtMjEuMzctMjIuMzNabTIxLjI4LDQyLjA5YzI2LjA0LDAsNDQuMTgtMTguNjIsNDQuMTgtNDIuMDlzLTE4LjE0LTQyLjA5LTQ0LjE4LTQyLjA5LTQ0LjEsMTguNDYtNDQuMSw0Mi4wOSwxNy45OCw0Mi4wOSw0NC4xLDQyLjA5Wm0xNTcuMjItODkuMDF2Ni43N2gtMTMuNzFjLS43MywwLTEuMTMuNC0xLjEzLDEuMTN2MTYuMTJjMCwuNzMuNCwxLjEzLDEuMTMsMS4xM2gxMy43MXY2MC43OWMwLC43My40LDEuMTMsMS4xMywxLjEzaDIwLjY0Yy43MywwLDEuMTMtLjQsMS4xMy0xLjEzdi02MC43OWgxNy42NmwyNS42NCw1NS43MS0xMy43OSwzMC4zMWMtLjQuODkuMDgsMS4yOS44OSwxLjI5aDIyLjAxYy43MywwLDEuMDUtLjE2LDEuMzctLjg5bDQ1LjU1LTEwMy41MmMuMzItLjczLS4wOC0xLjI5LS44OS0xLjI5aC0yMC42NGMtLjczLDAtMS4wNS4xNi0xLjM3Ljg5bC0yMC44LDQ5Ljk5LTIwLjg4LTQ5Ljk5Yy0uMzItLjczLS42NC0uODktMS4zNy0uODloLTMzLjM4di01LjMyYzAtOC43MSw1Ljg5LTEyLjc0LDEzLjQ2LTEyLjc0LDQuNTEsMCw5LjQzLDIuMzQsMTIuOSw0LjQzLjgxLjQ4LDEuMzctLjA4LDEuMDUtLjgxbC03LjI2LTE3LjMzYy0uMjQtLjU2LS41Ni0uODktMS4xMy0xLjIxLTMuNTUtMS44NS05LjM1LTMuNDctMTUtMy40Ny0xNy4wOSwwLTI2LjkzLDEzLjA2LTI2LjkzLDI5LjY3Wm0tMjQzLDg4LjUyYzIwLjY0LDAsMzUuNDctMTcuODIsMzUuNDctNDEuNzZzLTE1LTQxLjQ0LTM1LjY0LTQxLjQ0Yy0xNS4zMiwwLTI0LjE5LDkuMzUtMjkuMzUsMTguN3YtMTYuMTJjMC0uNzMtLjQtMS4xMy0xLjEzLTEuMTNoLTIwLjI0Yy0uNzMsMC0xLjEzLjQtMS4xMywxLjEzdjEwMy40NGMwLC43My40LDEuMTMsMS4xMywxLjEzaDIwLjI0Yy43MywwLDEuMTMtLjQsMS4xMy0xLjEzdi00MS4zNmM1LjE2LDkuMzUsMTMuODcsMTguNTQsMjkuNTEsMTguNTRabTE3Mi4yMS0uMzJjNi43NywwLDEzLjMtMS43NywxNy4xNy00LjAzLjU2LS4zMi42NC0uNjQuNjQtMS4yMXYtMTUuMzJjMC0uODEtLjQtMS4wNS0xLjEzLS42NC0yLjM0LDEuMjktNS40LDIuMzQtOS41OSwyLjM0LTYuNjEsMC0xMC44LTMuODctMTAuOC0xMi40MnYtMzEuNzdoMjAuMTZjLjczLDAsMS4xMy0uNCwxLjEzLTEuMTN2LTE2LjEyYzAtLjczLS40LTEuMTMtMS4xMy0xLjEzaC0yMC4xNnYtMjEuMDRjMC0uODktLjU2LTEuMzctMS4zNy0uNzNsLTM2LjA0LDI4LjM4Yy0uNDguNC0uNjQuODEtLjY0LDEuNDV2OS4xOWMwLC43My40LDEuMTMsMS4xMywxLjEzaDE0LjAzdjM1LjE1YzAsMTkuMDMsMTAuOTYsMjcuOSwyNi42MSwyNy45Wm0yMy4zLTEwNS4yOWMwLDcuMjYsNS42NCwxMi43NCwxMy4zOCwxMi43NHMxMy41NC01LjQ4LDEzLjU0LTEyLjc0LTUuNjQtMTIuNzQtMTMuNTQtMTIuNzQtMTMuMzgsNS40OC0xMy4zOCwxMi43NFptMy4xNCwxMDQuMTdoMjAuNjRjLjczLDAsMS4xMy0uNCwxLjEzLTEuMTN2LTc4LjA0YzAtLjczLS40LTEuMTMtMS4xMy0xLjEzaC0yMC42NGMtLjczLDAtMS4xMy40LTEuMTMsMS4xM3Y3OC4wNGMwLC43My40LDEuMTMsMS4xMywxLjEzWm0tMjI4LjY1LTQwLjQ3YzMuNzEtMTIuNDIsMTIuMjUtMjEuOTMsMjMuODYtMjEuOTNzMTguNyw4LjM4LDE4LjcsMjIuMDktNy42NiwyMi4yNS0xOC43LDIyLjI1LTIwLjE2LTEwLjY0LTIzLjg2LTIyLjQxWiIvPjxwYXRoIGZpbGw9IiNmZmZmZmYiIGQ9Im04MTAuMSw5Mi4zMWMtMS4wNi0xLjgzLTIuNTMtMy4yNi00LjQxLTQuMy0xLjg4LTEuMDMtMy45OC0xLjU1LTYuMzItMS41NXMtNC40NC41Mi02LjMyLDEuNTVjLTEuODgsMS4wNC0zLjM1LDIuNDctNC40MSw0LjMtMS4wNiwxLjgzLTEuNTksMy45LTEuNTksNi4yMXMuNTMsNC4zNCwxLjU5LDYuMTdjMS4wNiwxLjgzLDIuNTMsMy4yNiw0LjQxLDQuMywxLjg4LDEuMDQsMy45OCwxLjU1LDYuMzIsMS41NXM0LjQ0LS41Miw2LjMyLTEuNTUsMy4zNS0yLjQ3LDQuNDEtNC4zYzEuMDYtMS44MywxLjU5LTMuODgsMS41OS02LjE3cy0uNTMtNC4zOC0xLjU5LTYuMjFabS0xLjkzLDExLjM2Yy0uODYsMS41Mi0yLjA2LDIuNy0zLjU5LDMuNTYtMS41My44NS0zLjI3LDEuMjgtNS4yLDEuMjhzLTMuNzItLjQzLTUuMjUtMS4yOGMtMS41My0uODUtMi43Mi0yLjA0LTMuNTctMy41Ni0uODUtMS41MS0xLjI3LTMuMjMtMS4yNy01LjE1cy40Mi0zLjYzLDEuMjctNS4xM2MuODUtMS41LDIuMDQtMi42OCwzLjU3LTMuNTMsMS41My0uODUsMy4yOC0xLjI4LDUuMjUtMS4yOHMzLjY3LjQzLDUuMiwxLjI4YzEuNTMuODUsMi43MywyLjA0LDMuNTksMy41Ni44NiwxLjUyLDEuMjksMy4yMywxLjI5LDUuMTVzLS40MywzLjU5LTEuMjksNS4xMVoiLz48cGF0aCBmaWxsPSIjZmZmZmZmIiBkPSJtODAzLjU2LDk4LjI5Yy44Mi0uNiwxLjIzLTEuNCwxLjIzLTIuMzlzLS40LTEuODMtMS4yLTIuNDNjLS44LS42LTEuOTYtLjktMy40OC0uOWgtNS4zNnYxMS4yaDIuNTl2LTQuNDVoMS40MWwzLjQxLDQuNDVoMy4xOGwtMy43My00LjcyYy43OS0uMTUsMS40Ni0uNCwxLjk2LS43N1ptLTMuODYtLjk5aC0yLjM2di0yLjc0aDIuNDVjLjczLDAsMS4yOS4xMSwxLjY4LjM0LjM5LjIzLjU5LjU4LjU5LDEuMDYsMCwuNDUtLjIxLjc5LS42MSwxLjAxLS40MS4yMy0uOTkuMzQtMS43NS4zNFoiLz48L3N2Zz4=" alt="Spotify">
+          <div class="nd-origin-copy"><span>Reproduciendo desde</span><strong>Atardecer en Buenos Aires</strong></div>
+        </div>
+        <div class="nd-nav">
+          <button class="nd-nav-item cursor-interaction" type="button" data-queue aria-controls="nd-queue-panel" aria-pressed="true">
+            <i data-lucide="list-music" aria-hidden="true">☷</i><span>Cola</span>
+          </button>
+          <div class="nd-nav-item nd-context" aria-label="Biblioteca"><i data-lucide="library" aria-hidden="true">Ⅲ</i><span>Biblioteca</span></div>
+        </div>
+      </header>
+
+      <div class="nd-main" hidden>
+        <div class="nd-cover" data-current-cover aria-hidden="true"></div>
+        <div class="nd-main-copy">
+          <div class="nd-main-title" data-current-title>Vereda Mojada</div>
+          <div class="nd-main-artist" data-current-artist>Los Tilos del Sur</div>
+          <div class="nd-device"><i data-lucide="laptop" aria-hidden="true">▱</i><span>Reproduciendo en <strong>MacBook Pro</strong></span></div>
+        </div>
+      </div>
+
+      <section id="nd-queue-panel" class="nd-queue" aria-labelledby="nd-queue-label">
+        <h2 id="nd-queue-label" class="nd-label">A CONTINUACIÓN</h2>
+        <div class="nd-scroll">
+          <ol class="nd-list"></ol>
+          <div class="nd-queue-footer"><span>Para quitar o reordenar temas, usá Spotify.</span><span class="nd-open">ABRIR SPOTIFY ↗</span></div>
+        </div>
+      </section>
+
+      <div class="nd-lyrics" hidden>
+        <p>La lluvia dibuja caminos<br>al borde de la ciudad</p>
+        <p>Y en el reflejo de las luces<br>te vuelvo a encontrar</p>
+      </div>
+
+      <div class="nd-current">
+        <div class="nd-cover" data-current-cover aria-hidden="true"></div>
+        <div class="nd-current-copy" aria-live="polite">
+          <strong data-current-title>Vereda Mojada</strong>
+          <span data-current-artist>Los Tilos del Sur</span>
+        </div>
+        <div class="nd-device"><i data-lucide="laptop" aria-hidden="true">▱</i><span><strong>MacBook Pro</strong></span></div>
+      </div>
+    </div>
+
+    <div class="nd-bottom">
+      <div class="nd-progress">
+        <input class="cursor-interaction" data-progress type="range" min="0" max="227" value="85" aria-label="Progreso de reproducción">
+        <div class="nd-times"><span data-elapsed>1:25</span><span data-duration>3:47</span></div>
+      </div>
+      <div class="nd-controls" aria-label="Controles de reproducción">
+        <div class="nd-side">
+          <span class="nd-control nd-context" aria-label="Agregar a una playlist"><i data-lucide="circle-plus" aria-hidden="true">⊕</i></span>
+          <button type="button" class="nd-control cursor-interaction" aria-label="Aleatorio" aria-pressed="false" data-option><i data-lucide="shuffle" aria-hidden="true">⤨</i></button>
+          <button type="button" class="nd-control cursor-interaction" aria-label="Repetir" aria-pressed="false" data-option><i data-lucide="repeat" aria-hidden="true">⇄</i></button>
+        </div>
+        <div class="nd-transport">
+          <button type="button" class="nd-control nd-skip cursor-interaction" aria-label="Anterior" data-step="-1"><b class="nd-step nd-step-back" aria-hidden="true"></b></button>
+          <button type="button" class="nd-control nd-play cursor-interaction" aria-label="Pausar" data-play><b aria-hidden="true"></b></button>
+          <button type="button" class="nd-control nd-skip cursor-interaction" aria-label="Siguiente" data-step="1"><b class="nd-step" aria-hidden="true"></b></button>
+        </div>
+        <div class="nd-side nd-right">
+          <button type="button" class="nd-control cursor-interaction" aria-label="Letras" aria-pressed="false" data-lyrics><i data-lucide="message-square-text" aria-hidden="true">▤</i></button>
+          <span class="nd-control nd-context" aria-label="Volumen"><i data-lucide="volume-2" aria-hidden="true">◖))</i></span>
+        </div>
+      </div>
+    </div>
+
+    <dialog class="nd-confirm" aria-labelledby="nd-confirm-title">
+      <form method="dialog">
+        <h2 id="nd-confirm-title">¿Reproducir este tema?</h2>
+        <p data-confirm-copy></p>
+        <div class="nd-confirm-buttons">
+          <button class="cursor-interaction" value="cancel">Cancelar</button>
+          <button class="cursor-interaction" value="play">Reproducir</button>
+        </div>
+      </form>
+    </dialog>
+  </section>
+</div>
+
+<style>
+  #nowdeck-queue-mock {
+    --nd-text: #f2eee8;
+    --nd-secondary: #d5dce4;
+    --nd-muted: #a9b4c0;
+    --nd-accent: #2fd566;
+    --nd-line: rgba(255,255,255,.13);
+    --nd-mono: ui-monospace, "SF Mono", Menlo, monospace;
+    box-sizing: border-box;
+    padding: 10px 0;
+    container-type: inline-size;
+  }
+  #nowdeck-queue-mock *, #nowdeck-queue-mock *::before, #nowdeck-queue-mock *::after {
+    box-sizing: border-box;
+  }
+  #nowdeck-queue-mock [hidden] { display: none !important; }
+  #nowdeck-queue-mock .nd-screen {
+    position: relative;
+    display: grid;
+    grid-template-rows: 268px 94px;
+    gap: 20px;
+    padding: 12px clamp(16px, 5.36cqw, 48px) 20px;
+    border-radius: 13px;
+    background: #34465a;
+    color: var(--nd-text);
+    font: 15px/1.25 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    color-scheme: dark;
+    isolation: isolate;
+  }
+  #nowdeck-queue-mock button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+  }
+  #nowdeck-queue-mock i { font-style: normal; font-size: 20px; line-height: 1; }
+  #nowdeck-queue-mock svg { width: 20px; height: 20px; flex: none; vertical-align: middle; }
+  #nowdeck-queue-mock .nd-upper {
+    display: grid;
+    min-width: 0;
+    grid-template-rows: 44px minmax(0, 1fr) 56px;
+  }
+  #nowdeck-queue-mock [data-mode="player"] .nd-upper { grid-template-rows: 44px 1fr; }
+  #nowdeck-queue-mock .nd-top,
+  #nowdeck-queue-mock .nd-origin,
+  #nowdeck-queue-mock .nd-nav,
+  #nowdeck-queue-mock .nd-nav-item {
+    display: flex;
+    align-items: center;
+  }
+  #nowdeck-queue-mock .nd-top { gap: 12px; justify-content: space-between; min-width: 0; }
+  #nowdeck-queue-mock .nd-origin { gap: 12px; min-width: 0; }
+  #nowdeck-queue-mock .nd-brand { display: block; flex: none; object-fit: contain; }
+  #nowdeck-queue-mock .nd-brand-icon { width: 23px; height: 23px; }
+  #nowdeck-queue-mock .nd-brand-full { width: 77px; height: 26px; display: none; }
+  #nowdeck-queue-mock [data-mode="queue"] .nd-brand-icon { display: none; }
+  #nowdeck-queue-mock [data-mode="queue"] .nd-brand-full { display: block; }
+  #nowdeck-queue-mock .nd-origin-copy,
+  #nowdeck-queue-mock .nd-current-copy,
+  #nowdeck-queue-mock .nd-row-copy { min-width: 0; display: grid; }
+  #nowdeck-queue-mock .nd-origin-copy > *,
+  #nowdeck-queue-mock .nd-current-copy > *,
+  #nowdeck-queue-mock .nd-row-copy > *,
+  #nowdeck-queue-mock .nd-main-copy > :not(.nd-device) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #nowdeck-queue-mock .nd-origin-copy span { font-size: 12px; color: var(--nd-secondary); }
+  #nowdeck-queue-mock .nd-origin-copy strong { font-size: 15px; line-height: 20px; }
+  #nowdeck-queue-mock [data-mode="lyrics"] .nd-nav { display: none; }
+  #nowdeck-queue-mock .nd-nav { gap: clamp(8px, 3cqw, 24px); flex: none; }
+  #nowdeck-queue-mock .nd-nav-item { gap: 7px; min-height: 44px; font-weight: 600; }
+  #nowdeck-queue-mock .nd-nav-item[aria-pressed="true"] { color: var(--nd-accent); }
+  #nowdeck-queue-mock .nd-main {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: clamp(14px, 3.57cqw, 32px);
+    padding-top: 14px;
+  }
+  #nowdeck-queue-mock .nd-main-copy { min-width: 0; display: grid; gap: 6px; }
+  #nowdeck-queue-mock .nd-main-title { font-size: clamp(23px, 5.5cqw, 48px); font-weight: 700; letter-spacing: -.035em; }
+  #nowdeck-queue-mock .nd-main-artist { font-size: clamp(15px, 2.5cqw, 22px); color: var(--nd-secondary); }
+  #nowdeck-queue-mock .nd-main-copy .nd-device { margin-top: 9px; }
+  #nowdeck-queue-mock .nd-cover {
+    width: 40px;
+    aspect-ratio: 1;
+    display: block;
+    flex: none;
+    border-radius: 4px;
+    background:
+      linear-gradient(0deg, rgba(0,0,0,.28) 0 26%, transparent 26%),
+      radial-gradient(circle at 47% 43%, var(--cover-light) 0 28%, transparent 29%),
+      var(--cover-dark);
+    --cover-dark: #1e3a5c;
+    --cover-light: #f0a24e;
+  }
+  #nowdeck-queue-mock .nd-main .nd-cover { width: min(210px, 30cqw); }
+  #nowdeck-queue-mock .nd-current .nd-cover { width: 56px; }
+  #nowdeck-queue-mock .nd-queue {
+    min-height: 0;
+    display: grid;
+    grid-template-rows: 24px minmax(0, 1fr);
+  }
+  #nowdeck-queue-mock .nd-label {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    color: var(--nd-secondary);
+    font: 500 12px/1 var(--nd-mono);
+    letter-spacing: .075em;
+  }
+  #nowdeck-queue-mock .nd-scroll {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.3) transparent;
+  }
+  #nowdeck-queue-mock .nd-list { list-style: none; margin: 0; padding: 0; }
+  #nowdeck-queue-mock .nd-row {
+    display: grid;
+    grid-template-columns: 20px 40px minmax(0, 1fr) auto;
+    gap: 12px;
+    width: 100%;
+    height: 48px;
+    padding-inline-end: 10px;
+    align-items: center;
+    text-align: left;
+    border-top: 1px solid var(--nd-line);
+  }
+  #nowdeck-queue-mock .nd-row:hover { background: rgba(255,255,255,.06); }
+  #nowdeck-queue-mock .nd-order,
+  #nowdeck-queue-mock .nd-length,
+  #nowdeck-queue-mock .nd-times { color: var(--nd-muted); font: 12px/1.25 var(--nd-mono); }
+  #nowdeck-queue-mock .nd-order { text-align: center; }
+  #nowdeck-queue-mock .nd-row-copy strong { font-size: 16px; font-weight: 600; }
+  #nowdeck-queue-mock .nd-row-copy small { color: var(--nd-secondary); font-size: 13px; }
+  #nowdeck-queue-mock .nd-explicit {
+    display: inline-grid;
+    place-items: center;
+    width: 14px;
+    height: 14px;
+    margin-inline-start: 6px;
+    border-radius: 3px;
+    background: var(--nd-secondary);
+    color: #17222f;
+    font-size: 10px;
+    vertical-align: 1px;
+  }
+  #nowdeck-queue-mock .nd-queue-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 10px 0;
+    color: var(--nd-secondary);
+    font-size: 13px;
+    border-top: 1px solid var(--nd-line);
+  }
+  #nowdeck-queue-mock .nd-open { color: var(--nd-accent); font: 12px/1.4 var(--nd-mono); }
+  #nowdeck-queue-mock .nd-empty { margin: 16px 0; color: var(--nd-secondary); }
+  #nowdeck-queue-mock .nd-current {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 -1px 0 var(--nd-line);
+  }
+  #nowdeck-queue-mock [data-mode="player"] .nd-current { display: none; }
+  #nowdeck-queue-mock [data-mode="lyrics"] .nd-current { box-shadow: none; }
+  #nowdeck-queue-mock .nd-current-copy strong { font-size: 18px; font-weight: 700; }
+  #nowdeck-queue-mock .nd-current-copy span { font-size: 15px; color: var(--nd-secondary); }
+  #nowdeck-queue-mock .nd-device {
+    display: flex;
+    gap: 7px;
+    align-items: center;
+    color: var(--nd-accent);
+    font-size: 13px;
+  }
+  #nowdeck-queue-mock .nd-device strong { font-weight: 600; }
+  #nowdeck-queue-mock .nd-lyrics {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 10px;
+    padding: 0 12px;
+    text-align: center;
+  }
+  #nowdeck-queue-mock .nd-lyrics p { margin: 0; font-size: clamp(17px, 3.7cqw, 30px); font-weight: 700; }
+  #nowdeck-queue-mock .nd-lyrics p + p { color: var(--nd-muted); font-size: clamp(14px, 2.8cqw, 23px); }
+  #nowdeck-queue-mock .nd-bottom { display: grid; grid-template-rows: 28px 1fr; gap: 6px; }
+  #nowdeck-queue-mock .nd-progress { display: grid; grid-template-rows: 12px 16px; }
+  #nowdeck-queue-mock .nd-progress input {
+    appearance: none;
+    width: 100%;
+    height: 12px;
+    margin: 0;
+    background: transparent;
+  }
+  #nowdeck-queue-mock .nd-progress input::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 3px;
+    background: linear-gradient(to right, var(--nd-text) var(--fill, 37.4%), rgba(255,255,255,.24) var(--fill, 37.4%));
+  }
+  #nowdeck-queue-mock .nd-progress input::-moz-range-track {
+    height: 4px;
+    border-radius: 3px;
+    background: linear-gradient(to right, var(--nd-text) var(--fill, 37.4%), rgba(255,255,255,.24) var(--fill, 37.4%));
+  }
+  #nowdeck-queue-mock .nd-progress input::-webkit-slider-thumb {
+    appearance: none;
+    width: 8px;
+    height: 8px;
+    margin-top: -2px;
+    border-radius: 50%;
+    background: var(--nd-text);
+  }
+  #nowdeck-queue-mock .nd-times { display: flex; justify-content: space-between; }
+  #nowdeck-queue-mock .nd-controls {
+    --nd-control-gap: clamp(0px, calc((100cqw - 399px) * .075), 36px);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: var(--nd-control-gap);
+  }
+  #nowdeck-queue-mock .nd-side, #nowdeck-queue-mock .nd-transport {
+    display: flex;
+    align-items: center;
+    gap: var(--nd-control-gap);
+  }
+  #nowdeck-queue-mock .nd-side { justify-content: flex-end; }
+  #nowdeck-queue-mock .nd-right { justify-content: flex-start; }
+  #nowdeck-queue-mock .nd-control {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    color: var(--nd-muted);
+  }
+  #nowdeck-queue-mock button.nd-control:hover { background: rgba(255,255,255,.1); }
+  #nowdeck-queue-mock .nd-control[aria-pressed="true"] { color: var(--nd-accent); background: rgba(47,213,102,.16); }
+  #nowdeck-queue-mock .nd-play {
+    width: 60px;
+    height: 60px;
+    background: var(--nd-text);
+    color: #0b0b0b;
+  }
+  #nowdeck-queue-mock button.nd-play:hover { background: #fff; }
+  #nowdeck-queue-mock .nd-play b { width: 16px; height: 22px; border-inline: 5px solid currentColor; }
+  #nowdeck-queue-mock .nd-play.is-paused b { width: 0; height: 0; margin-left: 3px; border: 10px solid transparent; border-right: 0; border-left: 15px solid currentColor; }
+  #nowdeck-queue-mock .nd-skip { color: var(--nd-text); }
+  #nowdeck-queue-mock .nd-step { display: flex; align-items: center; }
+  #nowdeck-queue-mock .nd-step::before { content: ""; border: 9px solid transparent; border-right: 0; border-left: 13px solid currentColor; }
+  #nowdeck-queue-mock .nd-step::after { content: ""; width: 3px; height: 16px; border-radius: 2px; background: currentColor; }
+  #nowdeck-queue-mock .nd-step-back { transform: scaleX(-1); }
+  #nowdeck-queue-mock .nd-confirm {
+    max-width: min(290px, calc(100% - 24px));
+    padding: 20px;
+    border: 1px solid var(--nd-line);
+    border-radius: 15px;
+    background: #222d3b;
+    color: var(--nd-text);
+    text-align: center;
+  }
+  #nowdeck-queue-mock .nd-confirm::backdrop { background: rgba(8,10,14,.58); }
+  #nowdeck-queue-mock .nd-confirm h2 { margin: 0; font-size: 17px; line-height: 1.3; }
+  #nowdeck-queue-mock .nd-confirm p { color: var(--nd-secondary); font-size: 14px; margin: 8px 0 12px; }
+  #nowdeck-queue-mock .nd-confirm-buttons { display: flex; justify-content: center; gap: 16px; }
+  #nowdeck-queue-mock .nd-confirm-buttons button { min-height: 44px; color: var(--nd-accent); font-weight: 600; }
+  @container (max-width: 590px) {
+    #nowdeck-queue-mock .nd-controls { --nd-control-gap: 4px; }
+  }
+  @container (max-width: 463px) {
+    #nowdeck-queue-mock .nd-controls { --nd-control-gap: 0px; }
+    #nowdeck-queue-mock .nd-side .nd-context,
+    #nowdeck-queue-mock .nd-nav .nd-context span,
+    #nowdeck-queue-mock .nd-current .nd-device span { display: none; }
+    #nowdeck-queue-mock [data-mode="queue"] .nd-brand-full { display: none; }
+    #nowdeck-queue-mock [data-mode="queue"] .nd-brand-icon { display: block; }
+    #nowdeck-queue-mock .nd-row { gap: 8px; grid-template-columns: 15px 36px minmax(0, 1fr) auto; }
+    #nowdeck-queue-mock .nd-row .nd-cover { width: 36px; }
+    #nowdeck-queue-mock .nd-row-copy strong { font-size: 14px; }
+  }
+  @container (max-width: 377px) {
+    #nowdeck-queue-mock [aria-label="Aleatorio"] { display: none; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    #nowdeck-queue-mock [data-interacted] .nd-main,
+    #nowdeck-queue-mock [data-interacted] .nd-queue,
+    #nowdeck-queue-mock [data-interacted] .nd-lyrics { animation: nd-mode-in .25s ease-out; }
+    @keyframes nd-mode-in { from { opacity: 0; } to { opacity: 1; } }
+  }
+</style>
+
+<script>
+  (() => {
+    const root = document.getElementById("nowdeck-queue-mock");
+    const q = selector => root.querySelector(selector);
+    const screen = q(".nd-screen");
+    const queueButton = q("[data-queue]");
+    const lyricsButton = q("[data-lyrics]");
+    const list = q(".nd-list");
+    const scroll = q(".nd-scroll");
+    const queueFooter = q(".nd-queue-footer");
+    const progress = q("[data-progress]");
+    const playButton = q("[data-play]");
+    const dialog = q("dialog");
+    const tracks = [
+      ["Vereda Mojada", "Los Tilos del Sur", 227, "#1e3a5c", "#f0a24e"],
+      ["Luces de la Costanera", "Los Tilos del Sur", 192, "#5c1e3a", "#f2d06b"],
+      ["Domingo en Palermo", "Mara Quiroga", 245, "#20463a", "#9fe0c0"],
+      ["Fiebre de Sábado", "Club Atlántico, Nina Ferro", 178, "#3b2a5c", "#ff8a7a", true],
+      ["El último colectivo", "Los Tilos del Sur", 221, "#4a3b22", "#e9e2c8"],
+      ["Agua de Río", "Tomás Bravo", 302, "#1f2f44", "#7cc4ff"],
+      ["Siesta", "Mara Quiroga", 157, "#5a2a1e", "#f7b36a"]
+    ];
+    let current = 0;
+    let pending = 0;
+    let playing = true;
+
+    function format(seconds) {
+      return Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0");
+    }
+
+    function paintCover(el, track) {
+      el.style.setProperty("--cover-dark", track[3]);
+      el.style.setProperty("--cover-light", track[4]);
+    }
+
+    function setMode(mode) {
+      if (screen.dataset.mode !== mode) screen.setAttribute("data-interacted", "");
+      screen.dataset.mode = mode;
+      q(".nd-main").hidden = mode !== "player";
+      q(".nd-queue").hidden = mode !== "queue";
+      q(".nd-lyrics").hidden = mode !== "lyrics";
+      queueButton.setAttribute("aria-pressed", String(mode === "queue"));
+      queueButton.setAttribute("aria-expanded", String(mode === "queue"));
+      lyricsButton.setAttribute("aria-pressed", String(mode === "lyrics"));
+    }
+
+    function renderProgress() {
+      progress.style.setProperty("--fill", (100 * progress.value / progress.max) + "%");
+      q("[data-elapsed]").textContent = format(Number(progress.value));
+      progress.setAttribute("aria-valuetext", format(Number(progress.value)) + " de " + format(Number(progress.max)));
+    }
+
+    function renderPlaying() {
+      playButton.classList.toggle("is-paused", !playing);
+      playButton.setAttribute("aria-label", playing ? "Pausar" : "Reproducir");
+    }
+
+    function renderTrack(position) {
+      const track = tracks[current];
+      root.querySelectorAll("[data-current-title]").forEach(el => { el.textContent = track[0]; });
+      root.querySelectorAll("[data-current-artist]").forEach(el => { el.textContent = track[1]; });
+      root.querySelectorAll("[data-current-cover]").forEach(el => paintCover(el, track));
+      progress.max = track[2];
+      progress.value = position;
+      q("[data-duration]").textContent = format(track[2]);
+      renderProgress();
+
+      list.replaceChildren();
+      scroll.scrollTop = 0;
+      const upcoming = tracks.slice(current + 1);
+      queueFooter.hidden = upcoming.length === 0;
+      if (upcoming.length === 0) {
+        const empty = document.createElement("li");
+        empty.className = "nd-empty";
+        empty.textContent = "No hay nada en la cola";
+        list.append(empty);
+      }
+      upcoming.forEach((next, index) => {
+        const li = document.createElement("li");
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = "nd-row cursor-interaction";
+        row.innerHTML = '<span class="nd-order" aria-hidden="true"></span><span class="nd-cover" aria-hidden="true"></span><span class="nd-row-copy"><strong></strong><small></small></span><span class="nd-length"></span>';
+        row.children[0].textContent = index + 1;
+        paintCover(row.children[1], next);
+        row.querySelector("strong").textContent = next[0];
+        row.querySelector("small").textContent = next[1];
+        row.children[3].textContent = format(next[2]);
+        if (next[5]) {
+          const mark = document.createElement("span");
+          mark.className = "nd-explicit";
+          mark.setAttribute("aria-label", "Explícito");
+          mark.textContent = "E";
+          row.querySelector("strong").append(mark);
+        }
+        row.addEventListener("click", () => {
+          pending = current + 1 + index;
+          dialog.returnValue = "";
+          q("[data-confirm-copy]").textContent = "«" + next[0] + "» de " + next[1] + " empieza a sonar ahora.";
+          dialog.showModal();
+        });
+        li.append(row);
+        list.append(li);
+      });
+    }
+
+    queueButton.addEventListener("click", () => setMode(screen.dataset.mode === "queue" ? "player" : "queue"));
+    lyricsButton.addEventListener("click", () => setMode(screen.dataset.mode === "lyrics" ? "player" : "lyrics"));
+    playButton.addEventListener("click", () => { playing = !playing; renderPlaying(); });
+    progress.addEventListener("input", renderProgress);
+    root.querySelectorAll("[data-step]").forEach(button => {
+      button.addEventListener("click", () => {
+        current = Math.max(0, Math.min(tracks.length - 1, current + Number(button.dataset.step)));
+        renderTrack(0);
+      });
+    });
+    root.querySelectorAll("[data-option]").forEach(button => {
+      button.addEventListener("click", () => button.setAttribute("aria-pressed", String(button.getAttribute("aria-pressed") !== "true")));
+    });
+    dialog.addEventListener("close", () => {
+      if (dialog.returnValue === "play") {
+        current = pending;
+        playing = true;
+        renderPlaying();
+        renderTrack(0);
+        queueButton.focus();
+      }
+    });
+    setMode("queue");
+    renderTrack(85);
+  })();
+</script>

@@ -30,10 +30,6 @@ final class PlayerPresentationTests: XCTestCase {
         let presentation = PlayerPresentation()
         XCTAssertFalse(presentation.keepsPlayerPolling)
 
-        presentation.showsQueue = true
-        XCTAssertTrue(presentation.keepsPlayerPolling, "Cola's header follows the playback")
-        presentation.showsQueue = false
-
         presentation.showsLibrary = true
         XCTAssertTrue(presentation.keepsPlayerPolling, "The mini player follows the playback")
         presentation.showsLibrary = false

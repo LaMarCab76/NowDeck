@@ -19,8 +19,6 @@ final class PlayerPresentation: ObservableObject {
     @Published var showsDevices = false
     /// Dispositivos presented from inside the library, which covers the player.
     @Published var showsLibraryDevices = false
-    /// Cola, presented from the player (only the player has its button).
-    @Published var showsQueue = false
     /// Agregar a una playlist, presented from the player.
     @Published var showsAddToPlaylist = false
     /// Agregar a una playlist, presented from inside the library (its mini player).
@@ -31,14 +29,9 @@ final class PlayerPresentation: ObservableObject {
         showsLibrary ? .library : .player
     }
 
-    /// Whether the player keeps polling while it is covered. Presenting a full-screen cover
-    /// makes the player's `onDisappear` run, which would stop the polling. The library (its
-    /// mini player) and Cola (its header, and reading the queue again on a track change)
-    /// show the playback live, so the polling goes on under them (Ajustes opens inside the
-    /// library). Dispositivos does not show it: polling stops there, as before, to save
-    /// requests.
+    /// The library's mini player needs polling while its cover hides the player.
     var keepsPlayerPolling: Bool {
-        showsLibrary || showsQueue
+        showsLibrary
     }
 
     /// Opens Dispositivos on the visible screen: "Reproduciendo en …", "Suena en …", or a

@@ -341,10 +341,10 @@ mini reproductor; la fila de filtros y las tarjetas se reemplazan por el detalle
 ## Agregar a una playlist (2026-11-18, sin mockup)
 
 A pedido del dueño. Se abre desde el botón del reproductor y desde el del mini reproductor, y
-sigue el diseño de Cola:
+usa el formato histórico de la hoja de Cola (`Cola.html`):
 
 - La misma hoja de 640×398 (manija, superficie, radio 20 arriba, degradado de 40 al final).
-- **Cabecera**: la de Cola con "AGREGAR A UNA PLAYLIST" en acento en lugar de "SONANDO". El
+- **Cabecera**: la de la hoja histórica con "AGREGAR A UNA PLAYLIST" en acento en lugar de "SONANDO". El
   tema queda **fijo** al abrir: si la música avanza mientras el usuario elige, se agrega el
   que sonaba al tocar el botón.
 - "TUS PLAYLISTS" y filas de 56: carátula de 40 (sin recortar, radio 4), nombre en 16
@@ -385,48 +385,30 @@ sigue el diseño de Cola:
   agregado que falla se reintenta tocando su fila. Al volver a entrar con "Dar permiso" solo
   se acepta la **misma cuenta** de Spotify, y solo si Spotify concede los dos permisos.
 
-## Cola (`Cola.html`)
+## Cola (`cola-integrada.html`)
 
-- La misma hoja que Dispositivos: 640×398 sobre fondo negro, superficie `#161616`, radio 20
-  arriba, manija de 40×5 (arrastrarla hacia abajo la cierra).
-- **Cabecera** (alto 56): carátula de 56, "SONANDO" en acento (12 mono, +0,08em), el título en
-  20 bold y los artistas en 14 `textoCuerpo` (con la marca de explícito delante, como en el
-  reproductor); a la derecha, el logo de Spotify (enlace al tema)
-  y Cerrar (44). Título y artistas largos se desplazan (marquesina).
-- "A CONTINUACIÓN" (12 mono, `etiqueta`) y filas de 56 con separadores blancos al 10 %:
-  número (12 mono), carátula de 40 (sin recortar, radio 4), título 16 semibold con la marca
-  de explícito, artistas 13 `textoCuerpo` y duración (12 mono). Hasta **20** temas.
-- **Tocar un tema** (desde el 2026-11-18, pedido del dueño; no está en el mockup) abre la
-  alerta del sistema "¿Reproducir este tema?", con "«Título» de Artistas empieza a sonar
-  ahora." y los botones "Reproducir" y "Cancelar". Al apretar, la fila baja al 70 %. Mientras
-  arranca, una ruedita reemplaza la duración y las demás filas no responden; si falla, la
-  línea de aviso aparece arriba de la lista ("No hay un dispositivo activo. Elegí uno para
-  escuchar.", "No pudimos reproducirlo. Probá de nuevo.", etc.). La hoja queda abierta y se
-  actualiza sola cuando empieza el tema. Episodios y archivos locales no son botones.
-- Mantener apretado un tema muestra el nombre completo y "Abrir en Spotify", como en el
-  detalle. Abajo, un degradado de 40 hacia la superficie.
-- Al final de la lista: "Para quitar o reordenar temas, usá Spotify." (14, `textoCuerpo`) y
-  "ABRIR SPOTIFY ↗".
-- **Cola vacía**: ícono de lista, "No hay nada en la cola" (20 bold) y "Cuando termine este
-  tema, Spotify decide qué sigue. Podés elegir algo desde la Biblioteca." (15, ancho máximo
-  440).
-- **Error**: la línea de aviso de Dispositivos y "Reintentar" (cápsula de acento de 48).
-- Se lee al abrir, cuando empieza otro tema con la hoja abierta (también si el mismo tema
-  vuelve a empezar, por ejemplo porque estaba dos veces seguidas en la cola) y al deslizar
-  hacia abajo la lista (también con la cola vacía). No hace polling propio: usa el del
-  reproductor, que sigue andando mientras la hoja está abierta.
-- **Botón**: "Cola" en la fila superior, a la izquierda de Biblioteca y con su mismo estilo
-  (44 de alto, ícono y texto 15 semibold; sin píldora desde el 2026-11-18). Siempre está, salvo en
-  modo letras: su fila superior conserva el ícono de Spotify y el origen, pero no lleva Cola
-  ni Biblioteca.
-- Diferencias con el mockup (decisión del dueño, 2026-11-17):
-  - El mockup pone el botón en el grupo derecho de controles. Desde el rediseño los
-    controles van en una sola fila centrada con 36 entre botones, y uno más no entra en el
-    iPhone 8 Plus (ese lado necesitaría 216 y tiene 160), así que pasó a la fila superior.
-  - No es un control del tema (`reproductor.controles`): los temas guardados antes de que
-    existiera listan sus controles y nunca lo mostrarían.
-  - El ícono es el símbolo `list.bullet` de SF Symbols (tres renglones con viñetas); el
-    mockup dibuja renglones con un triángulo de reproducción.
+- **Botón Cola** en la fila superior (44), a la izquierda de Biblioteca. Mientras está abierto
+  usa el color de acento. Otro toque vuelve a la carátula grande. El botón Letras reemplaza
+  Cola por el modo letras cuando hay letra disponible. Biblioteca sigue accesible desde Cola.
+- **Bloque superior** (268): fila superior de 44 con el logo completo de Spotify enlazado al
+  tema y el origen a su lado. En el centro, "A CONTINUACIÓN" (12 mono, franja de 24) y una
+  lista desplazable de 144. Debajo, la misma fila compacta de Letras (56), con carátula de 56,
+  título, artista y dispositivo. Se puede cambiar de tema deslizando esa fila en horizontal.
+- **Lista**: hasta 20 temas. Filas de 48 con separador al 10 %, número (12 mono), carátula de
+  40 (radio 4), título de 16 semibold con marca de explícito, artista de 13 y duración
+  de 12 mono. El scroll queda dentro de la lista. La barra de progreso y los controles
+  conservan su posición al abrir o cerrar Cola.
+- **Tocar un tema** abre la alerta "¿Reproducir este tema?" con "Reproducir" y "Cancelar".
+  Al confirmar, una ruedita reemplaza la duración y las filas y los controles de transporte
+  esperan la respuesta. Cola queda abierta. Si falla, se muestra el aviso sobre la lista.
+  Episodios y archivos locales se muestran como información.
+- Mantener apretado muestra el nombre completo y "Abrir en Spotify" donde corresponda.
+  El final de la lista ofrece "Para quitar o reordenar temas, usá Spotify." y "ABRIR SPOTIFY ↗".
+- **Carga, cola vacía y error** se muestran en el centro, con "Reintentar" si falla la primera
+  lectura. La lista se lee al abrir, al deslizarla hacia abajo y cada vez que arranca un tema,
+  aunque sea el mismo dos veces seguidas. Sigue el polling del reproductor.
+
+`Cola.html` conserva el diseño histórico de la hoja. Agregar a una playlist conserva ese formato.
 
 ## Ajustes (`Ajustes.dc.html`)
 

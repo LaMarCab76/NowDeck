@@ -15,7 +15,8 @@ colores, tamaños, márgenes, radios, textos y estados.
 | `Biblioteca.dc.html` | Biblioteca y Buscar, con filtros y mini reproductor |
 | `Detalle.dc.html` | Detalle de una playlist o un álbum: propia, álbum y playlist de otra persona |
 | `Dispositivos.dc.html` | Hoja de dispositivos y ayuda |
-| `Cola.html` | Hoja de Cola: con temas, fin de la lista y cola vacía. Hecho a mano (no en el lienzo) el 2026-11-17 y aprobado por el dueño; se ve en un navegador sin `support.js` |
+| `cola-integrada.html` | Cola integrada al reproductor, con transición a la carátula grande. Interactivo, se abre en el navegador |
+| `Cola.html` | Referencia histórica de la hoja de Cola |
 | `Ajustes.dc.html` / `AjustesReproductor.dc.html` | Ajustes: Apariencia y Reproductor |
 | `TemaImportar.dc.html` | Importar tema |
 | `SinReproduccion.dc.html` | Nada sonando |

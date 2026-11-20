@@ -154,7 +154,7 @@ Repaso punto por punto sobre la rama `hito/08-terminaciones` (hitos 1 a 7 integr
   `https://open.spotify.com`.
 - ✅ Texto visible "ABRIR SPOTIFY ↗" en Biblioteca y en Nada sonando, además de la tarjeta "Ver
   más en Spotify" al final de cada fila.
-- ✅ Cola (2026-11-17): logo completo en la cabecera (enlace al tema que suena), hasta 20
+- ✅ Cola: logo completo en la fila superior (enlace al tema que suena), hasta 20
   temas, marca de explícito, nombres completos al mantener apretado y "ABRIR SPOTIFY ↗" al
   final de la lista.
 - ✅ Agregar a una playlist (2026-11-18): logo completo en la cabecera (enlace al tema),
